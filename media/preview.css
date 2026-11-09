@@ -1,0 +1,471 @@
+:root {
+  --bm-gap: 28px;
+  --bm-border: var(--vscode-panel-border, rgba(128, 128, 128, 0.35));
+  --bm-muted: var(--vscode-descriptionForeground, rgba(128, 128, 128, 0.9));
+  --bm-code-bg: var(--vscode-textCodeBlock-background, rgba(128, 128, 128, 0.12));
+  --bm-link: var(--vscode-textLink-foreground, #3794ff);
+  --bm-skeleton: rgba(128, 128, 128, 0.16);
+  --bm-skeleton-shine: rgba(128, 128, 128, 0.3);
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN",
+    "Noto Sans CJK JP", "Yu Gothic UI", Meiryo, system-ui, Ubuntu, "Droid Sans", sans-serif;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--vscode-editor-foreground);
+  background: var(--vscode-editor-background);
+  overflow-wrap: break-word;
+}
+
+/* Toolbar */
+
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 20px;
+  background: var(--vscode-editor-background);
+  border-bottom: 1px solid var(--bm-border);
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size, 13px);
+  line-height: 1.4;
+}
+
+.toolbar button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.modes {
+  display: inline-flex;
+  flex: none;
+  border: 1px solid var(--vscode-button-border, var(--bm-border));
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.modes button {
+  padding: 2px 10px;
+  border: 0;
+  background: transparent;
+}
+
+.modes button + button {
+  border-left: 1px solid var(--vscode-button-border, var(--bm-border));
+}
+
+.modes button:hover {
+  background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.15));
+}
+
+.modes button[aria-pressed="true"] {
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+}
+
+.progress {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--bm-muted);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.tool {
+  flex: none;
+  width: 26px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  font-size: 15px;
+}
+
+.tool:hover {
+  background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.15));
+}
+
+/* Notice */
+
+.notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 20px 0;
+  padding: 8px 12px;
+  border: 1px solid var(--bm-border);
+  border-left-width: 4px;
+  border-radius: 4px;
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size, 13px);
+  background: var(--vscode-textBlockQuote-background, rgba(128, 128, 128, 0.08));
+}
+
+.notice[hidden] {
+  display: none;
+}
+
+.notice.info {
+  border-left-color: var(--vscode-notificationsInfoIcon-foreground, var(--bm-link));
+}
+
+.notice.warning {
+  border-left-color: var(--vscode-notificationsWarningIcon-foreground, #cca700);
+}
+
+.notice.error {
+  border-left-color: var(--vscode-notificationsErrorIcon-foreground, #f14c4c);
+}
+
+.notice .message {
+  flex: 1 1 260px;
+}
+
+.notice button {
+  padding: 3px 10px;
+  border: 1px solid var(--vscode-button-border, transparent);
+  border-radius: 3px;
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  font: inherit;
+  cursor: pointer;
+}
+
+.notice button + button {
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+}
+
+/* Rows */
+
+.rows {
+  padding: 16px 20px 45vh;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: var(--bm-gap);
+  margin: 0 0 16px;
+}
+
+.row.shared,
+body[data-mode="source"] .row.pair,
+body[data-mode="translation"] .row.pair {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.row.pair .translation {
+  position: relative;
+}
+
+/* The divider reaches across the gap below the row, so consecutive pairs form one line;
+   it stops at a block that spans both columns and at the end of the document. */
+body[data-mode="both"] .row.pair .translation::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: -16px;
+  left: calc(var(--bm-gap) / -2);
+  border-left: 1px solid var(--bm-border);
+}
+
+body[data-mode="both"] .row.pair:has(+ .row.shared) .translation::before,
+body[data-mode="both"] .row.pair:last-child .translation::before {
+  bottom: 0;
+}
+
+body[data-mode="source"] .row.pair .translation,
+body[data-mode="translation"] .row.pair .source {
+  display: none;
+}
+
+.cell > .content > :first-child,
+.cell > :first-child {
+  margin-top: 0;
+}
+
+.cell > .content > :last-child,
+.cell > :last-child {
+  margin-bottom: 0;
+}
+
+.row.kind-list-item {
+  margin-bottom: 4px;
+}
+
+.row.kind-list-item.list-last {
+  margin-bottom: 16px;
+}
+
+.row.kind-list-item ul,
+.row.kind-list-item ol {
+  margin: 0;
+  padding-left: 2em;
+}
+
+.row.kind-list-item li > p {
+  margin: 0 0 0.5em;
+}
+
+.row.kind-list-item li > p:last-child {
+  margin-bottom: 0;
+}
+
+/* Translation states */
+
+.skeleton span {
+  display: block;
+  height: 0.85em;
+  margin: 0.5em 0;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--bm-skeleton) 25%, var(--bm-skeleton-shine) 37%, var(--bm-skeleton) 63%);
+  background-size: 400% 100%;
+  animation: bm-shimmer 1.4s ease infinite;
+}
+
+.skeleton span:first-child {
+  margin-top: 0.3em;
+}
+
+.skeleton span:last-child:not(:first-child) {
+  width: 62%;
+}
+
+body.paused .skeleton span {
+  animation: none;
+  opacity: 0.6;
+}
+
+@keyframes bm-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton span {
+    animation: none;
+  }
+}
+
+.row-flag {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 6px;
+  font-family: var(--vscode-font-family);
+  font-size: 0.85em;
+  line-height: 1.4;
+}
+
+.row-flag.error {
+  margin-top: 0;
+  padding: 6px 10px;
+  border: 1px dashed var(--vscode-inputValidation-errorBorder, #f14c4c);
+  border-radius: 4px;
+  color: var(--vscode-errorForeground, #f14c4c);
+}
+
+.row-flag.warning {
+  color: var(--vscode-editorWarning-foreground, #cca700);
+}
+
+.link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--bm-link);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* Markdown content */
+
+a {
+  color: var(--bm-link);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 1.2em 0 0.6em;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+h1 {
+  font-size: 2em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--bm-border);
+}
+
+h2 {
+  font-size: 1.5em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--bm-border);
+}
+
+h3 {
+  font-size: 1.25em;
+}
+
+h4 {
+  font-size: 1em;
+}
+
+h5 {
+  font-size: 0.875em;
+}
+
+h6 {
+  font-size: 0.85em;
+  color: var(--bm-muted);
+}
+
+p,
+ul,
+ol,
+blockquote,
+table,
+pre,
+details {
+  margin: 0 0 1em;
+}
+
+code,
+kbd,
+samp,
+pre {
+  font-family: var(--vscode-editor-font-family, SFMono-Regular, Menlo, Consolas, monospace);
+}
+
+code {
+  padding: 0.15em 0.35em;
+  border-radius: 4px;
+  background: var(--bm-code-bg);
+  font-size: 0.9em;
+}
+
+pre {
+  padding: 12px 16px;
+  overflow-x: auto;
+  border-radius: 6px;
+  background: var(--bm-code-bg);
+  line-height: 1.45;
+}
+
+pre code {
+  padding: 0;
+  background: none;
+  font-size: 0.9em;
+}
+
+pre.front-matter {
+  opacity: 0.75;
+}
+
+blockquote {
+  padding: 0 1em;
+  border-left: 4px solid var(--vscode-textBlockQuote-border, var(--bm-border));
+  color: var(--bm-muted);
+}
+
+table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 4px 10px;
+  border: 1px solid var(--bm-border);
+}
+
+th {
+  font-weight: 600;
+}
+
+hr {
+  height: 1px;
+  margin: 1.5em 0;
+  border: 0;
+  background: var(--bm-border);
+}
+
+img,
+video {
+  max-width: 100%;
+}
+
+ul,
+ol {
+  padding-left: 2em;
+}
+
+.task-list-item {
+  list-style-type: none;
+}
+
+.task-list-item-checkbox {
+  margin: 0 0.4em 0.2em -1.5em;
+  vertical-align: middle;
+}
+
+kbd {
+  padding: 0.1em 0.4em;
+  border: 1px solid var(--bm-border);
+  border-radius: 3px;
+  font-size: 0.85em;
+}
+
+/* Narrow panels: stack the translation under the source. */
+
+@media (max-width: 640px) {
+  body[data-mode="both"] .row.pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body[data-mode="both"] .row.pair .translation {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--bm-border);
+  }
+
+  body[data-mode="both"] .row.pair .translation::before {
+    display: none;
+  }
+}

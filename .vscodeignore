@@ -1,0 +1,12 @@
+**
+!package.json
+!package.nls.json
+!package.nls.ja.json
+!dist/extension.js
+!dist/webview/main.js
+!dist/ThirdPartyNotices.txt
+!media/**
+!l10n/**
+!README.md
+!CHANGELOG.md
+!LICENSE*

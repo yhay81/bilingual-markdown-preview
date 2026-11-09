@@ -1,0 +1,120 @@
+import type { ProviderSettings } from "./providers/factory";
+import { usesReasoning } from "./providers/params";
+import { REASONING_EFFORTS, isProviderId, type ProviderId, type ReasoningEffortSetting } from "./providers/types";
+import { settingsFingerprint } from "./translate/keys";
+import type { ServiceConfig } from "./translate/service";
+
+/** Extension settings after validation. Pure, so it can be tested without VS Code. */
+export interface ExtensionConfig {
+  provider: ProviderId;
+  targetLanguage: string;
+  anthropicModel: string;
+  openaiModel: string;
+  openaiBaseUrl: string;
+  reasoningEffort: ReasoningEffortSetting;
+  styleInstructions: string;
+  glossary: Record<string, string>;
+  maxConcurrentRequests: number;
+  batchCharacterLimit: number;
+  syncScroll: boolean;
+}
+
+export const DEFAULT_CONFIG: ExtensionConfig = {
+  provider: "anthropic",
+  targetLanguage: "Japanese",
+  anthropicModel: "claude-haiku-5-5",
+  openaiModel: "gpt-6-luna",
+  openaiBaseUrl: "",
+  reasoningEffort: "none",
+  styleInstructions: "",
+  glossary: {},
+  maxConcurrentRequests: 3,
+  batchCharacterLimit: 4000,
+  syncScroll: true,
+};
+
+export type RawConfig = Partial<Record<keyof ExtensionConfig, unknown>>;
+
+export function sanitizeConfig(raw: RawConfig): ExtensionConfig {
+  return {
+    provider: isProviderId(raw.provider) ? raw.provider : DEFAULT_CONFIG.provider,
+    targetLanguage: nonEmpty(raw.targetLanguage) ?? DEFAULT_CONFIG.targetLanguage,
+    anthropicModel: nonEmpty(raw.anthropicModel) ?? DEFAULT_CONFIG.anthropicModel,
+    openaiModel: nonEmpty(raw.openaiModel) ?? DEFAULT_CONFIG.openaiModel,
+    openaiBaseUrl: typeof raw.openaiBaseUrl === "string" ? raw.openaiBaseUrl.trim().replace(/\/+$/, "") : "",
+    reasoningEffort: (REASONING_EFFORTS as readonly unknown[]).includes(raw.reasoningEffort)
+      ? (raw.reasoningEffort as ReasoningEffortSetting)
+      : DEFAULT_CONFIG.reasoningEffort,
+    styleInstructions: typeof raw.styleInstructions === "string" ? raw.styleInstructions.trim().slice(0, 4000) : "",
+    glossary: sanitizeGlossary(raw.glossary),
+    maxConcurrentRequests: clampInt(raw.maxConcurrentRequests, 1, 8, DEFAULT_CONFIG.maxConcurrentRequests),
+    batchCharacterLimit: clampInt(raw.batchCharacterLimit, 500, 20_000, DEFAULT_CONFIG.batchCharacterLimit),
+    syncScroll: typeof raw.syncScroll === "boolean" ? raw.syncScroll : DEFAULT_CONFIG.syncScroll,
+  };
+}
+
+export function modelOf(config: ExtensionConfig): string {
+  return config.provider === "anthropic" ? config.anthropicModel : config.openaiModel;
+}
+
+export function providerSettingsOf(config: ExtensionConfig): ProviderSettings {
+  return {
+    provider: config.provider,
+    model: modelOf(config),
+    baseUrl: config.provider === "openai" ? config.openaiBaseUrl : "",
+    reasoningEffort: config.reasoningEffort,
+  };
+}
+
+export function serviceConfigOf(config: ExtensionConfig): ServiceConfig {
+  return {
+    prompt: {
+      targetLanguage: config.targetLanguage,
+      styleInstructions: config.styleInstructions,
+      glossary: config.glossary,
+    },
+    maxConcurrentRequests: config.maxConcurrentRequests,
+    batchCharacterLimit: config.batchCharacterLimit,
+    usesReasoning: usesReasoning(config.provider, modelOf(config), config.reasoningEffort),
+  };
+}
+
+/** Everything that changes a translation, hashed. Part of every cache key. */
+export function fingerprintOf(config: ExtensionConfig): string {
+  const provider = providerSettingsOf(config);
+  return settingsFingerprint({
+    provider: provider.provider,
+    model: provider.model,
+    endpoint: provider.baseUrl,
+    targetLanguage: config.targetLanguage,
+    styleInstructions: config.styleInstructions,
+    glossary: config.glossary,
+  });
+}
+
+/** True when requests in flight were made with settings that no longer apply. */
+export function translationSettingsChanged(before: ExtensionConfig, after: ExtensionConfig): boolean {
+  return fingerprintOf(before) !== fingerprintOf(after) || before.reasoningEffort !== after.reasoningEffort;
+}
+
+export function providerLabel(provider: ProviderId): string {
+  return provider === "anthropic" ? "Anthropic" : "OpenAI";
+}
+
+function nonEmpty(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() !== "" ? value.trim() : undefined;
+}
+
+function clampInt(value: unknown, min: number, max: number, fallback: number): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
+  return Math.min(max, Math.max(min, Math.round(value)));
+}
+
+function sanitizeGlossary(value: unknown): Record<string, string> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return {};
+  const glossary: Record<string, string> = {};
+  for (const [source, translation] of Object.entries(value)) {
+    if (typeof translation === "string" && source.trim() && translation.trim()) glossary[source.trim()] = translation.trim();
+  }
+  return glossary;
+}
