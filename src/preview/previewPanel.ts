@@ -1,39 +1,22 @@
 import type { MarkdownIt } from "markdown-it";
 import * as vscode from "vscode";
-import { exportFileName, exportTranslation } from "../markdown/export";
-import { documentTargetLanguage } from "../markdown/frontMatter";
 import type { RowRenderer } from "../markdown/render";
-import type { Row, SegmentedDocument, Unit } from "../markdown/segment";
-import { segmentDocument } from "../markdown/segment";
-import { Slugger } from "../markdown/slug";
-import { fingerprintOf, modelLabelOf, providerLabel, type ExtensionConfig } from "../settings";
-import {
-  parseWebviewMessage,
-  type EditableUnit,
-  type HostAction,
-  type HostToWebview,
-  type InitData,
-  type Notice,
-  type NoticeAction,
-  type ProgressInfo,
-  type RowPayload,
-  type RowUpdate,
-  type UiStrings,
-  type ViewMode,
-} from "../shared/protocol";
+import type { ExtensionConfig } from "../settings";
+import { parseWebviewMessage, type HostAction, type HostToWebview, type Notice, type RowUpdate, type ViewMode } from "../shared/protocol";
 import type { TranslationCache } from "../translate/cache";
-import { translationKey } from "../translate/keys";
-import { unmask } from "../translate/mask";
-import type { SegmentKind } from "../translate/prompt";
-import type { ServiceChange, TranslationJob, TranslationService } from "../translate/service";
-import { buildWebviewHtml } from "./html";
+import type { ServiceChange, TranslationService } from "../translate/service";
+import { buildWebviewHtml, webviewOptions } from "./html";
+import { openLink } from "./links";
+import { noticeFor } from "./notices";
+import { PreviewDocument, type DocumentContext } from "./previewDocument";
+import { saveTranslation } from "./saveTranslation";
+import { ScrollSync } from "./scrollSync";
 
 export const VIEW_TYPE = "markdownTranslation.preview";
 
 const RENDER_DELAY_MS = 200;
 const TRANSLATE_DELAY_MS = 1000;
 const FLUSH_DELAY_MS = 80;
-const SCROLL_ECHO_MS = 300;
 
 export interface PreviewContext {
   extensionUri: vscode.Uri;
@@ -48,46 +31,28 @@ export interface PreviewContext {
   onModeChanged(mode: ViewMode): void;
 }
 
-interface PreparedRow {
-  row: Row;
-  sourceHtml: string;
-  /** Cache key per unit, or undefined for units that are shown as written. */
-  keys: Array<string | undefined>;
-  /** What the webview shows now, to send only real changes. */
-  sent?: RowUpdate;
-}
-
-interface Prepared {
-  version: number;
-  doc: SegmentedDocument;
-  rows: PreparedRow[];
-  /** Rows containing each key. Its size is the number of distinct segments to translate. */
-  rowsByKey: Map<string, number[]>;
-  /** Set when the document's front matter chooses the language; otherwise the configured one is used. */
-  documentLanguage: string | undefined;
-  targetLanguage: string;
-  modelLabel: string;
-}
-
-/** Characters of preceding text sent with a request, so terms and tone carry over between requests. */
-const CONTEXT_CHARS = 400;
-
 let nextOwner = 1;
 
-/** One preview panel showing one Markdown document with its translation. */
+/**
+ * One preview panel showing one Markdown document with its translation. It keeps the webview up to
+ * date with the document and the translation queue; `PreviewDocument` decides what each row shows.
+ */
 export class TranslationPreview implements vscode.Disposable {
   readonly owner = `preview-${nextOwner++}`;
   private document: vscode.TextDocument;
   private ready = false;
   private version = 0;
-  private current: Prepared | undefined;
+  private current: PreviewDocument | undefined;
+  /** What the webview shows for each row of `current`, to send only real changes. */
+  private sent: Array<RowUpdate | undefined> = [];
   private readonly dirtyRows = new Set<number>();
   private renderTimer: ReturnType<typeof setTimeout> | undefined;
   private translateTimer: ReturnType<typeof setTimeout> | undefined;
   private flushTimer: ReturnType<typeof setTimeout> | undefined;
-  private ignoreEditorScrollUntil = 0;
   private lastNotice = "";
   private disposed = false;
+  private readonly documentContext: DocumentContext;
+  private readonly scroll: ScrollSync;
   private readonly disposables: vscode.Disposable[] = [];
   private readonly disposeEmitter = new vscode.EventEmitter<void>();
   private readonly activeEmitter = new vscode.EventEmitter<void>();
@@ -97,15 +62,23 @@ export class TranslationPreview implements vscode.Disposable {
   constructor(
     readonly panel: vscode.WebviewPanel,
     document: vscode.TextDocument,
-    private mode: ViewMode,
+    mode: ViewMode,
     private readonly context: PreviewContext,
   ) {
     this.document = document;
+    this.documentContext = { md: context.md, renderer: context.renderer, service: context.service, edits: context.edits, l10n: vscode.l10n };
+    this.scroll = new ScrollSync({
+      uri: document.uri.toString(),
+      setFocus: (line) => context.service.setFocus(this.owner, line),
+      enabled: () => context.getConfig().syncScroll,
+      scrollPreview: (line) => this.post({ type: "scrollToLine", line }),
+    });
     panel.title = titleOf(document);
     panel.webview.options = webviewOptions(context.extensionUri, document.uri);
-    panel.webview.html = buildWebviewHtml(panel.webview, context.extensionUri, document.uri, this.initData());
+    panel.webview.html = buildWebviewHtml(panel.webview, context.extensionUri, document.uri, mode);
 
     this.disposables.push(
+      this.scroll,
       panel.onDidDispose(() => this.dispose()),
       panel.webview.onDidReceiveMessage((raw: unknown) => this.onMessage(raw)),
       panel.onDidChangeViewState(({ webviewPanel }) => {
@@ -118,7 +91,6 @@ export class TranslationPreview implements vscode.Disposable {
         this.document = event.document;
         this.schedule("render");
       }),
-      vscode.window.onDidChangeTextEditorVisibleRanges((event) => this.onEditorScroll(event)),
       context.service.onDidChange((change) => this.onServiceChange(change)),
     );
   }
@@ -147,37 +119,14 @@ export class TranslationPreview implements vscode.Disposable {
 
   /** Translates the whole document again, ignoring cached translations. The user's edits stay. */
   retranslate(): void {
-    if (this.current) this.context.service.forget(this.current.rowsByKey.keys());
+    if (this.current) this.context.service.forget(this.current.keys());
     this.render(true);
   }
 
   /** Writes the translated Markdown to a file, by default `README.ja.md` beside `README.md`. */
   async exportTranslation(target?: vscode.Uri): Promise<vscode.Uri | undefined> {
-    const prepared = this.current ?? this.prepare();
-    const { markdown, untranslated } = exportTranslation(this.context.md, this.document.getText(), prepared.doc, (row, unit) =>
-      this.translationOf(prepared, row, unit),
-    );
-    let uri = target;
-    if (!uri) {
-      const name = exportFileName(this.document.uri.path.split("/").pop() || "document.md", prepared.targetLanguage);
-      const folder = this.document.uri.scheme === "untitled" ? vscode.workspace.workspaceFolders?.[0]?.uri : vscode.Uri.joinPath(this.document.uri, "..");
-      uri = await vscode.window.showSaveDialog({
-        defaultUri: folder ? vscode.Uri.joinPath(folder, name) : undefined,
-        filters: { Markdown: ["md"] },
-        saveLabel: vscode.l10n.t("Save Translation"),
-      });
-      if (!uri) return undefined;
-    }
-    await vscode.workspace.fs.writeFile(uri, new TextEncoder().encode(markdown));
-    if (!target) {
-      await vscode.window.showTextDocument(uri, { preview: false });
-      if (untranslated > 0) {
-        void vscode.window.showWarningMessage(
-          vscode.l10n.t("{0} segments are not translated yet, so they were saved as written.", untranslated),
-        );
-      }
-    }
-    return uri;
+    const current = this.current ?? this.prepare();
+    return saveTranslation(this.document, current.exportMarkdown(this.document.getText()), current.targetLanguage, target);
   }
 
   dispose(): void {
@@ -192,11 +141,6 @@ export class TranslationPreview implements vscode.Disposable {
     this.activeEmitter.dispose();
   }
 
-  private initData(): InitData {
-    const mermaid = this.panel.webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, "dist", "webview", "mermaid.js"));
-    return { documentUri: this.uri, lang: vscode.env.language, mode: this.mode, strings: uiStrings(), mermaidScriptUri: mermaid.toString() };
-  }
-
   private onMessage(raw: unknown): void {
     const message = parseWebviewMessage(raw);
     if (!message) return;
@@ -204,24 +148,21 @@ export class TranslationPreview implements vscode.Disposable {
       case "ready":
         this.ready = true;
         this.render(true);
-        this.syncToEditor();
+        this.scroll.syncToEditor();
         break;
       case "openLink":
-        void this.openLink(message.href);
+        void openLink(message.href, this.document.uri);
         break;
       case "visibleLine":
-        this.onPreviewScroll(message.line);
+        this.scroll.onPreviewScroll(message.line);
         break;
-      case "retryRow": {
-        const row = this.current?.rows[message.index];
-        if (row) this.context.service.retry(definedKeys(row.keys));
+      case "retryRow":
+        if (this.current) this.context.service.retry(this.current.rowKeys(message.index));
         break;
-      }
       case "action":
         this.onAction(message.action);
         break;
       case "modeChanged":
-        this.mode = message.mode;
         this.context.onModeChanged(message.mode);
         break;
       case "editRow":
@@ -238,46 +179,24 @@ export class TranslationPreview implements vscode.Disposable {
 
   /** Sends the row's translated units to the webview for editing. */
   private offerEdit(index: number): void {
-    const prepared = this.current;
-    const entry = prepared?.rows[index];
-    if (!prepared || !entry) return;
-    const units: EditableUnit[] = [];
-    entry.row.units.forEach((unit, k) => {
-      if (entry.keys[k]) units.push({ source: unit.source, text: this.translationOf(prepared, index, k) ?? unit.source });
-    });
-    if (units.length > 0) this.post({ type: "editRow", version: prepared.version, index, units });
+    const current = this.current;
+    if (!current) return;
+    const units = current.editableUnits(index);
+    if (units.length > 0) this.post({ type: "editRow", version: current.version, index, units });
   }
 
   /** Stores the user's texts for the row's translated units, or removes them when `texts` is undefined. */
   private saveEdit(index: number, texts: readonly string[] | undefined): void {
-    const prepared = this.current;
-    const entry = prepared?.rows[index];
-    if (!prepared || !entry) return;
-    const edits = this.context.edits;
-    let n = 0;
-    entry.row.units.forEach((unit, k) => {
-      const key = entry.keys[k];
-      if (!key) return;
-      const text = texts?.[n++];
-      const result = this.context.service.getResult(key);
-      const machine = result?.state === "done" ? unmask(result.text, unit.placeholders) : undefined;
-      if (text === undefined || text.trim() === "" || text === machine) edits.delete([key]);
-      else edits.set(key, text);
-    });
-    for (const key of definedKeys(entry.keys)) for (const row of prepared.rowsByKey.get(key) ?? []) this.dirtyRows.add(row);
+    const current = this.current;
+    if (!current) return;
+    const changes = current.editsFor(index, texts);
+    if (changes.length === 0) return;
+    for (const { key, text } of changes) {
+      if (text === undefined) this.context.edits.delete([key]);
+      else this.context.edits.set(key, text);
+    }
+    for (const row of current.rowsWith(changes.map(({ key }) => key))) this.dirtyRows.add(row);
     this.flush();
-  }
-
-  /** The text shown for one unit: the user's edit, or the finished translation with code and links restored. */
-  private translationOf(prepared: Prepared, rowIndex: number, unitIndex: number): string | undefined {
-    const entry = prepared.rows[rowIndex];
-    const key = entry?.keys[unitIndex];
-    const unit = entry?.row.units[unitIndex];
-    if (!key || !unit) return undefined;
-    const edited = this.context.edits.get(key);
-    if (edited !== undefined) return edited;
-    const result = this.context.service.getResult(key);
-    return result?.state === "done" ? unmask(result.text, unit.placeholders) : undefined;
   }
 
   private onAction(action: HostAction): void {
@@ -291,13 +210,9 @@ export class TranslationPreview implements vscode.Disposable {
       case "exportTranslation":
         void this.exportTranslation();
         break;
-      case "retryFailed": {
-        const prepared = this.current;
-        if (!prepared) return;
-        const failed = [...prepared.rowsByKey.keys()].filter((key) => this.context.service.getResult(key)?.state === "error");
-        this.context.service.retry(failed);
+      case "retryFailed":
+        if (this.current) this.context.service.retry(this.current.failedKeys());
         break;
-      }
       default:
         this.context.runAction(action);
     }
@@ -317,248 +232,47 @@ export class TranslationPreview implements vscode.Disposable {
   private render(requestNow: boolean): void {
     clearTimeout(this.renderTimer);
     if (!this.ready || this.disposed) return;
-    const prepared = this.prepare();
-    this.current = prepared;
+    const current = this.prepare();
+    this.current = current;
     this.dirtyRows.clear();
-    const rows = prepared.rows.map((entry, index): RowPayload => {
-      const state = this.rowState(prepared, index);
-      entry.sent = state;
-      return {
-        index,
-        shared: entry.row.shared,
-        line: entry.row.startLine,
-        endLine: entry.row.endLine,
-        classes: entry.row.classes,
-        sourceHtml: entry.sourceHtml,
-        translationHtml: state.translationHtml,
-        status: state.status,
-        message: state.message,
-        edited: state.edited,
-      };
+    this.sent = [];
+    const rows = Array.from({ length: current.rowCount }, (_, index) => {
+      const state = current.rowState(index);
+      this.sent[index] = state;
+      return current.rowPayload(index, state);
     });
-    const notice = this.notice(prepared);
+    const progress = current.progress();
+    const notice = this.notice(progress.failed);
     this.lastNotice = JSON.stringify(notice);
-    this.post({ type: "render", version: prepared.version, rows, progress: this.progress(prepared), notice });
+    this.post({ type: "render", version: current.version, rows, progress, notice });
     if (requestNow) this.requestTranslations();
     else this.schedule("translate");
   }
 
-  private prepare(): Prepared {
-    const config = this.context.getConfig();
-    const text = this.document.getText();
-    // Like the target language setting, the document's choice counts only in a trusted workspace.
-    const documentLanguage = vscode.workspace.isTrusted ? documentTargetLanguage(text) : undefined;
-    const targetLanguage = documentLanguage ?? config.targetLanguage;
-    const fingerprint = fingerprintOf({ ...config, targetLanguage });
-    const doc = segmentDocument(this.context.md, text, {
-      targetLanguage,
-      translateCodeComments: config.translateCodeComments,
-    });
-    const slugger = new Slugger();
-    const rowsByKey = new Map<string, number[]>();
-    const rows = doc.rows.map((row, index): PreparedRow => {
-      const keys = row.shared
-        ? []
-        : row.units.map((unit) => (unit.translatable ? translationKey(fingerprint, unit.masked, unit.placeholders, kindOf(unit)) : undefined));
-      for (const key of definedKeys(keys)) {
-        const indexes = rowsByKey.get(key);
-        if (!indexes) rowsByKey.set(key, [index]);
-        else if (indexes.at(-1) !== index) indexes.push(index);
-      }
-      return { row, sourceHtml: this.context.renderer.renderSource(row, doc.env, slugger), keys };
-    });
-    return {
+  private prepare(): PreviewDocument {
+    return new PreviewDocument(this.documentContext, {
       version: ++this.version,
-      doc,
-      rows,
-      rowsByKey,
-      documentLanguage,
-      targetLanguage,
-      modelLabel: modelLabelOf(config),
-    };
+      text: this.document.getText(),
+      config: this.context.getConfig(),
+      trusted: vscode.workspace.isTrusted,
+    });
   }
 
   private requestTranslations(): void {
     clearTimeout(this.translateTimer);
-    const prepared = this.current;
-    if (!prepared || this.disposed) return;
-    const jobs: TranslationJob[] = [];
-    let before = "";
-    for (const { row, keys } of prepared.rows) {
-      row.units.forEach((unit, k) => {
-        const key = keys[k];
-        if (key) {
-          jobs.push({
-            key,
-            masked: unit.masked,
-            placeholders: unit.placeholders,
-            line: row.startLine,
-            kind: kindOf(unit),
-            targetLanguage: prepared.documentLanguage,
-            context: before || undefined,
-          });
-        }
-        if (!unit.comment) before = `${before}\n${contextText(unit.masked)}`.slice(-CONTEXT_CHARS);
-      });
-    }
-    this.context.service.request(this.owner, jobs);
+    if (!this.current || this.disposed) return;
+    this.context.service.request(this.owner, this.current.jobs());
   }
 
-  private rowState(prepared: Prepared, index: number): RowUpdate {
-    const entry = prepared.rows[index]!;
-    if (entry.row.shared) return { index, status: "shared" };
-    const texts: Array<string | undefined> = [];
-    let pending = false;
-    let warning = false;
-    let edited = false;
-    let error: string | undefined;
-    entry.row.units.forEach((unit, k) => {
-      const key = entry.keys[k];
-      const edit = key ? this.context.edits.get(key) : undefined;
-      const result = key && edit === undefined ? this.context.service.getResult(key) : undefined;
-      if (!key) {
-        texts.push(undefined);
-      } else if (edit !== undefined) {
-        edited = true;
-        texts.push(edit);
-      } else if (!result || result.state === "queued" || result.state === "inflight") {
-        pending = true;
-      } else if (result.state === "error") {
-        error ??= result.error.message;
-      } else {
-        if (result.problems.length > 0) warning = true;
-        texts.push(unmask(result.text, unit.placeholders));
-      }
-    });
-    if (pending) return { index, status: "translating" };
-    if (error !== undefined) return { index, status: "error", message: error };
-    const translationHtml = this.context.renderer.renderTranslation(entry.row, prepared.doc.env, texts);
-    const state: RowUpdate = warning
-      ? { index, status: "warning", translationHtml, message: vscode.l10n.t("This translation may be missing code, links, or formatting.") }
-      : { index, status: "done", translationHtml };
-    if (edited) state.edited = true;
-    return state;
-  }
-
-  private progress(prepared: Prepared): ProgressInfo {
-    let done = 0;
-    let failed = 0;
-    for (const key of prepared.rowsByKey.keys()) {
-      const state = this.context.service.getResult(key)?.state;
-      if (state === "done") done++;
-      else if (state === "error") failed++;
-    }
-    const usage = this.context.service.getUsage();
-    const tokens = usage.inputTokens + usage.outputTokens;
-    return { total: prepared.rowsByKey.size, done, failed, model: prepared.modelLabel, targetLanguage: prepared.targetLanguage, ...(tokens > 0 ? { tokens } : {}) };
-  }
-
-  private notice(prepared: Prepared): Notice | null {
-    const config = this.context.getConfig();
-    const provider = providerLabel(config.provider);
-    const model = modelLabelOf(config);
-    const setKey: NoticeAction = { label: vscode.l10n.t("Set API Key"), action: "setApiKey" };
-    const switchProvider: NoticeAction = { label: vscode.l10n.t("Switch Provider"), action: "switchProvider" };
-    const openSettings: NoticeAction = { label: vscode.l10n.t("Open Settings"), action: "openSettings" };
-    const chooseModel: NoticeAction = { label: vscode.l10n.t("Choose Model"), action: "chooseModel" };
-    const tryAgain: NoticeAction = { label: vscode.l10n.t("Try Again"), action: "resume" };
-    const block = this.context.service.getBlock();
-    const detail = block?.message ? ` (${block.message})` : "";
-
-    if (config.provider === "vscode") {
-      switch (block?.reason) {
-        case "permission":
-          return {
-            severity: "error",
-            blocking: true,
-            message:
-              vscode.l10n.t(
-                "VS Code did not allow this extension to use the language model. Allow it in the Accounts menu under Manage Language Model Access, then try again.",
-              ) + detail,
-            actions: [tryAgain, switchProvider],
-          };
-        case "notFound":
-        case "auth":
-          return {
-            severity: "error",
-            blocking: true,
-            message: vscode.l10n.t("No language model is available in VS Code. Install GitHub Copilot and sign in, or choose another model.") + detail,
-            actions: [chooseModel, tryAgain, switchProvider],
-          };
-        default:
-          break;
-      }
-    }
-
-    switch (block?.reason) {
-      case "tokenLimit":
-        return {
-          severity: "info",
-          blocking: true,
-          message: vscode.l10n.t("Translation paused: this session reached the token limit of {0}.", config.tokenLimit.toLocaleString()),
-          actions: [{ label: vscode.l10n.t("Continue"), action: "resume" }, openSettings],
-        };
-      case "missingKey":
-        return {
-          severity: "info",
-          blocking: true,
-          message: vscode.l10n.t("Set your {0} API key to start translating. It is kept in VS Code Secret Storage.", provider),
-          actions: [setKey, switchProvider],
-        };
-      case "invalidBaseUrl":
-        return {
-          severity: "error",
-          blocking: true,
-          message: vscode.l10n.t("The OpenAI base URL must start with https:// (or http://localhost)."),
-          actions: [openSettings],
-        };
-      case "invalidEndpoint":
-        return {
-          severity: "info",
-          blocking: true,
-          message: vscode.l10n.t("Set the endpoint of your Azure resource, such as https://my-resource.services.ai.azure.com, to translate with Azure."),
-          actions: [openSettings, switchProvider],
-        };
-      case "auth":
-        return {
-          severity: "error",
-          blocking: true,
-          message: vscode.l10n.t("{0} rejected the API key.", provider) + detail,
-          actions: [setKey, switchProvider],
-        };
-      case "permission":
-        return {
-          severity: "error",
-          blocking: true,
-          message: vscode.l10n.t("This API key is not allowed to use {0}.", model) + detail,
-          actions: [chooseModel, setKey],
-        };
-      case "notFound":
-        return {
-          severity: "error",
-          blocking: true,
-          message: vscode.l10n.t("Model {0} was not found. Choose another model.", model) + detail,
-          actions: [chooseModel, switchProvider],
-        };
-      case undefined:
-        break;
-    }
-
-    const { failed } = this.progress(prepared);
-    if (failed === 0) return null;
-    const lastError = this.context.service.getLastError();
-    return {
-      severity: "warning",
-      blocking: false,
-      message: vscode.l10n.t("{0} segments could not be translated.", failed) + (lastError ? ` (${lastError.message})` : ""),
-      actions: [{ label: vscode.l10n.t("Retry"), action: "retryFailed" }],
-    };
+  private notice(failed: number): Notice | null {
+    const service = this.context.service;
+    return noticeFor({ config: this.context.getConfig(), block: service.getBlock(), failed, lastError: service.getLastError() }, vscode.l10n);
   }
 
   private onServiceChange(change: ServiceChange): void {
-    const prepared = this.current;
-    if (!prepared || !this.ready) return;
-    for (const key of change.keys) for (const index of prepared.rowsByKey.get(key) ?? []) this.dirtyRows.add(index);
+    const current = this.current;
+    if (!current || !this.ready) return;
+    for (const index of current.rowsWith(change.keys)) this.dirtyRows.add(index);
     if (this.dirtyRows.size > 0 || change.stateChanged) {
       this.flushTimer ??= setTimeout(() => this.flush(), FLUSH_DELAY_MS);
     }
@@ -566,85 +280,25 @@ export class TranslationPreview implements vscode.Disposable {
 
   private flush(): void {
     this.flushTimer = undefined;
-    const prepared = this.current;
-    if (!prepared || !this.ready || this.disposed) return;
+    const current = this.current;
+    if (!current || !this.ready || this.disposed) return;
     const updates: RowUpdate[] = [];
     for (const index of this.dirtyRows) {
-      const entry = prepared.rows[index];
-      if (!entry) continue;
-      const state = this.rowState(prepared, index);
-      if (sameUpdate(entry.sent, state)) continue;
-      entry.sent = state;
+      if (index >= current.rowCount) continue;
+      const state = current.rowState(index);
+      if (sameUpdate(this.sent[index], state)) continue;
+      this.sent[index] = state;
       updates.push(state);
     }
     this.dirtyRows.clear();
-    this.post({ type: "updateRows", version: prepared.version, rows: updates, progress: this.progress(prepared) });
-    const notice = this.notice(prepared);
+    const progress = current.progress();
+    this.post({ type: "updateRows", version: current.version, rows: updates, progress });
+    const notice = this.notice(progress.failed);
     const serialized = JSON.stringify(notice);
     if (serialized !== this.lastNotice) {
       this.lastNotice = serialized;
       this.post({ type: "notice", notice });
     }
-  }
-
-  private onEditorScroll(event: vscode.TextEditorVisibleRangesChangeEvent): void {
-    if (event.textEditor.document.uri.toString() !== this.uri) return;
-    const line = event.visibleRanges[0]?.start.line;
-    if (line === undefined) return;
-    this.context.service.setFocus(this.owner, line);
-    if (!this.ready || !this.context.getConfig().syncScroll || Date.now() < this.ignoreEditorScrollUntil) return;
-    this.post({ type: "scrollToLine", line });
-  }
-
-  private onPreviewScroll(line: number): void {
-    this.context.service.setFocus(this.owner, Math.floor(line));
-    if (!this.context.getConfig().syncScroll) return;
-    const editor = vscode.window.visibleTextEditors.find((candidate) => candidate.document.uri.toString() === this.uri);
-    if (!editor) return;
-    // Revealing scrolls the editor, which would scroll the preview back; ignore that echo.
-    this.ignoreEditorScrollUntil = Date.now() + SCROLL_ECHO_MS;
-    const target = Math.max(0, Math.min(editor.document.lineCount - 1, Math.floor(line)));
-    editor.revealRange(new vscode.Range(target, 0, target, 0), vscode.TextEditorRevealType.AtTop);
-  }
-
-  private syncToEditor(): void {
-    const editor = vscode.window.visibleTextEditors.find((candidate) => candidate.document.uri.toString() === this.uri);
-    const line = editor?.visibleRanges[0]?.start.line;
-    if (line === undefined) return;
-    this.context.service.setFocus(this.owner, line);
-    if (this.context.getConfig().syncScroll && line > 0) this.post({ type: "scrollToLine", line });
-  }
-
-  /** Links never navigate the webview: web links open in the browser, relative paths in VS Code. */
-  private async openLink(href: string): Promise<void> {
-    const link = href.trim();
-    if (!link || link.startsWith("#") || link.startsWith("//")) return;
-    const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(link)?.[1]?.toLowerCase();
-    if (scheme) {
-      if (scheme === "http" || scheme === "https" || scheme === "mailto") {
-        await vscode.env.openExternal(vscode.Uri.parse(link, true));
-      }
-      return;
-    }
-    const target = this.resolveRelative(link);
-    if (target) await vscode.commands.executeCommand("vscode.open", target);
-  }
-
-  private resolveRelative(link: string): vscode.Uri | undefined {
-    const path = link.split(/[?#]/, 1)[0];
-    if (!path) return undefined;
-    let decoded = path;
-    try {
-      decoded = decodeURIComponent(path);
-    } catch {
-      // Keep the raw path.
-    }
-    if (decoded.startsWith("/")) {
-      const folder = vscode.workspace.getWorkspaceFolder(this.document.uri);
-      return folder ? vscode.Uri.joinPath(folder.uri, decoded) : undefined;
-    }
-    if (this.document.uri.scheme === "untitled") return undefined;
-    return vscode.Uri.joinPath(this.document.uri, "..", decoded);
   }
 
   private post(message: HostToWebview): void {
@@ -657,47 +311,6 @@ export function titleOf(document: vscode.TextDocument): string {
   return vscode.l10n.t("Translation: {0}", name);
 }
 
-export function webviewOptions(extensionUri: vscode.Uri, documentUri: vscode.Uri): vscode.WebviewOptions {
-  const roots = [vscode.Uri.joinPath(extensionUri, "dist"), vscode.Uri.joinPath(extensionUri, "media")];
-  for (const folder of vscode.workspace.workspaceFolders ?? []) roots.push(folder.uri);
-  if (documentUri.scheme !== "untitled" && !vscode.workspace.getWorkspaceFolder(documentUri)) {
-    roots.push(vscode.Uri.joinPath(documentUri, ".."));
-  }
-  return { enableScripts: true, enableCommandUris: false, localResourceRoots: roots };
-}
-
-function uiStrings(): UiStrings {
-  return {
-    modeSource: vscode.l10n.t("Source"),
-    modeBoth: vscode.l10n.t("Side by side"),
-    modeTranslation: vscode.l10n.t("Translation"),
-    retranslate: vscode.l10n.t("Retranslate"),
-    settings: vscode.l10n.t("Settings"),
-    chooseModel: vscode.l10n.t("Choose Model"),
-    chooseTargetLanguage: vscode.l10n.t("Choose Target Language"),
-    retry: vscode.l10n.t("Retry"),
-    exportTranslation: vscode.l10n.t("Save Translation as Markdown"),
-    edit: vscode.l10n.t("Edit"),
-    edited: vscode.l10n.t("Edited"),
-    revert: vscode.l10n.t("Revert"),
-    save: vscode.l10n.t("Save"),
-    cancel: vscode.l10n.t("Cancel"),
-    tokens: vscode.l10n.t("{0} tokens", "{0}"),
-    // The webview fills in the placeholders.
-    progress: vscode.l10n.t("{0}/{1} translated", "{0}", "{1}"),
-    failed: vscode.l10n.t("{0} failed", "{0}"),
-    warning: vscode.l10n.t("Check this translation"),
-  };
-}
-
-function kindOf(unit: Unit): SegmentKind {
-  return unit.comment ? "comment" : "markdown";
-}
-
-function definedKeys(keys: ReadonlyArray<string | undefined>): string[] {
-  return keys.filter((key): key is string => key !== undefined);
-}
-
 function sameUpdate(a: RowUpdate | undefined, b: RowUpdate): boolean {
   return (
     a !== undefined &&
@@ -706,9 +319,4 @@ function sameUpdate(a: RowUpdate | undefined, b: RowUpdate): boolean {
     a.message === b.message &&
     a.edited === b.edited
   );
-}
-
-/** Masked text as context: placeholders stand for code and links, which are not sent. */
-function contextText(masked: string): string {
-  return masked.replace(/⟦\d+⟧/g, "").replace(/[ \t]+/g, " ").trim();
 }

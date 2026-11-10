@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { isViewMode, type ViewMode, type WebviewState } from "../shared/protocol";
-import { TranslationPreview, VIEW_TYPE, titleOf, webviewOptions, type PreviewContext } from "./previewPanel";
+import { webviewOptions } from "./html";
+import { TranslationPreview, VIEW_TYPE, titleOf, type PreviewContext } from "./previewPanel";
 
 export interface ManagerContext extends PreviewContext {
   defaultMode(): ViewMode;

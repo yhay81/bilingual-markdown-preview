@@ -29,7 +29,7 @@ The tests never call a translation API. To see real translations in the Extensio
 - `src/markdown/`: splitting Markdown into rows, rendering them, finding the comments in code blocks, and writing the translation out as Markdown.
 - `src/translate/`: prompts, placeholders, validation, the cache and the translation queue.
 - `src/providers/`: the Anthropic client (also used for Claude on Azure and Amazon Bedrock), one client for OpenAI and the OpenAI-compatible services (`catalog.ts` lists their endpoints and reasoning parameters), a client for Gemini on Vertex AI, and the VS Code Language Model API.
-- `src/preview/`: the preview panels and their HTML.
+- `src/preview/`: the preview panels (`previewPanel.ts`) and their HTML. `previewDocument.ts` decides what each row shows and which segments to translate, and `notices.ts` what the notice above the preview says; neither uses VS Code, so the tests cover them.
 - `src/webview/`: the script that runs inside the preview.
 - `src/shared/`: the messages between the extension and the preview.
 - `l10n/` and `package.nls*.json`: the strings in English, Japanese, Simplified Chinese, Traditional Chinese, Korean, Spanish, French, German, Brazilian Portuguese, Russian and Italian. A new string needs an entry in every language.
