@@ -90,6 +90,28 @@ describe("heuristics", () => {
     expect(looksLikeTargetLanguage("Use ⟦1⟧ for テスト setup and configuration", "Japanese")).toBe(false);
     expect(looksLikeTargetLanguage("これは説明です。", "English")).toBe(false);
   });
+
+  it("recognizes text already in languages with their own script", () => {
+    expect(looksLikeTargetLanguage("这是一个简单的说明。", "Simplified Chinese")).toBe(true);
+    expect(looksLikeTargetLanguage("これは説明です。", "Chinese")).toBe(false);
+    expect(looksLikeTargetLanguage("이것은 ⟦1⟧ 설명입니다.", "ko")).toBe(true);
+    expect(looksLikeTargetLanguage("Это простое описание.", "Russian")).toBe(true);
+    expect(looksLikeTargetLanguage("Це простий опис і приклад.", "Russian")).toBe(false);
+    expect(looksLikeTargetLanguage("Це простий опис і приклад.", "uk")).toBe(true);
+    expect(looksLikeTargetLanguage("Αυτή είναι μια περιγραφή.", "Greek")).toBe(true);
+    expect(looksLikeTargetLanguage("This is a description.", "Korean")).toBe(false);
+  });
+
+  it("recognizes text already in languages written in Latin letters by their common words", () => {
+    expect(looksLikeTargetLanguage("This is the guide for the new release.", "English")).toBe(true);
+    expect(looksLikeTargetLanguage("Esta es la guía para la nueva versión.", "Spanish")).toBe(true);
+    expect(looksLikeTargetLanguage("Ceci est le guide pour la nouvelle version.", "French")).toBe(true);
+    expect(looksLikeTargetLanguage("Das ist die Anleitung für die neue Version.", "de-DE")).toBe(true);
+    expect(looksLikeTargetLanguage("Esta es la guía para la nueva versión.", "English")).toBe(false);
+    // Too short to tell, so it is translated.
+    expect(looksLikeTargetLanguage("Release notes", "English")).toBe(false);
+    expect(looksLikeTargetLanguage("Das ist gut.", "Klingon")).toBe(false);
+  });
 });
 
 describe("parseWebviewMessage", () => {
