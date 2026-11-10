@@ -6,6 +6,7 @@
 !dist/webview/main.js
 !dist/ThirdPartyNotices.txt
 !media/**
+!images/icon.png
 !l10n/**
 !README.md
 !CHANGELOG.md

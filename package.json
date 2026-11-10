@@ -6,25 +6,41 @@
   "private": true,
   "publisher": "yhay81",
   "license": "MIT",
+  "icon": "images/icon.png",
+  "galleryBanner": {
+    "color": "#173A8C",
+    "theme": "dark"
+  },
+  "homepage": "https://github.com/yhay81/bilingual-markdown-preview#readme",
   "repository": {
     "type": "git",
     "url": "https://github.com/yhay81/bilingual-markdown-preview.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yhay81/bilingual-markdown-preview/issues"
   },
   "engines": {
     "vscode": "^1.101.0"
   },
   "categories": [
     "Visualization",
-    "Other"
+    "AI"
   ],
   "keywords": [
     "markdown",
     "preview",
     "translation",
+    "translate",
+    "translator",
     "bilingual",
+    "side-by-side",
     "japanese",
+    "llm",
+    "ai",
     "claude",
+    "anthropic",
     "openai",
+    "gpt",
     "byok"
   ],
   "main": "./dist/extension.js",
