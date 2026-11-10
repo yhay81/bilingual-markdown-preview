@@ -2,6 +2,7 @@ import DOMPurify from "dompurify";
 import {
   VIEW_MODES,
   isViewMode,
+  type EditableUnit,
   type HostAction,
   type HostToWebview,
   type InitData,
@@ -32,6 +33,10 @@ interface RowView {
   sourceHtml: string;
   /** Serialized status, HTML and message currently shown in the translation cell. */
   translationState: string;
+  /** The last translation state from the host, shown again when editing ends. */
+  last?: RowUpdate | RowPayload;
+  /** The translation cell holds the editor; updates wait until it closes. */
+  editing: boolean;
 }
 
 /** Mermaid's browser bundle, which sets `window.mermaid`. */
@@ -94,6 +99,11 @@ function onMessage(message: HostToWebview): void {
       showProgress(message.progress);
       drawDiagrams();
       break;
+    case "editRow": {
+      const view = views[message.index];
+      if (message.version === version && view) openEditor(view, message.units);
+      break;
+    }
     case "notice":
       showNotice(message.notice);
       break;
@@ -161,6 +171,8 @@ function renderRows(rows: readonly RowPayload[]): void {
   const next: RowView[] = [];
   rows.forEach((payload, i) => {
     const view = views[i] ?? createView();
+    // Row numbers may now point at other rows: an open editor would save into the wrong one.
+    if (view.editing) closeEditor(view);
     view.index = payload.index;
     view.line = payload.line;
     view.endLine = payload.endLine;
@@ -185,11 +197,19 @@ function createView(): RowView {
   const translation = document.createElement("div");
   translation.className = "cell translation";
   el.append(source, translation);
-  return { el, source, translation, index: 0, line: 0, endLine: 0, sourceHtml: "", translationState: "" };
+  return { el, source, translation, index: 0, line: 0, endLine: 0, sourceHtml: "", translationState: "", editing: false };
 }
 
 function showTranslation(view: RowView, update: RowUpdate | RowPayload): void {
-  const state = JSON.stringify([update.status, update.translationHtml ?? null, update.message ?? null, view.endLine - view.line]);
+  view.last = update;
+  if (view.editing) return;
+  const state = JSON.stringify([
+    update.status,
+    update.translationHtml ?? null,
+    update.message ?? null,
+    update.edited ?? false,
+    view.endLine - view.line,
+  ]);
   if (view.translationState === state) return;
   view.translationState = state;
   view.el.dataset.status = update.status;
@@ -206,12 +226,93 @@ function showTranslation(view: RowView, update: RowUpdate | RowPayload): void {
       cell.append(flag("error", update.message ?? "", strings.retry));
       return;
     case "warning":
-      cell.append(content(update.translationHtml), flag("warning", strings.warning, strings.retry, update.message));
+      cell.append(content(update.translationHtml), flag("warning", strings.warning, strings.retry, update.message), editTools(update.edited));
       return;
     case "done":
-      cell.append(content(update.translationHtml));
+      cell.append(content(update.translationHtml), editTools(update.edited));
       return;
   }
+}
+
+/** The edit button, and for an edited translation a badge and a way back to the machine translation. */
+function editTools(edited: boolean | undefined): HTMLElement {
+  const div = document.createElement("div");
+  div.className = "edit-tools";
+  if (edited) {
+    const badge = document.createElement("span");
+    badge.className = "edited-badge";
+    badge.textContent = strings.edited;
+    const revert = document.createElement("button");
+    revert.type = "button";
+    revert.className = "link-button revert-row";
+    revert.textContent = strings.revert;
+    div.append(badge, revert);
+  }
+  const edit = document.createElement("button");
+  edit.type = "button";
+  edit.className = "edit-row";
+  edit.textContent = "✎";
+  edit.title = strings.edit;
+  edit.setAttribute("aria-label", strings.edit);
+  div.append(edit);
+  return div;
+}
+
+function openEditor(view: RowView, units: readonly EditableUnit[]): void {
+  view.editing = true;
+  view.el.classList.add("editing");
+  const form = document.createElement("form");
+  form.className = "editor";
+  const fields = units.map((unit) => {
+    const label = document.createElement("label");
+    label.className = "edit-unit";
+    const source = document.createElement("span");
+    source.className = "edit-source";
+    source.textContent = unit.source;
+    const field = document.createElement("textarea");
+    field.value = unit.text;
+    field.rows = Math.min(12, Math.max(2, Math.ceil(unit.text.length / 60) + unit.text.split("\n").length - 1));
+    field.spellcheck = false;
+    label.append(source, field);
+    form.append(label);
+    return field;
+  });
+  const save = document.createElement("button");
+  save.type = "submit";
+  save.textContent = strings.save;
+  const cancel = document.createElement("button");
+  cancel.type = "button";
+  cancel.className = "secondary";
+  cancel.textContent = strings.cancel;
+  cancel.addEventListener("click", () => closeEditor(view));
+  const actions = document.createElement("div");
+  actions.className = "edit-actions";
+  actions.append(save, cancel);
+  form.append(actions);
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    api.postMessage({ type: "saveRow", index: view.index, texts: fields.map((field) => field.value) });
+    closeEditor(view);
+  });
+  form.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeEditor(view);
+    } else if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+      event.preventDefault();
+      form.requestSubmit();
+    }
+  });
+  view.translation.replaceChildren(form);
+  fields[0]?.focus();
+}
+
+/** Shows the translation again; after a save the host sends the new one. */
+function closeEditor(view: RowView): void {
+  view.editing = false;
+  view.el.classList.remove("editing");
+  view.translationState = "";
+  if (view.last) showTranslation(view, view.last);
 }
 
 function content(html: string | undefined): HTMLElement {
@@ -280,10 +381,13 @@ function showNotice(notice: Notice | null): void {
 
 function onClick(event: MouseEvent): void {
   const target = event.target instanceof Element ? event.target : null;
-  const retry = target?.closest(".retry-row");
-  if (retry) {
-    const index = Number(retry.closest<HTMLElement>(".row")?.dataset.index);
-    if (Number.isInteger(index)) api.postMessage({ type: "retryRow", index });
+  const rowIndex = Number(target?.closest<HTMLElement>(".row")?.dataset.index);
+  const rowAction = target?.closest(".retry-row, .edit-row, .revert-row");
+  if (rowAction) {
+    if (!Number.isInteger(rowIndex)) return;
+    if (rowAction.classList.contains("retry-row")) api.postMessage({ type: "retryRow", index: rowIndex });
+    else if (rowAction.classList.contains("edit-row")) api.postMessage({ type: "editRow", index: rowIndex });
+    else api.postMessage({ type: "revertRow", index: rowIndex });
     return;
   }
   const summary = target?.closest(".row.details-open summary");

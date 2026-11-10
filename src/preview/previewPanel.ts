@@ -9,6 +9,7 @@ import { Slugger } from "../markdown/slug";
 import { fingerprintOf, modelLabelOf, providerLabel, type ExtensionConfig } from "../settings";
 import {
   parseWebviewMessage,
+  type EditableUnit,
   type HostAction,
   type HostToWebview,
   type InitData,
@@ -20,6 +21,7 @@ import {
   type UiStrings,
   type ViewMode,
 } from "../shared/protocol";
+import type { TranslationCache } from "../translate/cache";
 import { translationKey } from "../translate/keys";
 import { unmask } from "../translate/mask";
 import type { SegmentKind } from "../translate/prompt";
@@ -38,6 +40,8 @@ export interface PreviewContext {
   md: MarkdownIt;
   renderer: RowRenderer;
   service: TranslationService;
+  /** The user's own edits of translations, by translation key, with code and links restored. */
+  edits: TranslationCache;
   getConfig(): ExtensionConfig;
   /** Runs actions the preview cannot handle itself, such as setting the API key. */
   runAction(action: HostAction): void;
@@ -136,7 +140,7 @@ export class BilingualPreview implements vscode.Disposable {
     this.render(true);
   }
 
-  /** Translates the whole document again, ignoring cached translations. */
+  /** Translates the whole document again, ignoring cached translations. The user's edits stay. */
   retranslate(): void {
     if (this.current) this.context.service.forget(this.current.rowsByKey.keys());
     this.render(true);
@@ -215,15 +219,58 @@ export class BilingualPreview implements vscode.Disposable {
         this.mode = message.mode;
         this.context.onModeChanged(message.mode);
         break;
+      case "editRow":
+        this.offerEdit(message.index);
+        break;
+      case "saveRow":
+        this.saveEdit(message.index, message.texts);
+        break;
+      case "revertRow":
+        this.saveEdit(message.index, undefined);
+        break;
     }
   }
 
-  /** The text shown for one unit: the finished translation with code and links restored. */
+  /** Sends the row's translated units to the webview for editing. */
+  private offerEdit(index: number): void {
+    const prepared = this.current;
+    const entry = prepared?.rows[index];
+    if (!prepared || !entry) return;
+    const units: EditableUnit[] = [];
+    entry.row.units.forEach((unit, k) => {
+      if (entry.keys[k]) units.push({ source: unit.source, text: this.translationOf(prepared, index, k) ?? unit.source });
+    });
+    if (units.length > 0) this.post({ type: "editRow", version: prepared.version, index, units });
+  }
+
+  /** Stores the user's texts for the row's translated units, or removes them when `texts` is undefined. */
+  private saveEdit(index: number, texts: readonly string[] | undefined): void {
+    const prepared = this.current;
+    const entry = prepared?.rows[index];
+    if (!prepared || !entry) return;
+    const edits = this.context.edits;
+    let n = 0;
+    entry.row.units.forEach((unit, k) => {
+      const key = entry.keys[k];
+      if (!key) return;
+      const text = texts?.[n++];
+      const result = this.context.service.getResult(key);
+      const machine = result?.state === "done" ? unmask(result.text, unit.placeholders) : undefined;
+      if (text === undefined || text.trim() === "" || text === machine) edits.delete([key]);
+      else edits.set(key, text);
+    });
+    for (const key of definedKeys(entry.keys)) for (const row of prepared.rowsByKey.get(key) ?? []) this.dirtyRows.add(row);
+    this.flush();
+  }
+
+  /** The text shown for one unit: the user's edit, or the finished translation with code and links restored. */
   private translationOf(prepared: Prepared, rowIndex: number, unitIndex: number): string | undefined {
     const entry = prepared.rows[rowIndex];
     const key = entry?.keys[unitIndex];
     const unit = entry?.row.units[unitIndex];
     if (!key || !unit) return undefined;
+    const edited = this.context.edits.get(key);
+    if (edited !== undefined) return edited;
     const result = this.context.service.getResult(key);
     return result?.state === "done" ? unmask(result.text, unit.placeholders) : undefined;
   }
@@ -281,6 +328,7 @@ export class BilingualPreview implements vscode.Disposable {
         translationHtml: state.translationHtml,
         status: state.status,
         message: state.message,
+        edited: state.edited,
       };
     });
     const notice = this.notice(prepared);
@@ -357,12 +405,17 @@ export class BilingualPreview implements vscode.Disposable {
     const texts: Array<string | undefined> = [];
     let pending = false;
     let warning = false;
+    let edited = false;
     let error: string | undefined;
     entry.row.units.forEach((unit, k) => {
       const key = entry.keys[k];
-      const result = key ? this.context.service.getResult(key) : undefined;
+      const edit = key ? this.context.edits.get(key) : undefined;
+      const result = key && edit === undefined ? this.context.service.getResult(key) : undefined;
       if (!key) {
         texts.push(undefined);
+      } else if (edit !== undefined) {
+        edited = true;
+        texts.push(edit);
       } else if (!result || result.state === "queued" || result.state === "inflight") {
         pending = true;
       } else if (result.state === "error") {
@@ -375,9 +428,11 @@ export class BilingualPreview implements vscode.Disposable {
     if (pending) return { index, status: "translating" };
     if (error !== undefined) return { index, status: "error", message: error };
     const translationHtml = this.context.renderer.renderTranslation(entry.row, prepared.doc.env, texts);
-    return warning
+    const state: RowUpdate = warning
       ? { index, status: "warning", translationHtml, message: vscode.l10n.t("This translation may be missing code, links, or formatting.") }
       : { index, status: "done", translationHtml };
+    if (edited) state.edited = true;
+    return state;
   }
 
   private progress(prepared: Prepared): ProgressInfo {
@@ -608,6 +663,11 @@ function uiStrings(): UiStrings {
     settings: vscode.l10n.t("Settings"),
     retry: vscode.l10n.t("Retry"),
     exportTranslation: vscode.l10n.t("Save Translation as Markdown"),
+    edit: vscode.l10n.t("Edit"),
+    edited: vscode.l10n.t("Edited"),
+    revert: vscode.l10n.t("Revert"),
+    save: vscode.l10n.t("Save"),
+    cancel: vscode.l10n.t("Cancel"),
     tokens: vscode.l10n.t("{0} tokens", "{0}"),
     // The webview fills in the placeholders.
     progress: vscode.l10n.t("{0}/{1} translated", "{0}", "{1}"),
@@ -625,7 +685,13 @@ function definedKeys(keys: ReadonlyArray<string | undefined>): string[] {
 }
 
 function sameUpdate(a: RowUpdate | undefined, b: RowUpdate): boolean {
-  return a !== undefined && a.status === b.status && a.translationHtml === b.translationHtml && a.message === b.message;
+  return (
+    a !== undefined &&
+    a.status === b.status &&
+    a.translationHtml === b.translationHtml &&
+    a.message === b.message &&
+    a.edited === b.edited
+  );
 }
 
 /** Masked text as context: placeholders stand for code and links, which are not sent. */

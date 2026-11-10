@@ -26,14 +26,16 @@ const MODE_STATE_KEY = "bilingualMarkdown.viewMode";
 /** A team's glossary, kept in the repository. Read only in a trusted workspace. */
 export const GLOSSARY_FILE = ".vscode/translation-glossary.json";
 
-let cacheToFlush: TranslationCache | undefined;
+let cachesToFlush: TranslationCache[] = [];
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const cache = new TranslationCache(new FileCacheStore(vscode.Uri.joinPath(context.globalStorageUri, "translation-cache.json")));
-  cacheToFlush = cache;
+  // The user's own edits are kept apart, so clearing the cache or retranslating never loses them.
+  const edits = new TranslationCache(new FileCacheStore(vscode.Uri.joinPath(context.globalStorageUri, "translation-edits.json")), 5_000);
+  cachesToFlush = [cache, edits];
   const keys = new ApiKeyStore(context.secrets);
   let workspaceGlossary = await readWorkspaceGlossary();
-  await Promise.all([cache.load(), keys.load()]);
+  await Promise.all([cache.load(), edits.load(), keys.load()]);
 
   let config = readConfig(workspaceGlossary);
   const justification = vscode.l10n.t("Markdown Translation Preview translates the Markdown you preview.");
@@ -53,6 +55,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     md,
     renderer: new RowRenderer(md),
     service,
+    edits,
     getConfig: () => config,
     runAction: (action) => void runHostAction(action, context.extension.id),
     onModeChanged: (mode) => void context.globalState.update(MODE_STATE_KEY, mode),
@@ -121,7 +124,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 }
 
 export async function deactivate(): Promise<void> {
-  await cacheToFlush?.flush();
+  await Promise.all(cachesToFlush.map((cache) => cache.flush()));
 }
 
 /** The glossary files of all workspace folders, merged in folder order. */

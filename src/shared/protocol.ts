@@ -25,6 +25,8 @@ export interface RowPayload {
   status: RowStatus;
   /** Error or warning detail for the translation. */
   message?: string;
+  /** The translation includes the user's own edits. */
+  edited?: boolean;
 }
 
 export interface RowUpdate {
@@ -32,6 +34,7 @@ export interface RowUpdate {
   translationHtml?: string;
   status: RowStatus;
   message?: string;
+  edited?: boolean;
 }
 
 export interface ProgressInfo {
@@ -87,6 +90,11 @@ export interface UiStrings {
   settings: string;
   retry: string;
   exportTranslation: string;
+  edit: string;
+  edited: string;
+  revert: string;
+  save: string;
+  cancel: string;
   /** Template with {0} = number of tokens. */
   tokens: string;
   /** Template with {0} = done and {1} = total. */
@@ -105,6 +113,14 @@ export interface InitData {
   mermaidScriptUri: string;
 }
 
+/** One translated segment of a row, as offered for editing. */
+export interface EditableUnit {
+  /** The source, for reference. */
+  source: string;
+  /** The translation shown now, with code and links restored. */
+  text: string;
+}
+
 /** What the webview stores with `setState`, so a restored panel can find its document again. */
 export interface WebviewState {
   documentUri: string;
@@ -115,7 +131,8 @@ export type HostToWebview =
   | { type: "render"; version: number; rows: RowPayload[]; progress: ProgressInfo; notice: Notice | null }
   | { type: "updateRows"; version: number; rows: RowUpdate[]; progress: ProgressInfo }
   | { type: "notice"; notice: Notice | null }
-  | { type: "scrollToLine"; line: number };
+  | { type: "scrollToLine"; line: number }
+  | { type: "editRow"; version: number; index: number; units: EditableUnit[] };
 
 export type WebviewToHost =
   | { type: "ready" }
@@ -123,7 +140,10 @@ export type WebviewToHost =
   | { type: "visibleLine"; line: number }
   | { type: "retryRow"; index: number }
   | { type: "action"; action: HostAction }
-  | { type: "modeChanged"; mode: ViewMode };
+  | { type: "modeChanged"; mode: ViewMode }
+  | { type: "editRow"; index: number }
+  | { type: "saveRow"; index: number; texts: string[] }
+  | { type: "revertRow"; index: number };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -131,6 +151,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
+}
+
+function isIndex(value: unknown): value is number {
+  return Number.isInteger(value) && (value as number) >= 0;
 }
 
 export function isViewMode(value: unknown): value is ViewMode {
@@ -148,13 +172,23 @@ export function parseWebviewMessage(raw: unknown): WebviewToHost | undefined {
     case "visibleLine":
       return isFiniteNumber(raw.line) && raw.line >= 0 ? { type: "visibleLine", line: raw.line } : undefined;
     case "retryRow":
-      return Number.isInteger(raw.index) && (raw.index as number) >= 0 ? { type: "retryRow", index: raw.index as number } : undefined;
+      return isIndex(raw.index) ? { type: "retryRow", index: raw.index } : undefined;
     case "action":
       return typeof raw.action === "string" && (HOST_ACTIONS as readonly string[]).includes(raw.action)
         ? { type: "action", action: raw.action as HostAction }
         : undefined;
     case "modeChanged":
       return isViewMode(raw.mode) ? { type: "modeChanged", mode: raw.mode } : undefined;
+    case "editRow":
+    case "revertRow":
+      return isIndex(raw.index) ? { type: raw.type, index: raw.index } : undefined;
+    case "saveRow":
+      return isIndex(raw.index) &&
+        Array.isArray(raw.texts) &&
+        raw.texts.length <= 1000 &&
+        raw.texts.every((text) => typeof text === "string" && text.length <= 100_000)
+        ? { type: "saveRow", index: raw.index, texts: raw.texts as string[] }
+        : undefined;
     default:
       return undefined;
   }

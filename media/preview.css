@@ -308,6 +308,106 @@ body.paused .skeleton span {
   color: var(--vscode-editorWarning-foreground, #cca700);
 }
 
+/* Editing a translation */
+
+.edit-tools {
+  display: flex;
+  justify-content: flex-end;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 2px;
+  font-family: var(--vscode-font-family);
+  font-size: 0.85em;
+  line-height: 1.4;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+
+.row:hover .edit-tools,
+.edit-tools:focus-within,
+.edit-tools:has(.edited-badge) {
+  opacity: 1;
+}
+
+.edited-badge {
+  padding: 0 6px;
+  border-radius: 8px;
+  background: var(--vscode-badge-background, rgba(128, 128, 128, 0.3));
+  color: var(--vscode-badge-foreground, inherit);
+}
+
+.edit-row {
+  padding: 0 4px;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  color: var(--bm-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.edit-row:hover {
+  background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.2));
+  color: inherit;
+}
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-family: var(--vscode-font-family);
+}
+
+.edit-unit {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.edit-source {
+  color: var(--bm-muted);
+  font-size: 0.85em;
+  white-space: pre-wrap;
+}
+
+.editor textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--vscode-input-border, var(--bm-border));
+  border-radius: 2px;
+  background: var(--vscode-input-background, transparent);
+  color: var(--vscode-input-foreground, inherit);
+  font: inherit;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.editor textarea:focus {
+  outline: 1px solid var(--vscode-focusBorder, #007fd4);
+  outline-offset: -1px;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.edit-actions button {
+  padding: 3px 12px;
+  border: 1px solid var(--vscode-button-border, transparent);
+  border-radius: 2px;
+  background: var(--vscode-button-background, #0e639c);
+  color: var(--vscode-button-foreground, #fff);
+  font: inherit;
+  cursor: pointer;
+}
+
+.edit-actions button.secondary {
+  background: var(--vscode-button-secondaryBackground, rgba(128, 128, 128, 0.3));
+  color: var(--vscode-button-secondaryForeground, inherit);
+}
+
 /* <details> folded across rows */
 
 .row.folded {
