@@ -48,13 +48,33 @@ code --install-extension bilingual-markdown-preview-0.1.0.vsix
 
 ## Release
 
-1. Change `version` in `package.json`, and add the changes under that version in `CHANGELOG.md`.
+Pushing a version tag runs the [Release workflow](.github/workflows/release.yml), which publishes the extension to the Visual Studio Marketplace and creates a GitHub release.
+
+1. Change `version` in `package.json`, and add a section for that version to `CHANGELOG.md`, such as `## 0.2.0`.
 2. Run `npm run check` and `npm run package`, and try the VSIX in VS Code.
-3. Push the commit to `main`. The Marketplace page shows the images in `README.md` from GitHub, so the repository must be public and up to date.
-4. Publish the VSIX you tried. The first time, vsce asks for a Personal Access Token for the `yhay81` publisher. [Publishing Extensions](https://code.visualstudio.com/api/working-with-extensions/publishing-extension) explains how to create one.
+3. Commit the changes and push them to `main`. The Marketplace page shows the images in `README.md` from GitHub, so push them before you release.
+4. Tag the commit with `v` and the version, and push the tag:
 
    ```bash
-   npx vsce publish --packagePath bilingual-markdown-preview-0.1.0.vsix
+   git tag v0.2.0
    ```
 
-5. Tag the commit with the version, such as `v0.1.0`, push the tag, and create a GitHub release with the VSIX attached.
+   ```bash
+   git push origin v0.2.0
+   ```
+
+The workflow stops if the tag does not match the version in `package.json`, or if `CHANGELOG.md` has no section for the version. Otherwise it runs the checks, packages the extension, publishes the VSIX to the Marketplace, and creates a GitHub release with the VSIX and that section of the changelog. The run also keeps the VSIX as a build artifact.
+
+### Trusted Publishing
+
+The workflow signs in to the Marketplace with [Trusted Publishing](https://code.visualstudio.com/api/working-with-extensions/publishing-extension), so no token is stored anywhere. The owner of the `yhay81` publisher sets it up once: on the [publisher management page](https://marketplace.visualstudio.com/manage), open the publisher, select **Trusted Publishing**, and create a policy with these values.
+
+| Field | Value |
+| --- | --- |
+| Policy name | Any name, such as `Release workflow` |
+| Repository owner | `yhay81` |
+| Repository | `bilingual-markdown-preview` |
+| Workflow | `release.yml` |
+| Environment | Leave it empty |
+
+If the workflow file is renamed, the policy must be changed to match.
