@@ -84,7 +84,7 @@ npm run package
 
 - `npm run build` は `dist/` に出力し、`npm run watch` は変更を監視して出力し直します。`npm run check` は型チェックとテストを実行します。
 - VS Code でこのフォルダーを開いて F5 を押すと、拡張機能をデバッグ用のウィンドウで試せます。
-- `npm run package` は `.vsix` を作り、同梱したライブラリのライセンスを `dist/ThirdPartyNotices.txt` に書き出します。作った `.vsix` は次のコマンドでインストールできます。
+- `npm run package` は `.vsix` を作り、同梱したライブラリのライセンスを `dist/ThirdPartyNotices.txt` に書き出します。作った `.vsix` は、リポジトリのフォルダーで次のコマンドを実行するとインストールできます（ほかのフォルダーからは `.vsix` の場所をパスで指定します）。
 
 ```bash
 code --install-extension bilingual-markdown-preview-0.1.0.vsix
