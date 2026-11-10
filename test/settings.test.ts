@@ -5,6 +5,7 @@ import {
   mergeGlossaries,
   parseGlossaryFile,
   providerSettingsOf,
+  sanitizeAzureEndpoint,
   sanitizeConfig,
   serviceConfigOf,
   translationSettingsChanged,
@@ -138,5 +139,32 @@ describe("glossary files", () => {
 
   it("lets later glossaries win", () => {
     expect(mergeGlossaries({ a: "file", b: "file" }, { b: "settings" })).toEqual({ a: "file", b: "settings" });
+  });
+});
+
+describe("cloud endpoints", () => {
+  it("cuts an Azure endpoint back to the resource", () => {
+    expect(sanitizeAzureEndpoint("my-resource")).toBe("https://my-resource.services.ai.azure.com");
+    expect(sanitizeAzureEndpoint(" https://my-resource.openai.azure.com/openai/v1/ ")).toBe("https://my-resource.openai.azure.com");
+    expect(sanitizeAzureEndpoint("https://my-resource.services.ai.azure.com/anthropic")).toBe("https://my-resource.services.ai.azure.com");
+    expect(sanitizeAzureEndpoint("https://gateway.example.com/azure")).toBe("https://gateway.example.com/azure");
+    expect(sanitizeAzureEndpoint(42)).toBe("");
+  });
+
+  it("takes a valid AWS region, or us-east-1", () => {
+    expect(sanitizeConfig({ bedrockRegion: " ap-northeast-1 " }).bedrockRegion).toBe("ap-northeast-1");
+    expect(sanitizeConfig({ bedrockRegion: "us-gov-west-1" }).bedrockRegion).toBe("us-gov-west-1");
+    expect(sanitizeConfig({ bedrockRegion: "evil.example.com/x" }).bedrockRegion).toBe("us-east-1");
+  });
+
+  it("gives each provider its own endpoint", () => {
+    const config = sanitizeConfig({ openaiBaseUrl: "https://gateway.example.com/v1", azureEndpoint: "my-resource", bedrockRegion: "eu-west-1" });
+    const endpoint = (provider: "openai" | "azure" | "bedrock" | "vercel") => providerSettingsOf({ ...config, provider }).baseUrl;
+    expect(endpoint("openai")).toBe("https://gateway.example.com/v1");
+    expect(endpoint("azure")).toBe("https://my-resource.services.ai.azure.com");
+    expect(endpoint("bedrock")).toBe("https://bedrock-runtime.eu-west-1.amazonaws.com");
+    expect(endpoint("vercel")).toBe("");
+    // A different endpoint means different translations in the cache.
+    expect(fingerprintOf({ ...config, provider: "bedrock" })).not.toBe(fingerprintOf({ ...config, provider: "bedrock", bedrockRegion: "us-east-1" }));
   });
 });

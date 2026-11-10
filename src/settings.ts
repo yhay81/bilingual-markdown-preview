@@ -1,4 +1,4 @@
-import { PROVIDERS } from "./providers/catalog";
+import { PROVIDERS, bedrockEndpoint } from "./providers/catalog";
 import type { ProviderSettings } from "./providers/factory";
 import { usesReasoning } from "./providers/params";
 import { PROVIDER_IDS, REASONING_EFFORTS, isProviderId, type ProviderId, type ReasoningEffortSetting } from "./providers/types";
@@ -12,6 +12,10 @@ export interface ExtensionConfig {
   /** The model of each provider. For VS Code, a model ID, or "" for the first Copilot model. */
   models: Record<ProviderId, string>;
   openaiBaseUrl: string;
+  /** The endpoint of the Azure resource, as `https://<resource>.services.ai.azure.com`, or "". */
+  azureEndpoint: string;
+  /** The AWS region for Amazon Bedrock, such as `us-east-1`. */
+  bedrockRegion: string;
   reasoningEffort: ReasoningEffortSetting;
   styleInstructions: string;
   glossary: Record<string, string>;
@@ -28,6 +32,8 @@ export const DEFAULT_CONFIG: ExtensionConfig = {
   targetLanguage: "Japanese",
   models: Object.fromEntries(PROVIDER_IDS.map((id) => [id, PROVIDERS[id].defaultModel])) as Record<ProviderId, string>,
   openaiBaseUrl: "",
+  azureEndpoint: "",
+  bedrockRegion: "us-east-1",
   reasoningEffort: "none",
   styleInstructions: "",
   glossary: {},
@@ -48,6 +54,8 @@ export function sanitizeConfig(raw: RawConfig): ExtensionConfig {
     targetLanguage: nonEmpty(raw.targetLanguage) ?? DEFAULT_CONFIG.targetLanguage,
     models: sanitizeModels(raw.models ?? {}),
     openaiBaseUrl: typeof raw.openaiBaseUrl === "string" ? raw.openaiBaseUrl.trim().replace(/\/+$/, "") : "",
+    azureEndpoint: sanitizeAzureEndpoint(raw.azureEndpoint),
+    bedrockRegion: typeof raw.bedrockRegion === "string" && AWS_REGION_RE.test(raw.bedrockRegion.trim()) ? raw.bedrockRegion.trim() : DEFAULT_CONFIG.bedrockRegion,
     reasoningEffort: (REASONING_EFFORTS as readonly unknown[]).includes(raw.reasoningEffort)
       ? (raw.reasoningEffort as ReasoningEffortSetting)
       : DEFAULT_CONFIG.reasoningEffort,
@@ -75,9 +83,22 @@ export function providerSettingsOf(config: ExtensionConfig): ProviderSettings {
   return {
     provider: config.provider,
     model: modelOf(config),
-    baseUrl: config.provider === "openai" ? config.openaiBaseUrl : "",
+    baseUrl: endpointSettingOf(config),
     reasoningEffort: config.reasoningEffort,
   };
+}
+
+function endpointSettingOf(config: ExtensionConfig): string {
+  switch (config.provider) {
+    case "openai":
+      return config.openaiBaseUrl;
+    case "azure":
+      return config.azureEndpoint;
+    case "bedrock":
+      return bedrockEndpoint(config.bedrockRegion);
+    default:
+      return "";
+  }
 }
 
 export function serviceConfigOf(config: ExtensionConfig): ServiceConfig {
@@ -144,6 +165,19 @@ function sanitizeModels(raw: Partial<Record<ProviderId, unknown>>): Record<Provi
     else models[id] = nonEmpty(value) ?? models[id];
   }
   return models;
+}
+
+const AWS_REGION_RE = /^[a-z]{2}(?:-[a-z]+)+-\d+$/;
+
+/**
+ * The endpoint of an Azure resource, without the API's path. A bare resource name is taken as a
+ * Foundry resource, and a pasted URL of the OpenAI or Anthropic API is cut back to the resource.
+ */
+export function sanitizeAzureEndpoint(value: unknown): string {
+  if (typeof value !== "string") return "";
+  const trimmed = value.trim();
+  if (/^[a-z0-9][a-z0-9-]*$/i.test(trimmed)) return `https://${trimmed.toLowerCase()}.services.ai.azure.com`;
+  return trimmed.replace(/\/+$/, "").replace(/\/(?:openai(?:\/v1)?|anthropic(?:\/v1)?|models)$/i, "");
 }
 
 function nonEmpty(value: unknown): string | undefined {

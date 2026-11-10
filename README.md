@@ -2,7 +2,7 @@
 
 [日本語](README.ja.md)
 
-Preview Markdown with an LLM translation beside it, block by block. Translate with **GitHub Copilot** or another language model in VS Code, with your own API key (BYOK) for **Anthropic**, **OpenAI**, **OpenRouter**, **Google Gemini**, **DeepSeek**, **Mistral AI** or **xAI**, or with a model running on your computer.
+Preview Markdown with an LLM translation beside it, block by block, into any language. Translate with **GitHub Copilot** or another language model in VS Code; with your own API key (BYOK) for **Anthropic**, **OpenAI**, **OpenRouter**, **Vercel AI Gateway**, **Google Gemini**, **DeepSeek**, **Mistral AI** or **xAI**; with a model in **Microsoft Azure**, **Amazon Bedrock** or **Google Cloud Vertex AI**; or with a model running on your computer.
 
 ![An English document on the left and its Japanese translation on the right, lined up block by block](images/screenshot.png)
 
@@ -27,7 +27,7 @@ Preview Markdown with an LLM translation beside it, block by block. Translate wi
 
 ## Getting started
 
-You need VS Code 1.101 or later, and one of these: GitHub Copilot, an API key from Anthropic, OpenAI, OpenRouter, Google Gemini, DeepSeek, Mistral AI or xAI, or a local server such as Ollama or LM Studio.
+You need VS Code 1.101 or later, and one of these: GitHub Copilot; an API key from Anthropic, OpenAI, OpenRouter, Vercel AI Gateway, Google Gemini, DeepSeek, Mistral AI or xAI; an API key for Microsoft Azure, Amazon Bedrock or Google Cloud Vertex AI; or a local server such as Ollama or LM Studio.
 
 1. Install **Markdown Translation Preview** from the Visual Studio Marketplace.
 2. Open a Markdown file and click the globe icon (**Open Translation Preview to the Side**) at the top right of the editor. You can also right-click the file in the Explorer, or run **Markdown Translation: Open Translation Preview** from the Command Palette.
@@ -74,6 +74,7 @@ Set `markdownTranslation.provider` to `vscode`, or run **Markdown Translation: S
 | [Anthropic](https://www.anthropic.com) | `anthropic` | `claude-haiku-5-5` |
 | [OpenAI](https://openai.com) | `openai` | `gpt-6-luna` |
 | [OpenRouter](https://openrouter.ai) | `openrouter` | `google/gemini-3.8-flash` |
+| [Vercel AI Gateway](https://vercel.com/ai-gateway) | `vercel` | `google/gemini-3.8-flash` |
 | [Google Gemini](https://aistudio.google.com) | `gemini` | `gemini-3.8-flash` |
 | [DeepSeek](https://www.deepseek.com) | `deepseek` | `deepseek-flash` |
 | [Mistral AI](https://mistral.ai) | `mistral` | `mistral-small-2603` |
@@ -82,13 +83,27 @@ Set `markdownTranslation.provider` to `vscode`, or run **Markdown Translation: S
 Run **Markdown Translation: Switch Translation Provider**, choose a provider and enter its key. Each provider keeps its own key and its own model, so you can switch back and forth.
 
 - To use another model, run **Markdown Translation: Choose Model**, or click the model name in the preview's toolbar. It lists the models your key can use; you can also type a model ID. The model is stored in `markdownTranslation.<provider>.model`.
-- OpenRouter reaches many providers' models with one key and one bill. Its model IDs name the provider, as in `anthropic/claude-haiku-5.5` or `openai/gpt-6-luna`.
+- OpenRouter and Vercel AI Gateway reach many providers' models with one key and one bill. Their model IDs name the provider, as in `anthropic/claude-haiku-5.5` or `openai/gpt-6-luna`.
 - Translation is billed to the account that issued the key.
 - You enter the key in a password box. It is kept in VS Code Secret Storage (your OS keychain), never in `settings.json`.
 - If the provider rejects the key (an authentication or permission error), translation stops, and the preview offers to set the key again or to switch providers.
 - With `markdownTranslation.reasoningEffort` at `none`, models that cannot stop reasoning, such as Gemini and Grok models, reason at their lowest level. When a model rejects a reasoning setting, the next lower one is tried, and finally none at all.
 - The Gemini API's free tier may use what you send to improve Google's products, and people may read it. Do not send confidential documents on the free tier.
 - The toolbar shows the tokens used in this VS Code session. `markdownTranslation.tokenLimit` pauses translation after that many tokens, until you click **Continue**.
+
+### Azure, AWS and Google Cloud
+
+If your organization uses a cloud platform, you can translate with a model there, billed to that cloud account. Each takes an API key, stored like the others; sign-in with Microsoft Entra ID, AWS credentials or Google OAuth is not supported.
+
+| Platform | `markdownTranslation.provider` | Default model |
+| --- | --- | --- |
+| [Microsoft Azure](https://ai.azure.com) (Azure AI Foundry, Azure OpenAI) | `azure` | `gpt-6-luna` (a deployment name) |
+| [Amazon Bedrock](https://aws.amazon.com/bedrock/) | `bedrock` | `global.anthropic.claude-haiku-5-5` |
+| [Google Cloud Vertex AI](https://cloud.google.com/vertex-ai) | `vertex` | `gemini-3.8-flash` |
+
+- **Azure**: Use a key of your Azure AI Foundry or Azure OpenAI resource. When you switch to Azure, the preview asks for the resource's endpoint, such as `https://my-resource.services.ai.azure.com`, or just the resource name; it is stored in `markdownTranslation.azure.endpoint`. Then choose the model by its deployment name: Azure does not list deployments to a key, so type it. Deployments with `claude` in the name are called through Azure's Anthropic API, others through its OpenAI API.
+- **Amazon Bedrock**: Use a Bedrock API key, and set `markdownTranslation.bedrock.region` to the region it was made in (`us-east-1` by default). Claude models are called through Bedrock's Anthropic API, and other models, such as `openai.gpt-oss-120b-1:0`, through its OpenAI-compatible API. **Choose Model** suggests a few models; type the ID of any other model or inference profile.
+- **Google Cloud Vertex AI**: Use an API key for the Vertex AI API from the Google Cloud console. With an API key, Vertex AI serves Google's own Gemini models only; Claude and other partner models on Vertex AI need OAuth, which is not supported.
 
 ### Local models
 
@@ -106,16 +121,22 @@ Small models translate less accurately and more often drop the placeholders that
 
 | Setting | Default | Description |
 | --- | --- | --- |
-| `markdownTranslation.provider` | `anthropic` | Translation provider: `anthropic`, `openai`, `openrouter`, `gemini`, `deepseek`, `mistral`, `xai`, or `vscode` for a language model in VS Code. |
+| `markdownTranslation.provider` | `anthropic` | Translation provider: `anthropic`, `openai`, `openrouter`, `vercel`, `gemini`, `deepseek`, `mistral`, `xai`, `azure`, `bedrock`, `vertex`, or `vscode` for a language model in VS Code. |
 | `markdownTranslation.targetLanguage` | `Japanese` | Language to translate into: any language, written as you would tell a translator, such as `English`, `Simplified Chinese` or `Swahili`. `translate-to` in a document's front matter overrides it. |
 | `markdownTranslation.anthropic.model` | `claude-haiku-5-5` | Anthropic model ID. |
 | `markdownTranslation.openai.model` | `gpt-6-luna` | OpenAI model ID. |
 | `markdownTranslation.openai.baseUrl` | (empty) | Base URL of an OpenAI-compatible API, such as a company gateway or a [local server](#local-models). Empty means `https://api.openai.com/v1`. Only `https://` URLs, and `http://` URLs to `localhost`, `127.0.0.1` or `[::1]`, are accepted. |
 | `markdownTranslation.openrouter.model` | `google/gemini-3.8-flash` | OpenRouter model ID, as `provider/model`. |
+| `markdownTranslation.vercel.model` | `google/gemini-3.8-flash` | Vercel AI Gateway model ID, as `provider/model`. |
 | `markdownTranslation.gemini.model` | `gemini-3.8-flash` | Gemini model ID. |
 | `markdownTranslation.deepseek.model` | `deepseek-flash` | DeepSeek model ID. |
 | `markdownTranslation.mistral.model` | `mistral-small-2603` | Mistral model ID. |
 | `markdownTranslation.xai.model` | `grok-4.3` | xAI model ID. |
+| `markdownTranslation.azure.endpoint` | (empty) | Endpoint of your Azure resource, such as `https://my-resource.services.ai.azure.com`, or the resource name alone. |
+| `markdownTranslation.azure.model` | `gpt-6-luna` | Deployment name of the model in your Azure resource. |
+| `markdownTranslation.bedrock.region` | `us-east-1` | AWS region for Amazon Bedrock. The API key must be from this region. |
+| `markdownTranslation.bedrock.model` | `global.anthropic.claude-haiku-5-5` | Amazon Bedrock model ID or inference profile. |
+| `markdownTranslation.vertex.model` | `gemini-3.8-flash` | Gemini model ID on Vertex AI. |
 | `markdownTranslation.vscode.model` | (empty) | Language model in VS Code, as a model ID or family. Empty means the first GitHub Copilot model. |
 | `markdownTranslation.reasoningEffort` | `none` | How much the model reasons before it answers: `none`, `low`, `medium`, `high` or `default`. `none` is usually enough for translation. |
 | `markdownTranslation.styleInstructions` | (empty) | Extra instructions for the translator, such as `Use the plain である style.` |
@@ -126,7 +147,7 @@ Small models translate less accurately and more often drop the placeholders that
 | `markdownTranslation.tokenLimit` | `0` | Pause translation after this many tokens in one VS Code session. `0` means no limit. Counted when the provider reports token usage; language models in VS Code and some local servers do not. |
 | `markdownTranslation.syncScroll` | `true` | Keeps the editor and the preview scrolled to the same place. |
 
-The provider, the models, the base URL, the reasoning effort, the number of requests, the request size and the token limit can be changed only in your user settings. A workspace's settings do not change them.
+The provider, the models, the base URL, the Azure endpoint, the Bedrock region, the reasoning effort, the number of requests, the request size and the token limit can be changed only in your user settings. A workspace's settings do not change them.
 
 ## Glossary file
 
@@ -168,7 +189,7 @@ Turn on `markdownTranslation.translateCodeComments` to translate the comments in
 
 ## Security and privacy
 
-- The text to translate is sent only to the provider you choose: `https://api.anthropic.com`, `https://api.openai.com/v1`, `https://openrouter.ai/api/v1`, `https://generativelanguage.googleapis.com`, `https://api.deepseek.com`, `https://api.mistral.ai/v1`, `https://api.x.ai/v1`, the `markdownTranslation.openai.baseUrl` in your user settings, or the language model in VS Code that you allowed. Each key is sent only to its own provider. Environment variables such as `ANTHROPIC_BASE_URL`, `OPENAI_BASE_URL`, `OPENAI_ORG_ID` and `OPENAI_PROJECT_ID` are not used.
+- The text to translate is sent only to the provider you choose: `https://api.anthropic.com`, `https://api.openai.com/v1`, `https://openrouter.ai/api/v1`, `https://ai-gateway.vercel.sh/v1`, `https://generativelanguage.googleapis.com`, `https://api.deepseek.com`, `https://api.mistral.ai/v1`, `https://api.x.ai/v1`, `https://bedrock-runtime.<region>.amazonaws.com`, `https://aiplatform.googleapis.com`, the `markdownTranslation.openai.baseUrl` or `markdownTranslation.azure.endpoint` in your user settings, or the language model in VS Code that you allowed. Each key is sent only to its own provider. Environment variables such as `ANTHROPIC_BASE_URL`, `OPENAI_BASE_URL`, `OPENAI_ORG_ID` and `OPENAI_PROJECT_ID` are not used.
 - Code blocks, front matter, inline code, math, URLs, link targets and HTML are not sent. With `markdownTranslation.translateCodeComments` on, the text of the comments in code blocks is sent.
 - In Restricted Mode (an untrusted workspace), the target language, style instructions, glossary and code comment translation also come only from your user settings. The glossary file and `translate-to` in front matter are not used.
 - The extension collects no telemetry.

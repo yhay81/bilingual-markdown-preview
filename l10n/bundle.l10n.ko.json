@@ -67,9 +67,14 @@
   "{0} Model": "{0} 모델",
   "Another language...": "다른 언어...",
   "Any language, written as you would tell a translator, such as Swahili or Brazilian Portuguese.": "어떤 언어든 번역가에게 말하듯이 쓰세요(예: Swahili, Brazilian Portuguese).",
+  "Azure Endpoint": "Azure 엔드포인트",
   "Choose Target Language": "번역할 언어 선택",
   "Enter a language.": "언어를 입력하세요.",
+  "Enter an https:// URL or a resource name.": "https:// URL 또는 리소스 이름을 입력하세요.",
+  "Set the endpoint of your Azure resource, such as https://my-resource.services.ai.azure.com, to translate with Azure.": "Azure로 번역하려면 Azure 리소스의 엔드포인트(예: https://my-resource.services.ai.azure.com)를 설정하세요.",
   "Target Language": "번역할 언어",
+  "The endpoint of your Azure resource, or just the resource name. Shown on the resource's Keys and Endpoint page.": "Azure 리소스의 엔드포인트 또는 리소스 이름. 리소스의 '키 및 엔드포인트' 페이지에 표시됩니다.",
+  "The name of the model's deployment in your Azure resource. Claude deployments need \"claude\" in the name.": "Azure 리소스에 배포한 모델의 배포 이름. Claude 배포는 이름에 'claude'가 들어가야 합니다.",
   "This document still translates into {0}, which its front matter chooses with translate-to.": "이 문서는 프런트 매터의 translate-to에서 지정한 {0}(으)로 계속 번역됩니다.",
   "Translate into which language? Now: {0}": "어떤 언어로 번역할까요? 현재: {0}"
 }

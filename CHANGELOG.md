@@ -3,7 +3,8 @@
 ## Unreleased
 
 - Settings, commands and the command category are named after the extension: `markdownTranslation.*` and **Markdown Translation: …**, no longer `bilingualMarkdown.*` and **Bilingual Markdown: …**. Your settings, stored API keys and view mode are moved to the new names when the extension starts. Keybindings to the old command IDs need updating.
-- Translate with your own key for OpenRouter, Google Gemini, DeepSeek, Mistral AI or xAI, as well as Anthropic and OpenAI. Each provider keeps its own key and model.
+- Translate with your own key for OpenRouter, Vercel AI Gateway, Google Gemini, DeepSeek, Mistral AI or xAI, as well as Anthropic and OpenAI. Each provider keeps its own key and model.
+- Translate with a model in Microsoft Azure (`markdownTranslation.azure.endpoint` and a deployment name), Amazon Bedrock (`markdownTranslation.bedrock.region`) or Google Cloud Vertex AI, with an API key. On Azure and Bedrock, Claude models go through their Anthropic API and other models through their OpenAI API.
 - **Markdown Translation: Choose Target Language** picks the language to translate into from common languages, or takes any language you type. Clicking the language in the toolbar opens it too.
 - **Markdown Translation: Choose Model** lists the models the current provider offers, or takes a model ID. Clicking the model name in the toolbar opens it too.
 - When a model rejects a reasoning setting, the next lower one is tried, and finally none at all.

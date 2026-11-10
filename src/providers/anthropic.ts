@@ -13,18 +13,20 @@ import {
 
 export const ANTHROPIC_API_URL = "https://api.anthropic.com";
 
+/** Claude through the Anthropic API, or through Azure or Amazon Bedrock, which serve the same API. */
 export class AnthropicProvider implements TranslationProvider {
-  readonly id = "anthropic";
   private readonly client: Anthropic;
 
   constructor(
     apiKey: string,
     readonly model: string,
     private readonly effort: ReasoningEffortSetting,
+    readonly id: "anthropic" | "azure" | "bedrock" = "anthropic",
+    baseURL = ANTHROPIC_API_URL,
   ) {
     // An explicit endpoint, so ANTHROPIC_BASE_URL or an SDK profile cannot send the key elsewhere.
     // The SDK retries connection errors, 408, 409, 429 and 5xx with backoff.
-    this.client = new Anthropic({ apiKey, baseURL: ANTHROPIC_API_URL, maxRetries: 3 });
+    this.client = new Anthropic({ apiKey, baseURL, maxRetries: 3, defaultHeaders: id === "anthropic" ? undefined : cloudHeaders(apiKey) });
   }
 
   async translate(request: TranslateRequest): Promise<TranslateResult> {
@@ -47,6 +49,14 @@ export class AnthropicProvider implements TranslationProvider {
       throw toProviderError(error);
     }
   }
+}
+
+/**
+ * Azure and Bedrock take the key in `x-api-key`, as their documentation shows, and the API version
+ * they document. The SDK's own Authorization header is removed.
+ */
+function cloudHeaders(apiKey: string): Record<string, string | null> {
+  return { Authorization: null, "x-api-key": apiKey, "anthropic-version": "2023-06-01" };
 }
 
 /** The Claude models this key can use, newest first. */
@@ -80,7 +90,7 @@ function toProviderError(error: unknown): ProviderError {
   if (error instanceof ProviderError) return error;
   if (error instanceof Anthropic.APIUserAbortError) return new ProviderError("aborted", "The request was cancelled.", { cause: error });
   if (error instanceof Anthropic.APIConnectionError) {
-    return new ProviderError("network", `Could not reach the Anthropic API: ${error.message}`, { cause: error });
+    return new ProviderError("network", `Could not reach the API: ${error.message}`, { cause: error });
   }
   if (error instanceof Anthropic.APIError) {
     const status = error.status;

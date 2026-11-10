@@ -46,9 +46,9 @@ type FinalResult = Extract<TranslationResult, { state: "done" | "error" }>;
 
 export type ProviderResolution =
   | { ok: true; provider: TranslationProvider }
-  | { ok: false; reason: "missingKey" | "invalidBaseUrl" };
+  | { ok: false; reason: "missingKey" | "invalidBaseUrl" | "invalidEndpoint" };
 
-export type BlockReason = "missingKey" | "invalidBaseUrl" | "auth" | "permission" | "notFound" | "tokenLimit";
+export type BlockReason = "missingKey" | "invalidBaseUrl" | "invalidEndpoint" | "auth" | "permission" | "notFound" | "tokenLimit";
 
 export interface Block {
   reason: BlockReason;

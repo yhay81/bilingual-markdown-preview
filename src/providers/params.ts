@@ -1,8 +1,11 @@
-import { COMPATIBLE_SERVICES } from "./catalog";
+import { COMPATIBLE_SERVICES, isClaudeModel } from "./catalog";
 import type { ProviderId, ReasoningEffortSetting } from "./types";
 
-/** Claude models that reject `thinking: { type: "disabled" }`. */
-const ALWAYS_THINKING_RE = /^claude-(?:opus|sonnet)-5|^claude-(?:fable|mythos)/;
+/**
+ * Claude models that reject `thinking: { type: "disabled" }`. On Bedrock the ID has a prefix, as in
+ * `global.anthropic.claude-sonnet-5-5`.
+ */
+const ALWAYS_THINKING_RE = /(?:^|[./])claude-(?:(?:opus|sonnet)-5|fable|mythos)/;
 
 export interface AnthropicReasoningParams {
   thinking?: { type: "disabled" } | { type: "adaptive" };
@@ -34,5 +37,8 @@ export function usesReasoning(provider: ProviderId, model: string, effort: Reaso
   // The VS Code Language Model API takes no output limit or reasoning setting.
   if (provider === "vscode") return false;
   if (effort !== "none") return true;
-  return provider === "anthropic" ? !canDisableThinking(model) : COMPATIBLE_SERVICES[provider].reasonsAtNone;
+  if (provider === "anthropic" || ((provider === "azure" || provider === "bedrock") && isClaudeModel(model))) return !canDisableThinking(model);
+  // Gemini models think at their lowest level at least.
+  if (provider === "vertex") return true;
+  return COMPATIBLE_SERVICES[provider].reasonsAtNone;
 }

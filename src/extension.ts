@@ -6,13 +6,14 @@ import { moveState } from "./migration";
 import { PreviewManager } from "./preview/previewManager";
 import { VIEW_TYPE } from "./preview/previewPanel";
 import { PROVIDERS } from "./providers/catalog";
-import { ProviderFactory, apiKeyFor, createProvider, listModels } from "./providers/factory";
+import { ProviderFactory, apiKeyFor, createProvider, isHttpsUrl, listModels, listsModelsWithoutKey } from "./providers/factory";
 import { KEY_PROVIDER_IDS, PROVIDER_IDS, isKeyProviderId, type KeyProviderId, type ProviderId } from "./providers/types";
 import { COPILOT_VENDOR, VsCodeLmProvider } from "./providers/vscodeLm";
 import { ApiKeyStore } from "./secrets";
 import {
   mergeGlossaries,
   modelLabelOf,
+  sanitizeAzureEndpoint,
   modelOf,
   parseGlossaryFile,
   providerLabel,
@@ -227,14 +228,17 @@ class Commands {
     const settings = providerSettingsOf(config);
     const current = modelOf(config);
     const apiKey = apiKeyFor(settings, (id) => this.keys.get(id));
+    const canList = apiKey !== undefined || listsModelsWithoutKey(provider);
     const enter = {
       id: undefined,
       label: `$(edit) ${vscode.l10n.t("Enter a model ID...")}`,
       description: "",
-      detail: apiKey === undefined ? vscode.l10n.t("Set the {0} API key to list its models.", label) : undefined,
+      detail: canList ? undefined : vscode.l10n.t("Set the {0} API key to list its models.", label),
       alwaysShow: true,
     };
-    const items = (apiKey === undefined ? Promise.resolve([]) : listModels(settings, apiKey)).then(
+    // Azure deployments have names only their owner knows.
+    const skipList = PROVIDERS[provider].suggestedModels?.length === 0;
+    const items = (canList ? listModels(settings, apiKey ?? "") : Promise.resolve([])).then(
       (models) => [
         enter,
         ...models.map((model) => ({
@@ -247,16 +251,21 @@ class Commands {
       ],
       (error: unknown) => [{ ...enter, detail: vscode.l10n.t("Could not list the models: {0}", error instanceof Error ? error.message : String(error)) }],
     );
-    const picked = await vscode.window.showQuickPick(items, {
-      placeHolder: vscode.l10n.t("Translate with which {0} model? Now: {1}", label, current),
-      matchOnDescription: true,
-    });
+    const picked = skipList
+      ? enter
+      : await vscode.window.showQuickPick(items, {
+          placeHolder: vscode.l10n.t("Translate with which {0} model? Now: {1}", label, current),
+          matchOnDescription: true,
+        });
     if (!picked) return;
     const model =
       picked.id ??
       (await vscode.window.showInputBox({
         title: vscode.l10n.t("{0} Model", label),
-        prompt: vscode.l10n.t("The model ID, as the provider's API names it. Default: {0}", PROVIDERS[provider].defaultModel),
+        prompt:
+          provider === "azure"
+            ? vscode.l10n.t("The name of the model's deployment in your Azure resource. Claude deployments need \"claude\" in the name.")
+            : vscode.l10n.t("The model ID, as the provider's API names it. Default: {0}", PROVIDERS[provider].defaultModel),
         value: current,
         ignoreFocusOut: true,
         validateInput: (input) => (input.trim() ? undefined : vscode.l10n.t("Enter a model ID.")),
@@ -378,10 +387,29 @@ class Commands {
     const current = readConfig().provider;
     const provider = await this.pickProvider(vscode.l10n.t("Translate with"), current, PROVIDER_IDS);
     if (!provider || provider === current) return;
+    if (provider === "azure" && !isHttpsUrl(readConfig().azureEndpoint) && !(await this.setAzureEndpoint())) return;
     await setProvider(provider);
     // An OpenAI-compatible server on this machine or a company gateway may need no key here.
     const ownEndpoint = provider === "openai" && readConfig().openaiBaseUrl !== "";
     if (isKeyProviderId(provider) && !this.keys.has(provider) && !ownEndpoint) await this.setApiKey(provider);
+  }
+
+  /** Asks for the endpoint of the Azure resource and stores it in the user's settings. */
+  private async setAzureEndpoint(): Promise<boolean> {
+    const value = await vscode.window.showInputBox({
+      title: vscode.l10n.t("Azure Endpoint"),
+      prompt: vscode.l10n.t("The endpoint of your Azure resource, or just the resource name. Shown on the resource's Keys and Endpoint page."),
+      placeHolder: "https://my-resource.services.ai.azure.com",
+      value: readConfig().azureEndpoint,
+      ignoreFocusOut: true,
+      validateInput: (input) =>
+        isHttpsUrl(sanitizeAzureEndpoint(input)) ? undefined : vscode.l10n.t("Enter an https:// URL or a resource name."),
+    });
+    if (value === undefined) return false;
+    await vscode.workspace
+      .getConfiguration(CONFIG_SECTION)
+      .update("azure.endpoint", sanitizeAzureEndpoint(value), vscode.ConfigurationTarget.Global);
+    return true;
   }
 
   async clearCache(): Promise<void> {

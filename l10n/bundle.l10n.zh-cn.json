@@ -67,9 +67,14 @@
   "{0} Model": "{0} 模型",
   "Another language...": "其他语言...",
   "Any language, written as you would tell a translator, such as Swahili or Brazilian Portuguese.": "任何语言均可，像告诉译者一样书写，例如 Swahili 或 Brazilian Portuguese。",
+  "Azure Endpoint": "Azure 终结点",
   "Choose Target Language": "选择目标语言",
   "Enter a language.": "请输入语言。",
+  "Enter an https:// URL or a resource name.": "请输入 https:// URL 或资源名称。",
+  "Set the endpoint of your Azure resource, such as https://my-resource.services.ai.azure.com, to translate with Azure.": "要使用 Azure 翻译，请设置 Azure 资源的终结点，例如 https://my-resource.services.ai.azure.com。",
   "Target Language": "目标语言",
+  "The endpoint of your Azure resource, or just the resource name. Shown on the resource's Keys and Endpoint page.": "Azure 资源的终结点，或仅填资源名称。可在资源的“密钥和终结点”页面找到。",
+  "The name of the model's deployment in your Azure resource. Claude deployments need \"claude\" in the name.": "模型在 Azure 资源中的部署名称。Claude 部署的名称中需含有“claude”。",
   "This document still translates into {0}, which its front matter chooses with translate-to.": "此文档仍会译为 {0}，这是其前置元数据中 translate-to 指定的语言。",
   "Translate into which language? Now: {0}": "要译为哪种语言？当前：{0}"
 }

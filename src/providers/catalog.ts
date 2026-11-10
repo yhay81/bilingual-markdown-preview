@@ -8,23 +8,37 @@ export interface ProviderInfo {
   defaultModel: string;
   /** Shown in the API key input box. */
   keyPlaceholder?: string;
+  /**
+   * Models to offer in Choose Model, for services whose API cannot list them with an API key.
+   * Empty when only the user knows the names, such as Azure deployments.
+   */
+  suggestedModels?: readonly string[];
 }
 
 export const PROVIDERS: Readonly<Record<ProviderId, ProviderInfo>> = {
   anthropic: { label: "Anthropic", defaultModel: "claude-haiku-5-5", keyPlaceholder: "sk-ant-..." },
   openai: { label: "OpenAI", defaultModel: "gpt-6-luna", keyPlaceholder: "sk-..." },
   openrouter: { label: "OpenRouter", defaultModel: "google/gemini-3.8-flash", keyPlaceholder: "sk-or-..." },
+  vercel: { label: "Vercel AI Gateway", defaultModel: "google/gemini-3.8-flash" },
   gemini: { label: "Google Gemini", defaultModel: "gemini-3.8-flash", keyPlaceholder: "AIza..." },
   deepseek: { label: "DeepSeek", defaultModel: "deepseek-flash", keyPlaceholder: "sk-..." },
   mistral: { label: "Mistral AI", defaultModel: "mistral-small-2603" },
   xai: { label: "xAI", defaultModel: "grok-4.3", keyPlaceholder: "xai-..." },
+  // Azure names a deployment after its model unless told otherwise.
+  azure: { label: "Microsoft Azure", defaultModel: "gpt-6-luna", suggestedModels: [] },
+  bedrock: {
+    label: "Amazon Bedrock",
+    defaultModel: "global.anthropic.claude-haiku-5-5",
+    suggestedModels: ["global.anthropic.claude-haiku-5-5", "openai.gpt-oss-120b-1:0"],
+  },
+  vertex: { label: "Google Cloud Vertex AI", defaultModel: "gemini-3.8-flash", suggestedModels: ["gemini-3.8-flash", "gemini-3.5-flash-lite"] },
   vscode: { label: "VS Code Language Model", defaultModel: "" },
 };
 
 export type ReasoningParams = Readonly<Record<string, unknown>>;
 
 export interface CompatibleService {
-  /** "" for OpenAI, whose endpoint is api.openai.com or the openai.baseUrl setting. */
+  /** "" when the endpoint comes from the settings: OpenAI's base URL, Azure's endpoint, Bedrock's region. */
   baseUrl: string;
   /** OpenAI's reasoning models reject `max_tokens`; the other services all accept it. */
   maxTokensParam: "max_completion_tokens" | "max_tokens";
@@ -60,6 +74,15 @@ export const COMPATIBLE_SERVICES: Readonly<Record<CompatibleProviderId, Compatib
     // Identifies the app on OpenRouter's usage pages. Nothing about the user is sent.
     headers: { "HTTP-Referer": REPOSITORY_URL, "X-Title": "Markdown Translation Preview" },
   },
+  vercel: {
+    baseUrl: "https://ai-gateway.vercel.sh/v1",
+    maxTokensParam: "max_tokens",
+    // Not documented for AI Gateway, so not asked for; usage is counted when it comes anyway.
+    askForUsage: false,
+    reasonsAtNone: false,
+    reasoning: (effort) => [{ reasoning: { effort } }],
+    headers: { "http-referer": REPOSITORY_URL, "x-title": "Markdown Translation Preview" },
+  },
   gemini: {
     baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
     maxTokensParam: "max_tokens",
@@ -91,7 +114,33 @@ export const COMPATIBLE_SERVICES: Readonly<Record<CompatibleProviderId, Compatib
     // Grok reasoning models cannot stop reasoning; `low` is the least they do.
     reasoning: (effort) => [effortParam(effort === "none" ? "low" : effort)],
   },
+  azure: {
+    baseUrl: "",
+    maxTokensParam: "max_completion_tokens",
+    askForUsage: true,
+    reasonsAtNone: false,
+    // Models other than OpenAI's, such as DeepSeek and Grok, may take only higher levels.
+    reasoning: (effort) => (effort === "none" ? [effortParam("none"), effortParam("minimal"), effortParam("low")] : [effortParam(effort)]),
+  },
+  bedrock: {
+    baseUrl: "",
+    maxTokensParam: "max_tokens",
+    askForUsage: false,
+    // gpt-oss models always reason; `low` is the least they do.
+    reasonsAtNone: true,
+    reasoning: (effort) => (effort === "none" ? [effortParam("none"), effortParam("low")] : [effortParam(effort)]),
+  },
 };
+
+/** Claude models on Azure and Amazon Bedrock, which take the Anthropic Messages API. */
+export function isClaudeModel(model: string): boolean {
+  return /claude/i.test(model);
+}
+
+/** The Bedrock endpoint of an AWS region, such as `us-east-1`. */
+export function bedrockEndpoint(region: string): string {
+  return `https://bedrock-runtime.${region}.amazonaws.com`;
+}
 
 /** The reasoning parameters to try in order. The last one sends no parameter at all. */
 export function reasoningAttempts(provider: CompatibleProviderId, effort: ReasoningEffortSetting): ReasoningParams[] {

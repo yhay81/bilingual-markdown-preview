@@ -52,7 +52,12 @@
     "ollama",
     "byok",
     "katex",
-    "mermaid"
+    "mermaid",
+    "vercel",
+    "ai gateway",
+    "azure",
+    "bedrock",
+    "vertex ai"
   ],
   "main": "./dist/extension.js",
   "l10n": "./l10n",
@@ -179,20 +184,28 @@
             "anthropic",
             "openai",
             "openrouter",
+            "vercel",
             "gemini",
             "deepseek",
             "mistral",
             "xai",
+            "azure",
+            "bedrock",
+            "vertex",
             "vscode"
           ],
           "enumDescriptions": [
             "%config.provider.anthropic%",
             "%config.provider.openai%",
             "%config.provider.openrouter%",
+            "%config.provider.vercel%",
             "%config.provider.gemini%",
             "%config.provider.deepseek%",
             "%config.provider.mistral%",
             "%config.provider.xai%",
+            "%config.provider.azure%",
+            "%config.provider.bedrock%",
+            "%config.provider.vertex%",
             "%config.provider.vscode%"
           ],
           "default": "anthropic",
@@ -234,40 +247,82 @@
           "scope": "machine",
           "order": 5
         },
+        "markdownTranslation.vercel.model": {
+          "type": "string",
+          "default": "google/gemini-3.8-flash",
+          "markdownDescription": "%config.vercel.model%",
+          "scope": "machine",
+          "order": 6
+        },
         "markdownTranslation.gemini.model": {
           "type": "string",
           "default": "gemini-3.8-flash",
           "markdownDescription": "%config.gemini.model%",
           "scope": "machine",
-          "order": 6
+          "order": 7
         },
         "markdownTranslation.deepseek.model": {
           "type": "string",
           "default": "deepseek-flash",
           "markdownDescription": "%config.deepseek.model%",
           "scope": "machine",
-          "order": 7
+          "order": 8
         },
         "markdownTranslation.mistral.model": {
           "type": "string",
           "default": "mistral-small-2603",
           "markdownDescription": "%config.mistral.model%",
           "scope": "machine",
-          "order": 8
+          "order": 9
         },
         "markdownTranslation.xai.model": {
           "type": "string",
           "default": "grok-4.3",
           "markdownDescription": "%config.xai.model%",
           "scope": "machine",
-          "order": 9
+          "order": 10
+        },
+        "markdownTranslation.azure.endpoint": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "%config.azure.endpoint%",
+          "scope": "machine",
+          "order": 11
+        },
+        "markdownTranslation.azure.model": {
+          "type": "string",
+          "default": "gpt-6-luna",
+          "markdownDescription": "%config.azure.model%",
+          "scope": "machine",
+          "order": 12
+        },
+        "markdownTranslation.bedrock.region": {
+          "type": "string",
+          "default": "us-east-1",
+          "markdownDescription": "%config.bedrock.region%",
+          "scope": "machine",
+          "order": 13
+        },
+        "markdownTranslation.bedrock.model": {
+          "type": "string",
+          "default": "global.anthropic.claude-haiku-5-5",
+          "markdownDescription": "%config.bedrock.model%",
+          "scope": "machine",
+          "order": 14
+        },
+        "markdownTranslation.vertex.model": {
+          "type": "string",
+          "default": "gemini-3.8-flash",
+          "markdownDescription": "%config.vertex.model%",
+          "scope": "machine",
+          "order": 15
         },
         "markdownTranslation.vscode.model": {
           "type": "string",
           "default": "",
           "markdownDescription": "%config.vscode.model%",
           "scope": "machine",
-          "order": 10
+          "order": 16
         },
         "markdownTranslation.reasoningEffort": {
           "type": "string",
@@ -288,14 +343,14 @@
           "default": "none",
           "markdownDescription": "%config.reasoningEffort%",
           "scope": "machine",
-          "order": 11
+          "order": 17
         },
         "markdownTranslation.styleInstructions": {
           "type": "string",
           "default": "",
           "editPresentation": "multilineText",
           "markdownDescription": "%config.styleInstructions%",
-          "order": 12
+          "order": 18
         },
         "markdownTranslation.glossary": {
           "type": "object",
@@ -304,13 +359,13 @@
             "type": "string"
           },
           "markdownDescription": "%config.glossary%",
-          "order": 13
+          "order": 19
         },
         "markdownTranslation.translateCodeComments": {
           "type": "boolean",
           "default": false,
           "markdownDescription": "%config.translateCodeComments%",
-          "order": 14
+          "order": 20
         },
         "markdownTranslation.maxConcurrentRequests": {
           "type": "integer",
@@ -319,7 +374,7 @@
           "maximum": 8,
           "markdownDescription": "%config.maxConcurrentRequests%",
           "scope": "machine",
-          "order": 15
+          "order": 21
         },
         "markdownTranslation.batchCharacterLimit": {
           "type": "integer",
@@ -328,7 +383,7 @@
           "maximum": 20000,
           "markdownDescription": "%config.batchCharacterLimit%",
           "scope": "machine",
-          "order": 16
+          "order": 22
         },
         "markdownTranslation.tokenLimit": {
           "type": "integer",
@@ -336,13 +391,13 @@
           "minimum": 0,
           "markdownDescription": "%config.tokenLimit%",
           "scope": "machine",
-          "order": 17
+          "order": 23
         },
         "markdownTranslation.syncScroll": {
           "type": "boolean",
           "default": true,
           "markdownDescription": "%config.syncScroll%",
-          "order": 18
+          "order": 24
         }
       }
     }

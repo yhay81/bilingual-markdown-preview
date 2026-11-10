@@ -28,7 +28,7 @@ The tests never call a translation API. To see real translations in the Extensio
 - `src/config.ts`, `src/settings.ts` and `src/secrets.ts`: the settings and the API keys. `src/migration.ts` moves the settings of version 0.1 to their new names.
 - `src/markdown/`: splitting Markdown into rows, rendering them, finding the comments in code blocks, and writing the translation out as Markdown.
 - `src/translate/`: prompts, placeholders, validation, the cache and the translation queue.
-- `src/providers/`: the Anthropic client, one client for OpenAI and the OpenAI-compatible services (`catalog.ts` lists their endpoints and reasoning parameters), and the VS Code Language Model API.
+- `src/providers/`: the Anthropic client (also used for Claude on Azure and Amazon Bedrock), one client for OpenAI and the OpenAI-compatible services (`catalog.ts` lists their endpoints and reasoning parameters), a client for Gemini on Vertex AI, and the VS Code Language Model API.
 - `src/preview/`: the preview panels and their HTML.
 - `src/webview/`: the script that runs inside the preview.
 - `src/shared/`: the messages between the extension and the preview.

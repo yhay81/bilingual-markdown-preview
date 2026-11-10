@@ -1,14 +1,19 @@
 import { createHash } from "node:crypto";
 import type { ProviderResolution } from "../translate/service";
 import { AnthropicProvider, listAnthropicModels } from "./anthropic";
+import { PROVIDERS, isClaudeModel } from "./catalog";
 import { OpenAIProvider, listCompatibleModels } from "./openai";
+import { VertexProvider } from "./vertex";
 import type { KeyProviderId, ModelInfo, ProviderId, ReasoningEffortSetting, TranslationProvider } from "./types";
 
 export interface ProviderSettings {
   provider: ProviderId;
   /** For `vscode`, a language model ID, or "" for the first Copilot model. */
   model: string;
-  /** OpenAI only; "" for api.openai.com. The other services have fixed endpoints. */
+  /**
+   * The endpoint from the settings: OpenAI's base URL ("" for api.openai.com), the Azure resource's
+   * endpoint, or the Bedrock endpoint of the chosen region. "" for the services with a fixed one.
+   */
   baseUrl: string;
   reasoningEffort: ReasoningEffortSetting;
 }
@@ -37,6 +42,7 @@ export class ProviderFactory {
     if (settings.provider === "openai" && settings.baseUrl && !isAllowedBaseUrl(settings.baseUrl)) {
       return { ok: false, reason: "invalidBaseUrl" };
     }
+    if (settings.provider === "azure" && !isHttpsUrl(settings.baseUrl)) return { ok: false, reason: "invalidEndpoint" };
     const apiKey = apiKeyFor(settings, this.getKey);
     if (apiKey === undefined) return { ok: false, reason: "missingKey" };
     const keyHash = createHash("sha256").update(apiKey).digest("hex");
@@ -55,8 +61,16 @@ export function createProvider(settings: ProviderSettings, apiKey: string): Tran
   switch (settings.provider) {
     case "anthropic":
       return new AnthropicProvider(apiKey, settings.model, settings.reasoningEffort);
+    case "vertex":
+      return new VertexProvider(apiKey, settings.model, settings.reasoningEffort);
     case "vscode":
       throw new Error("The VS Code Language Model API is not available here.");
+    case "azure":
+    case "bedrock":
+      // Both serve Claude through the Anthropic Messages API and other models through Chat Completions.
+      return isClaudeModel(settings.model)
+        ? new AnthropicProvider(apiKey, settings.model, settings.reasoningEffort, settings.provider, `${settings.baseUrl}/anthropic`)
+        : new OpenAIProvider(apiKey, settings.model, settings.reasoningEffort, `${settings.baseUrl}/openai/v1`, settings.provider);
     default:
       return new OpenAIProvider(apiKey, settings.model, settings.reasoningEffort, settings.baseUrl || undefined, settings.provider);
   }
@@ -75,14 +89,22 @@ export function apiKeyFor(settings: ProviderSettings, getKey: (provider: KeyProv
 
 /** The models a provider that uses an API key offers. The extension lists VS Code's own models. */
 export async function listModels(settings: ProviderSettings, apiKey: string): Promise<ModelInfo[]> {
+  const suggested = PROVIDERS[settings.provider].suggestedModels;
+  if (suggested) return suggested.map((id) => ({ id }));
   switch (settings.provider) {
     case "anthropic":
       return listAnthropicModels(apiKey);
+    case "vertex":
     case "vscode":
-      throw new Error("The VS Code Language Model API is not available here.");
+      throw new Error(`${settings.provider} models are not listed here.`);
     default:
       return listCompatibleModels(settings.provider, apiKey, settings.baseUrl);
   }
+}
+
+/** Whether Choose Model can offer a list for this provider without an API key. */
+export function listsModelsWithoutKey(provider: ProviderId): boolean {
+  return PROVIDERS[provider].suggestedModels !== undefined;
 }
 
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
@@ -92,6 +114,16 @@ export function isLoopbackUrl(value: string): boolean {
   try {
     const url = new URL(value);
     return (url.protocol === "http:" || url.protocol === "https:") && LOOPBACK_HOSTS.has(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
+/** An HTTPS URL without credentials in it. */
+export function isHttpsUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && !url.username && !url.password;
   } catch {
     return false;
   }

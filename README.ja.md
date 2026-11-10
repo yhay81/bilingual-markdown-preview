@@ -2,7 +2,7 @@
 
 [English](README.md)
 
-Markdown を原文と訳文で左右に並べてプレビューする VS Code 拡張機能です。翻訳には、**GitHub Copilot** など VS Code の言語モデル、自分の API キー（BYOK）で使う **Anthropic**・**OpenAI**・**OpenRouter**・**Google Gemini**・**DeepSeek**・**Mistral AI**・**xAI** のモデル、または手元のコンピューターで動くモデルを使います。
+Markdown を原文と訳文で左右に並べてプレビューする VS Code 拡張機能です。翻訳先はどの言語でも選べます。翻訳には、**GitHub Copilot** など VS Code の言語モデル、自分の API キー（BYOK）で使う **Anthropic**・**OpenAI**・**OpenRouter**・**Vercel AI Gateway**・**Google Gemini**・**DeepSeek**・**Mistral AI**・**xAI** のモデル、**Microsoft Azure**・**Amazon Bedrock**・**Google Cloud Vertex AI** のモデル、または手元のコンピューターで動くモデルを使います。
 
 ![左に英語の文書、右にその日本語訳をブロックごとに並べたプレビュー](images/screenshot.png)
 
@@ -27,7 +27,7 @@ Markdown を原文と訳文で左右に並べてプレビューする VS Code �
 
 ## 使い方
 
-VS Code 1.101 以降と、次のいずれかが必要です: GitHub Copilot、Anthropic・OpenAI・OpenRouter・Google Gemini・DeepSeek・Mistral AI・xAI のいずれかの API キー、Ollama や LM Studio などのローカルのサーバー。
+VS Code 1.101 以降と、次のいずれかが必要です: GitHub Copilot、Anthropic・OpenAI・OpenRouter・Vercel AI Gateway・Google Gemini・DeepSeek・Mistral AI・xAI のいずれかの API キー、Microsoft Azure・Amazon Bedrock・Google Cloud Vertex AI の API キー、Ollama や LM Studio などのローカルのサーバー。
 
 1. Visual Studio Marketplace から **Markdown Translation Preview** をインストールします。
 2. Markdown ファイルを開き、エディター右上の地球のアイコン（**翻訳プレビューを横に開く**）を押します。エクスプローラーの右クリックメニューや、コマンドパレットの **Markdown Translation: 翻訳プレビューを開く** からも開けます。
@@ -74,6 +74,7 @@ translate-to: French
 | [Anthropic](https://www.anthropic.com) | `anthropic` | `claude-haiku-5-5` |
 | [OpenAI](https://openai.com) | `openai` | `gpt-6-luna` |
 | [OpenRouter](https://openrouter.ai) | `openrouter` | `google/gemini-3.8-flash` |
+| [Vercel AI Gateway](https://vercel.com/ai-gateway) | `vercel` | `google/gemini-3.8-flash` |
 | [Google Gemini](https://aistudio.google.com) | `gemini` | `gemini-3.8-flash` |
 | [DeepSeek](https://www.deepseek.com) | `deepseek` | `deepseek-flash` |
 | [Mistral AI](https://mistral.ai) | `mistral` | `mistral-small-2603` |
@@ -82,13 +83,27 @@ translate-to: French
 **Markdown Translation: 翻訳プロバイダーを切り替え** でプロバイダーを選び、そのキーを入力します。キーとモデルはプロバイダーごとに保存するので、行き来しても設定し直す必要はありません。
 
 - 別のモデルを使うには、**Markdown Translation: モデルを選ぶ** を実行するか、プレビューのツールバーのモデル名をクリックします。キーで使えるモデルが一覧され、モデル ID を直接入力することもできます。選んだモデルは `markdownTranslation.<プロバイダー>.model` に保存されます。
-- OpenRouter では、1 つのキーと 1 つの請求で多数のプロバイダーのモデルを使えます。モデル ID は `anthropic/claude-haiku-5.5` や `openai/gpt-6-luna` のようにプロバイダー名から始まります。
+- OpenRouter と Vercel AI Gateway では、1 つのキーと 1 つの請求で多数のプロバイダーのモデルを使えます。モデル ID は `anthropic/claude-haiku-5.5` や `openai/gpt-6-luna` のようにプロバイダー名から始まります。
 - 利用料金は、キーを発行したアカウントに請求されます。
 - キーはパスワード入力欄から登録し、VS Code の Secret Storage（OS のキーチェーン）に保存します。`settings.json` には書きません。
 - キーが拒否されたとき（認証エラーや権限不足）は翻訳を止め、プレビュー上でキーの再設定やプロバイダーの切り替えを案内します。
 - `markdownTranslation.reasoningEffort` が `none` のとき、Gemini や Grok のように推論を止められないモデルは、いちばん低いレベルで推論します。モデルが推論の設定を受け付けないときは一段低い設定を試し、最後は推論の指定なしで送ります。
 - Gemini API の無料枠では、送った内容が Google の製品改善に使われ、人が読むことがあります。機密の文書は無料枠で送らないでください。
 - この VS Code のセッションで使ったトークン数をツールバーに表示します。`markdownTranslation.tokenLimit` を設定すると、その数に達したところで翻訳を止め、**続ける** を押すまで待ちます。
+
+### Azure・AWS・Google Cloud
+
+組織でクラウドを使っているなら、そのクラウドのモデルで翻訳し、料金をそのクラウドのアカウントに請求できます。どれも API キーを使い、ほかのキーと同じように保存します。Microsoft Entra ID、AWS の認証情報、Google の OAuth によるサインインには対応していません。
+
+| クラウド | `markdownTranslation.provider` | 既定のモデル |
+| --- | --- | --- |
+| [Microsoft Azure](https://ai.azure.com)（Azure AI Foundry、Azure OpenAI） | `azure` | `gpt-6-luna`（デプロイ名） |
+| [Amazon Bedrock](https://aws.amazon.com/bedrock/) | `bedrock` | `global.anthropic.claude-haiku-5-5` |
+| [Google Cloud Vertex AI](https://cloud.google.com/vertex-ai) | `vertex` | `gemini-3.8-flash` |
+
+- **Azure**: Azure AI Foundry または Azure OpenAI のリソースのキーを使います。Azure に切り替えると、リソースのエンドポイント（例: `https://my-resource.services.ai.azure.com`）かリソース名を尋ねられ、`markdownTranslation.azure.endpoint` に保存されます。モデルはデプロイ名で指定します。キーではデプロイを一覧できないので、名前を入力してください。名前に `claude` を含むデプロイは Azure の Anthropic API で、それ以外は OpenAI API で呼び出します。
+- **Amazon Bedrock**: Bedrock の API キーを使い、`markdownTranslation.bedrock.region` をキーを発行したリージョンにします（既定は `us-east-1`）。Claude は Bedrock の Anthropic API で、`openai.gpt-oss-120b-1:0` などほかのモデルは OpenAI 互換 API で呼び出します。**モデルを選ぶ** にはいくつかのモデルを候補として出します。ほかのモデルや推論プロファイルは ID を入力してください。
+- **Google Cloud Vertex AI**: Google Cloud コンソールで発行した、Vertex AI API 用の API キーを使います。API キーで使えるのは Google 自身の Gemini モデルだけです。Vertex AI の Claude などパートナーのモデルは OAuth が必要なため、対応していません。
 
 ### ローカルのモデル
 
@@ -106,16 +121,22 @@ OpenAI 互換の API を持つサーバーなら使えます。`markdownTranslat
 
 | 設定 | 既定値 | 内容 |
 | --- | --- | --- |
-| `markdownTranslation.provider` | `anthropic` | 翻訳に使うプロバイダー（`anthropic` / `openai` / `openrouter` / `gemini` / `deepseek` / `mistral` / `xai` / VS Code の言語モデルを使う `vscode`）。 |
+| `markdownTranslation.provider` | `anthropic` | 翻訳に使うプロバイダー（`anthropic` / `openai` / `openrouter` / `vercel` / `gemini` / `deepseek` / `mistral` / `xai` / `azure` / `bedrock` / `vertex` / VS Code の言語モデルを使う `vscode`）。 |
 | `markdownTranslation.targetLanguage` | `Japanese` | 翻訳先の言語。どの言語でも、翻訳者に伝えるように書きます（例: `English`、`Simplified Chinese`、`Swahili`）。文書のフロントマターの `translate-to` がこれより優先されます。 |
 | `markdownTranslation.anthropic.model` | `claude-haiku-5-5` | Anthropic のモデル ID。 |
 | `markdownTranslation.openai.model` | `gpt-6-luna` | OpenAI のモデル ID。 |
 | `markdownTranslation.openai.baseUrl` | （空欄） | OpenAI 互換 API のベース URL（社内ゲートウェイや[ローカルのサーバー](#ローカルのモデル)）。空欄なら `https://api.openai.com/v1` を使います。`https://` か、`localhost`・`127.0.0.1`・`[::1]` への `http://` だけが使えます。 |
 | `markdownTranslation.openrouter.model` | `google/gemini-3.8-flash` | OpenRouter のモデル ID（`provider/model` の形）。 |
+| `markdownTranslation.vercel.model` | `google/gemini-3.8-flash` | Vercel AI Gateway のモデル ID（`provider/model` の形）。 |
 | `markdownTranslation.gemini.model` | `gemini-3.8-flash` | Gemini のモデル ID。 |
 | `markdownTranslation.deepseek.model` | `deepseek-flash` | DeepSeek のモデル ID。 |
 | `markdownTranslation.mistral.model` | `mistral-small-2603` | Mistral のモデル ID。 |
 | `markdownTranslation.xai.model` | `grok-4.3` | xAI のモデル ID。 |
+| `markdownTranslation.azure.endpoint` | （空欄） | Azure リソースのエンドポイント（例: `https://my-resource.services.ai.azure.com`）、またはリソース名。 |
+| `markdownTranslation.azure.model` | `gpt-6-luna` | Azure リソースでのモデルのデプロイ名。 |
+| `markdownTranslation.bedrock.region` | `us-east-1` | Amazon Bedrock の AWS リージョン。API キーはこのリージョンで発行したものが必要です。 |
+| `markdownTranslation.bedrock.model` | `global.anthropic.claude-haiku-5-5` | Amazon Bedrock のモデル ID または推論プロファイル。 |
+| `markdownTranslation.vertex.model` | `gemini-3.8-flash` | Vertex AI の Gemini モデル ID。 |
 | `markdownTranslation.vscode.model` | （空欄） | VS Code の言語モデルの ID またはファミリー。空欄なら GitHub Copilot の最初のモデルを使います。 |
 | `markdownTranslation.reasoningEffort` | `none` | 回答の前にモデルが推論する量（`none` / `low` / `medium` / `high` / `default`）。翻訳には通常 `none` で足ります。 |
 | `markdownTranslation.styleInstructions` | （空欄） | 翻訳者への追加の指示（例: `である調で書く`）。 |
@@ -126,7 +147,7 @@ OpenAI 互換の API を持つサーバーなら使えます。`markdownTranslat
 | `markdownTranslation.tokenLimit` | `0` | 1 回の VS Code のセッションでこの数のトークンを使ったら翻訳を止めます。`0` は無制限です。プロバイダーがトークン数を返すときに数えます。VS Code の言語モデルや一部のローカルのサーバーは返しません。 |
 | `markdownTranslation.syncScroll` | `true` | エディターとプレビューのスクロールを連動させます。 |
 
-プロバイダー、モデル、ベース URL、推論の量、同時リクエスト数、1 回の文字数、トークンの上限はユーザー設定でだけ変えられます。ワークスペースの設定ファイルでは変わりません。
+プロバイダー、モデル、ベース URL、Azure のエンドポイント、Bedrock のリージョン、推論の量、同時リクエスト数、1 回の文字数、トークンの上限はユーザー設定でだけ変えられます。ワークスペースの設定ファイルでは変わりません。
 
 ## 用語集ファイル
 
@@ -168,7 +189,7 @@ OpenAI 互換の API を持つサーバーなら使えます。`markdownTranslat
 
 ## セキュリティとプライバシー
 
-- 翻訳する文章は、選んだプロバイダーに送ります。送信先は `https://api.anthropic.com`、`https://api.openai.com/v1`、`https://openrouter.ai/api/v1`、`https://generativelanguage.googleapis.com`、`https://api.deepseek.com`、`https://api.mistral.ai/v1`、`https://api.x.ai/v1`、ユーザー設定の `markdownTranslation.openai.baseUrl`、または利用を許可した VS Code の言語モデルだけです。各キーは、そのキーのプロバイダーにだけ送ります。`ANTHROPIC_BASE_URL`、`OPENAI_BASE_URL`、`OPENAI_ORG_ID`、`OPENAI_PROJECT_ID` などの環境変数は使いません。
+- 翻訳する文章は、選んだプロバイダーに送ります。送信先は `https://api.anthropic.com`、`https://api.openai.com/v1`、`https://openrouter.ai/api/v1`、`https://ai-gateway.vercel.sh/v1`、`https://generativelanguage.googleapis.com`、`https://api.deepseek.com`、`https://api.mistral.ai/v1`、`https://api.x.ai/v1`、`https://bedrock-runtime.<リージョン>.amazonaws.com`、`https://aiplatform.googleapis.com`、ユーザー設定の `markdownTranslation.openai.baseUrl` と `markdownTranslation.azure.endpoint`、または利用を許可した VS Code の言語モデルだけです。各キーは、そのキーのプロバイダーにだけ送ります。`ANTHROPIC_BASE_URL`、`OPENAI_BASE_URL`、`OPENAI_ORG_ID`、`OPENAI_PROJECT_ID` などの環境変数は使いません。
 - コードブロック、front matter、インラインコード、数式、URL、リンク先、HTML は送りません。ただし `markdownTranslation.translateCodeComments` をオンにしたときは、コードブロックのコメントの文章を送ります。
 - 制限モード（信頼していないワークスペース）では、翻訳先の言語・追加の指示・用語集・コメントの翻訳もユーザー設定の値だけを使います。用語集ファイルとフロントマターの `translate-to` も使いません。
 - 利用状況のデータ（テレメトリー）は集めません。

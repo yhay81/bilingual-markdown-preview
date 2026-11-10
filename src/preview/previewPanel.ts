@@ -512,6 +512,13 @@ export class TranslationPreview implements vscode.Disposable {
           message: vscode.l10n.t("The OpenAI base URL must start with https:// (or http://localhost)."),
           actions: [openSettings],
         };
+      case "invalidEndpoint":
+        return {
+          severity: "info",
+          blocking: true,
+          message: vscode.l10n.t("Set the endpoint of your Azure resource, such as https://my-resource.services.ai.azure.com, to translate with Azure."),
+          actions: [openSettings, switchProvider],
+        };
       case "auth":
         return {
           severity: "error",

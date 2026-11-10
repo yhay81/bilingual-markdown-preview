@@ -13,6 +13,8 @@ export function readConfig(workspaceGlossary: Readonly<Record<string, string>> =
     targetLanguage: config.get("targetLanguage"),
     models: Object.fromEntries(PROVIDER_IDS.map((id) => [id, config.get(modelSettingOf(id))])),
     openaiBaseUrl: config.get("openai.baseUrl"),
+    azureEndpoint: config.get("azure.endpoint"),
+    bedrockRegion: config.get("bedrock.region"),
     reasoningEffort: config.get("reasoningEffort"),
     styleInstructions: config.get("styleInstructions"),
     glossary: config.get("glossary"),

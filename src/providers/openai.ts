@@ -26,7 +26,7 @@ export class OpenAIProvider implements TranslationProvider {
   /** The first reasoning parameters in `attempts` that the API has not rejected. */
   private attempt = 0;
 
-  /** `baseURL` is used only for OpenAI; the other services have fixed endpoints. */
+  /** `baseURL` is used for OpenAI, Azure and Bedrock; the other services have fixed endpoints. */
   constructor(
     apiKey: string,
     readonly model: string,
@@ -90,9 +90,9 @@ export class OpenAIProvider implements TranslationProvider {
   }
 }
 
-/** The API endpoint. `baseUrl` is the openai.baseUrl setting, used only for OpenAI. */
+/** The API endpoint. `baseUrl` comes from the settings, for the services without a fixed endpoint. */
 export function endpointOf(provider: CompatibleProviderId, baseUrl: string): string {
-  return provider === "openai" ? baseUrl || OPENAI_API_URL : COMPATIBLE_SERVICES[provider].baseUrl;
+  return COMPATIBLE_SERVICES[provider].baseUrl || baseUrl || OPENAI_API_URL;
 }
 
 function compatibleClient(provider: CompatibleProviderId, apiKey: string, endpoint: string): OpenAI {
@@ -120,6 +120,9 @@ export async function listCompatibleModels(provider: CompatibleProviderId, apiKe
       // Gemini lists its models as `models/<id>`.
       const id = model.id.replace(/^models\//, "");
       if (NOT_CHAT_RE.test(id)) continue;
+      // Vercel AI Gateway gives each model a type, and offers batch-priced copies.
+      const type = (model as { type?: unknown }).type;
+      if ((typeof type === "string" && type !== "language") || id.endsWith("-batch")) continue;
       // OpenRouter adds a display name.
       const name = (model as { name?: unknown }).name;
       models.push(typeof name === "string" && name && name !== id ? { id, name } : { id });

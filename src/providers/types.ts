@@ -1,10 +1,13 @@
-/** Providers reached through an OpenAI-compatible Chat Completions API with the user's own key. */
-export const COMPATIBLE_PROVIDER_IDS = ["openai", "openrouter", "gemini", "deepseek", "mistral", "xai"] as const;
+/**
+ * Providers reached through an OpenAI-compatible Chat Completions API with the user's own key.
+ * Azure and Amazon Bedrock serve Claude through an Anthropic-compatible API instead.
+ */
+export const COMPATIBLE_PROVIDER_IDS = ["openai", "openrouter", "vercel", "gemini", "deepseek", "mistral", "xai", "azure", "bedrock"] as const;
 
 export type CompatibleProviderId = (typeof COMPATIBLE_PROVIDER_IDS)[number];
 
-/** Providers that are used with the user's own API key. */
-export const KEY_PROVIDER_IDS = ["anthropic", ...COMPATIBLE_PROVIDER_IDS] as const;
+/** Providers that are used with the user's own API key. `vertex` is Gemini on Google Cloud. */
+export const KEY_PROVIDER_IDS = ["anthropic", ...COMPATIBLE_PROVIDER_IDS, "vertex"] as const;
 
 export type KeyProviderId = (typeof KEY_PROVIDER_IDS)[number];
 
