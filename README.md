@@ -1,110 +1,106 @@
 # Bilingual Markdown Preview
 
-Markdown を原文と訳文で左右に並べてプレビューする VS Code 拡張機能です。翻訳には、自分の API キー（BYOK）で **Claude Haiku 5.5**（`claude-haiku-5-5`）か **GPT-6 Luna**（`gpt-6-luna`）を使います。
+[日本語](README.ja.md)
 
-## 特長
+Preview Markdown with an LLM translation beside it, block by block. Translation uses your own API key (BYOK) for **Claude Haiku 5.5** (`claude-haiku-5-5`) or **GPT-6 Luna** (`gpt-6-luna`).
 
-- 見出し・段落・リスト項目・表・引用をブロック単位で翻訳し、原文と訳文の高さを揃えて表示します。
-- コードブロック、front matter、画像だけの段落、すでに訳文の言語で書かれた段落は翻訳せず、2 列にまたがって表示します。
-- 設定でオンにすると、コードブロックのコメントも翻訳します。コメントを訳したコードを原文の横に並べます（送るのはコメントの文章だけです）。
-- ツールバーで「原文」「並べて表示」「訳文」を切り替えられます。エディターとプレビューのスクロールは連動します。
-- 画面に見えている部分から先に翻訳し、訳文は届いたそばから表示します。
-- インラインコード、URL、リンク先、HTML は記号（`⟦1⟧` など）に置き換えて翻訳に出し、訳文に元のまま戻します。記号が欠けた訳文は自動で訳し直し、それでも直らなければ行に警告を出します。
-- 翻訳結果は手元にキャッシュします（最大 20,000 件）。編集しても内容が変わっていないブロックは訳し直しません。
-- 日本語に訳すときは、です・ます調にそろえます（設定で変えられます）。用語集で訳語を固定できます。
-- 狭いパネルでは、訳文を原文の下に並べます。
-- 表示は日本語と英語に対応しています。
+![An English document on the left and its Japanese translation on the right, lined up block by block](images/screenshot.png)
 
-## 使い方
+## Features
 
-1. Markdown ファイルを開き、エディター右上の地球のアイコン（**対訳プレビューを横に開く**）を押します。エクスプローラーの右クリックメニューや、コマンドパレットの **Bilingual Markdown: 対訳プレビューを開く** からも開けます。
-2. 初めて開くと API キーを求める表示が出ます。**API キーを設定** を押して、キーを入力します。
-3. 翻訳が始まります。失敗した行は、その行の **再試行** で訳し直せます。
+- Translates headings, paragraphs, list items, table cells and block quotes one block at a time, and lines each translation up with its source.
+- Leaves code blocks, front matter, image-only paragraphs and paragraphs already in the target language untranslated, and shows them across both columns.
+- Can also translate the comments in code blocks, and show the code with its comments translated beside the original. Only the comment text is sent.
+- Switches between Source, Side by side and Translation from the toolbar. The editor and the preview scroll together.
+- Translates what is on screen first, and shows each translation as it arrives.
+- Sends inline code, URLs, link targets and HTML as placeholders such as `⟦1⟧`, and puts them back unchanged. A translation that drops a placeholder is translated again automatically; if it still fails, the row shows a warning.
+- Caches translations on your computer (up to 20,000 entries). After an edit, only the blocks that changed are translated again.
+- Japanese translations use the polite です・ます style unless your style instructions say otherwise. A glossary fixes the translation of terms.
+- In a narrow panel, the translation goes under the source.
+- The interface is in English and Japanese.
 
-| コマンド | 内容 |
+## Getting started
+
+You need VS Code 1.101 or later and an API key from Anthropic or OpenAI.
+
+1. Install **Bilingual Markdown Preview** from the Visual Studio Marketplace.
+2. Open a Markdown file and click the globe icon (**Open Bilingual Preview to the Side**) at the top right of the editor. You can also right-click the file in the Explorer, or run **Bilingual Markdown: Open Bilingual Preview** from the Command Palette.
+3. The first time, the preview asks for an API key. Click **Set API Key** and enter the key.
+4. Translation starts. If a row fails, click **Retry** on that row.
+
+The preview translates into Japanese. To translate into another language, set `bilingualMarkdown.targetLanguage`, for example to `English` or `Simplified Chinese`.
+
+## Commands
+
+| Command | What it does |
 | --- | --- |
-| Bilingual Markdown: 対訳プレビューを開く | 対訳プレビューを開きます。 |
-| Bilingual Markdown: 対訳プレビューを横に開く | エディターの横に開きます。 |
-| Bilingual Markdown: 再翻訳（キャッシュを使わない） | 表示中の文書をキャッシュを使わずに訳し直します。 |
-| Bilingual Markdown: API キーを設定 | API キーを登録します。 |
-| Bilingual Markdown: API キーを削除 | 登録した API キーを削除します。 |
-| Bilingual Markdown: 翻訳プロバイダーを切り替え | Anthropic と OpenAI を切り替えます。 |
-| Bilingual Markdown: 翻訳キャッシュを消去 | 保存した翻訳結果を削除します。 |
+| Bilingual Markdown: Open Bilingual Preview | Opens the preview. |
+| Bilingual Markdown: Open Bilingual Preview to the Side | Opens the preview beside the editor. |
+| Bilingual Markdown: Retranslate (Ignore Cache) | Translates the document in the preview again, without the cache. |
+| Bilingual Markdown: Set API Key | Stores an API key. |
+| Bilingual Markdown: Clear API Key | Deletes a stored API key. |
+| Bilingual Markdown: Switch Translation Provider | Switches between Anthropic and OpenAI. |
+| Bilingual Markdown: Clear Translation Cache | Deletes the cached translations. |
 
-## API キー（BYOK）
+## API keys and cost
 
-- Anthropic と OpenAI に対応しています。利用料金は、キーを発行したアカウントに請求されます。
-- キーはパスワード入力欄から登録し、VS Code の Secret Storage（OS のキーチェーン）に保存します。`settings.json` には書きません。
-- キーが拒否されたとき（認証エラーや権限不足）は翻訳を止め、プレビュー上でキーの再設定やプロバイダーの切り替えを案内します。
+- Anthropic and OpenAI are supported. Translation is billed to the account that issued the key.
+- You enter the key in a password box. It is kept in VS Code Secret Storage (your OS keychain), never in `settings.json`.
+- If the provider rejects the key (an authentication or permission error), translation stops, and the preview offers to set the key again or to switch providers.
 
-## 設定
+## Settings
 
-| 設定 | 既定値 | 内容 |
+| Setting | Default | Description |
 | --- | --- | --- |
-| `bilingualMarkdown.provider` | `anthropic` | 翻訳に使うプロバイダー（`anthropic` / `openai`）。 |
-| `bilingualMarkdown.targetLanguage` | `Japanese` | 翻訳先の言語。翻訳者に伝えるように書きます（例: `English`、`Simplified Chinese`）。 |
-| `bilingualMarkdown.anthropic.model` | `claude-haiku-5-5` | Anthropic のモデル ID。 |
-| `bilingualMarkdown.openai.model` | `gpt-6-luna` | OpenAI のモデル ID。 |
-| `bilingualMarkdown.openai.baseUrl` | （空欄） | OpenAI 互換 API のベース URL（社内ゲートウェイなど）。空欄なら `https://api.openai.com/v1` を使います。`https://` か、`localhost`・`127.0.0.1`・`[::1]` への `http://` だけが使えます。 |
-| `bilingualMarkdown.reasoningEffort` | `none` | 回答の前にモデルが推論する量（`none` / `low` / `medium` / `high` / `default`）。翻訳には通常 `none` で足ります。 |
-| `bilingualMarkdown.styleInstructions` | （空欄） | 翻訳者への追加の指示（例: `である調で書く`）。 |
-| `bilingualMarkdown.glossary` | `{}` | 訳語を固定する用語集。`{ "pull request": "プルリクエスト" }` のように書きます。 |
-| `bilingualMarkdown.translateCodeComments` | `false` | コードブロックのコメントも翻訳します。詳しくは「[コードのコメントの翻訳](#コードのコメントの翻訳)」を見てください。 |
-| `bilingualMarkdown.maxConcurrentRequests` | `3` | 同時に送る翻訳リクエストの上限（1〜8）。 |
-| `bilingualMarkdown.batchCharacterLimit` | `4000` | 1 回のリクエストで送る原文のおおよその文字数（500〜20000）。 |
-| `bilingualMarkdown.syncScroll` | `true` | エディターとプレビューのスクロールを連動させます。 |
+| `bilingualMarkdown.provider` | `anthropic` | Translation provider: `anthropic` or `openai`. |
+| `bilingualMarkdown.targetLanguage` | `Japanese` | Language to translate into, written as you would tell a translator, such as `English` or `Simplified Chinese`. |
+| `bilingualMarkdown.anthropic.model` | `claude-haiku-5-5` | Anthropic model ID. |
+| `bilingualMarkdown.openai.model` | `gpt-6-luna` | OpenAI model ID. |
+| `bilingualMarkdown.openai.baseUrl` | (empty) | Base URL of an OpenAI-compatible API, such as a company gateway. Empty means `https://api.openai.com/v1`. Only `https://` URLs, and `http://` URLs to `localhost`, `127.0.0.1` or `[::1]`, are accepted. |
+| `bilingualMarkdown.reasoningEffort` | `none` | How much the model reasons before it answers: `none`, `low`, `medium`, `high` or `default`. `none` is usually enough for translation. |
+| `bilingualMarkdown.styleInstructions` | (empty) | Extra instructions for the translator, such as `Use the plain である style.` |
+| `bilingualMarkdown.glossary` | `{}` | Fixed translations for terms, such as `{ "pull request": "プルリクエスト" }`. |
+| `bilingualMarkdown.translateCodeComments` | `false` | Also translate the comments in code blocks. See [Translating code comments](#translating-code-comments). |
+| `bilingualMarkdown.maxConcurrentRequests` | `3` | Maximum number of translation requests in flight at once (1–8). |
+| `bilingualMarkdown.batchCharacterLimit` | `4000` | Approximate number of source characters in one request (500–20000). |
+| `bilingualMarkdown.syncScroll` | `true` | Keeps the editor and the preview scrolled to the same place. |
 
-プロバイダー、モデル、ベース URL、推論の量、同時リクエスト数、1 回の文字数はユーザー設定でだけ変えられます。ワークスペースの設定ファイルでは変わりません。
+The provider, the models, the base URL, the reasoning effort, the number of requests and the request size can be changed only in your user settings. A workspace's settings do not change them.
 
-## コードのコメントの翻訳
+## Translating code comments
 
-`bilingualMarkdown.translateCodeComments` をオンにすると、コードブロックのコメントも翻訳します。コメントがあるコードブロックは、左に原文のコード、右にコメントを訳したコードを並べて表示します。
+Turn on `bilingualMarkdown.translateCodeComments` to translate the comments in code blocks too. A code block with comments then shows the original code on the left and the code with its comments translated on the right.
 
-- 送るのはコメントの文章だけで、コードは送りません。文字列の中の `//` や `#` はコメントとして扱いません。
-- 何行も続くコメントは 1 つの文章としてまとめて訳し、元のコメントの幅で折り返します。行末のコメントは 1 行のまま訳します。
-- `eslint-disable`、`@ts-ignore`、`# noqa`、`//go:build` のような、ツールが読むコメントは訳しません。すでに訳文の言語で書かれたコメントも訳しません。
-- 対象は、```` ```python ```` のように開始フェンスに言語名を書いたコードブロックです。対応している言語は次のとおりです。
-  - `//` と `/* */`: JavaScript、TypeScript、C、C++、C#、Java、Kotlin、Scala、Swift、Dart、Go、Rust、PHP、Protocol Buffers、JSON（コメント付き）
-  - `#`: Python、Ruby、Perl、R、Elixir、シェル（sh、bash、zsh など）、PowerShell、YAML、TOML、Dockerfile、Makefile、CMake、Terraform（HCL）、GraphQL、nginx
-  - そのほか: CSS、SCSS、Less、SQL、Lua、Haskell、Clojure などの Lisp、INI、HTML、XML
+![A JavaScript function with English comments beside the same function with its comments in Japanese](images/code-comments.png)
 
-## セキュリティとプライバシー
+- Only the comment text is sent, never the code. A `//` or `#` inside a string is not taken for a comment.
+- A comment that spans several lines is translated as one passage and wrapped to the width of the original comment. A comment at the end of a line stays on one line.
+- Comments that tools read, such as `eslint-disable`, `@ts-ignore`, `# noqa` and `//go:build`, are not translated, and neither are comments already in the target language.
+- The code block's language must be named after its opening fence, as in ```` ```python ````. These languages are supported:
+  - `//` and `/* */`: JavaScript, TypeScript, C, C++, C#, Java, Kotlin, Scala, Swift, Dart, Go, Rust, PHP, Protocol Buffers, JSON with comments
+  - `#`: Python, Ruby, Perl, R, Elixir, shells (sh, bash, zsh and others), PowerShell, YAML, TOML, Dockerfile, Makefile, CMake, Terraform (HCL), GraphQL, nginx
+  - Others: CSS, SCSS, Less, SQL, Lua, Haskell, Clojure and other Lisps, INI, HTML, XML
 
-- 翻訳する文章は、選んだプロバイダーの API に送ります。送信先は `https://api.anthropic.com`、`https://api.openai.com/v1`、またはユーザー設定の `bilingualMarkdown.openai.baseUrl` だけです。`ANTHROPIC_BASE_URL`、`OPENAI_BASE_URL`、`OPENAI_ORG_ID`、`OPENAI_PROJECT_ID` などの環境変数は使いません。
-- コードブロック、front matter、インラインコード、URL、リンク先、HTML は送りません。ただし `bilingualMarkdown.translateCodeComments` をオンにしたときは、コードブロックのコメントの文章を送ります。
-- 制限モード（信頼していないワークスペース）では、翻訳先の言語・追加の指示・用語集・コメントの翻訳もユーザー設定の値だけを使います。
-- プレビューは厳格な Content Security Policy の下で表示し、Markdown 中の HTML は DOMPurify で無害化します。文書中のスクリプトやコマンド URI は実行しません。
-- リンクは `http`、`https`、`mailto` をブラウザーなどの外部アプリで開き、相対パスは VS Code で開きます。それ以外のスキームは開きません。
+## Security and privacy
 
-## 既知の制限
+- The text to translate is sent only to the provider you choose: `https://api.anthropic.com`, `https://api.openai.com/v1`, or the `bilingualMarkdown.openai.baseUrl` in your user settings. Environment variables such as `ANTHROPIC_BASE_URL`, `OPENAI_BASE_URL`, `OPENAI_ORG_ID` and `OPENAI_PROJECT_ID` are not used.
+- Code blocks, front matter, inline code, URLs, link targets and HTML are not sent. With `bilingualMarkdown.translateCodeComments` on, the text of the comments in code blocks is sent.
+- In Restricted Mode (an untrusted workspace), the target language, style instructions, glossary and code comment translation also come only from your user settings.
+- The extension collects no telemetry.
+- The preview runs under a strict Content Security Policy, and HTML in the Markdown is sanitized with DOMPurify. Scripts and command URIs in a document never run.
+- `http`, `https` and `mailto` links open in your browser or mail app, and relative links open in VS Code. Links with other schemes do not open.
 
-- `<details>` など HTML ブロックの中に Markdown を書くと、ブロックごとに別の行として表示されます（開閉はできません）。
-- すでに訳文の言語で書かれた段落やコメントを見分けられるのは、翻訳先が日本語のときだけです。ほかの言語では、その言語で書かれた段落やコメントも翻訳に送ります。
-- 数式や Mermaid の図は描画せず、元の記法のまま表示します。
-- コメントの翻訳は、Python の docstring や文字列の中の文章を訳しません。インデントで書いたコードブロックや、言語名のないコードブロックのコメントも訳しません。
+## Known limitations
 
-## 開発
+- Markdown inside an HTML block such as `<details>` is shown as separate rows, one per block, and cannot be folded.
+- Text already in the target language is recognized only when translating into Japanese. For other languages, such paragraphs and comments are sent for translation too.
+- Math and Mermaid diagrams are shown as written, not rendered.
+- Comment translation does not translate Python docstrings or other text in strings, or the comments in indented code blocks and in code blocks without a language.
 
-```bash
-npm install
-```
+## Contributing
 
-```bash
-npm run check
-```
+Bug reports and pull requests are welcome on [GitHub](https://github.com/yhay81/bilingual-markdown-preview/issues). [CONTRIBUTING.md](CONTRIBUTING.md) explains how to build and test the extension.
 
-```bash
-npm run package
-```
+## License
 
-- `npm run build` は `dist/` に出力し、`npm run watch` は変更を監視して出力し直します。`npm run check` は型チェックとテストを実行します。
-- VS Code でこのフォルダーを開いて F5 を押すと、拡張機能をデバッグ用のウィンドウで試せます。
-- `npm run package` は `.vsix` を作り、同梱したライブラリのライセンスを `dist/ThirdPartyNotices.txt` に書き出します。作った `.vsix` は、リポジトリのフォルダーで次のコマンドを実行するとインストールできます（ほかのフォルダーからは `.vsix` の場所をパスで指定します）。
-
-```bash
-code --install-extension bilingual-markdown-preview-0.1.0.vsix
-```
-
-## ライセンス
-
-未定です（`package.json` では `UNLICENSED`）。同梱しているサードパーティのライブラリのライセンスは、`.vsix` 内の `dist/ThirdPartyNotices.txt` にまとめています。
+[MIT](LICENSE). The licenses of the third-party libraries bundled with the extension are in `dist/ThirdPartyNotices.txt` inside the package.
