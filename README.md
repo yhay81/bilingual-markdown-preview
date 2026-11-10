@@ -2,7 +2,7 @@
 
 [日本語](README.ja.md)
 
-Preview Markdown with an LLM translation beside it, block by block. Translation uses your own API key (BYOK) for **Claude Haiku 5.5** (`claude-haiku-5-5`) or **GPT-6 Luna** (`gpt-6-luna`).
+Preview Markdown with an LLM translation beside it, block by block. Translate with **GitHub Copilot** or another language model in VS Code, with your own API key (BYOK) for **Claude Haiku 5.5** (`claude-haiku-5-5`) or **GPT-6 Luna** (`gpt-6-luna`), or with a model running on your computer.
 
 ![An English document on the left and its Japanese translation on the right, lined up block by block](images/screenshot.png)
 
@@ -12,23 +12,34 @@ Preview Markdown with an LLM translation beside it, block by block. Translation 
 - Leaves code blocks, front matter, image-only paragraphs and paragraphs already in the target language untranslated, and shows them across both columns.
 - Can also translate the comments in code blocks, and show the code with its comments translated beside the original. Only the comment text is sent.
 - Switches between Source, Side by side and Translation from the toolbar. The editor and the preview scroll together.
-- Translates what is on screen first, and shows each translation as it arrives.
+- Translates what is on screen first, and shows each translation as it arrives. Each request carries the text just before it, so terms and tone stay consistent.
 - Sends inline code, URLs, link targets and HTML as placeholders such as `⟦1⟧`, and puts them back unchanged. A translation that drops a placeholder is translated again automatically; if it still fails, the row shows a warning.
 - Caches translations on your computer (up to 20,000 entries). After an edit, only the blocks that changed are translated again.
-- Japanese translations use the polite です・ます style unless your style instructions say otherwise. A glossary fixes the translation of terms.
+- Lets you correct a translation by hand. Your edits are kept, and can be reverted to the machine translation.
+- Saves the translation as a Markdown file, such as `README.ja.md`, with code, links and markup exactly as in the source.
+- Renders math (`$…$` and `$$…$$`) with KaTeX and Mermaid diagrams, and folds `<details>` blocks on both sides at once.
+- Japanese translations use the polite です・ます style unless your style instructions say otherwise. A glossary fixes the translation of terms, in your settings or in a file the whole team shares.
+- A document can name its own target language in its front matter.
+- Can pause after a number of tokens, and shows how many tokens were used.
 - In a narrow panel, the translation goes under the source.
-- The interface is in English and Japanese.
+- The interface is in English, Japanese, Simplified Chinese and Korean.
 
 ## Getting started
 
-You need VS Code 1.101 or later and an API key from Anthropic or OpenAI.
+You need VS Code 1.101 or later, and one of these: GitHub Copilot, an API key from Anthropic or OpenAI, or a local server such as Ollama or LM Studio.
 
 1. Install **Markdown Translation Preview** from the Visual Studio Marketplace.
 2. Open a Markdown file and click the globe icon (**Open Bilingual Preview to the Side**) at the top right of the editor. You can also right-click the file in the Explorer, or run **Bilingual Markdown: Open Bilingual Preview** from the Command Palette.
-3. The first time, the preview asks for an API key. Click **Set API Key** and enter the key.
+3. The first time, the preview asks for an API key. Click **Set API Key** and enter the key, or click **Switch Provider** and choose **VS Code Language Model** to use GitHub Copilot.
 4. Translation starts. If a row fails, click **Retry** on that row.
 
-The preview translates into Japanese. To translate into another language, set `bilingualMarkdown.targetLanguage`, for example to `English` or `Simplified Chinese`.
+The preview translates into Japanese. To translate into another language, set `bilingualMarkdown.targetLanguage`, for example to `English` or `Simplified Chinese`. A single document can ask for another language in its front matter:
+
+```markdown
+---
+translate-to: French
+---
+```
 
 ## Commands
 
@@ -37,35 +48,86 @@ The preview translates into Japanese. To translate into another language, set `b
 | Bilingual Markdown: Open Bilingual Preview | Opens the preview. |
 | Bilingual Markdown: Open Bilingual Preview to the Side | Opens the preview beside the editor. |
 | Bilingual Markdown: Retranslate (Ignore Cache) | Translates the document in the preview again, without the cache. |
+| Bilingual Markdown: Save Translation as Markdown | Saves the translation as a Markdown file. Also on the preview's toolbar. |
 | Bilingual Markdown: Set API Key | Stores an API key. |
 | Bilingual Markdown: Clear API Key | Deletes a stored API key. |
-| Bilingual Markdown: Switch Translation Provider | Switches between Anthropic and OpenAI. |
+| Bilingual Markdown: Switch Translation Provider | Switches between Anthropic, OpenAI and a language model in VS Code. |
+| Bilingual Markdown: Choose VS Code Language Model | Chooses which language model in VS Code to translate with. |
 | Bilingual Markdown: Clear Translation Cache | Deletes the cached translations. |
 
-## API keys and cost
+## Providers and cost
 
-- Anthropic and OpenAI are supported. Translation is billed to the account that issued the key.
+### GitHub Copilot and other language models in VS Code
+
+Set `bilingualMarkdown.provider` to `vscode`, or run **Bilingual Markdown: Switch Translation Provider** and choose **VS Code Language Model**. No API key is needed: the extension uses a language model that another extension, such as GitHub Copilot, makes available in VS Code.
+
+- The first time, VS Code asks whether this extension may use the model. If you declined, allow it again from the Accounts menu under **Manage Language Model Access**.
+- **Bilingual Markdown: Choose VS Code Language Model** lists the models you can use. With `bilingualMarkdown.vscode.model` empty, the first GitHub Copilot model is used.
+- Requests count against your Copilot plan, as chat does.
+
+### Anthropic and OpenAI
+
+- Translation is billed to the account that issued the key.
 - You enter the key in a password box. It is kept in VS Code Secret Storage (your OS keychain), never in `settings.json`.
 - If the provider rejects the key (an authentication or permission error), translation stops, and the preview offers to set the key again or to switch providers.
+- The toolbar shows the tokens used in this VS Code session. `bilingualMarkdown.tokenLimit` pauses translation after that many tokens, until you click **Continue**.
+
+### Local models
+
+Any server with an OpenAI-compatible API works. Set `bilingualMarkdown.provider` to `openai`, and in your user settings point `bilingualMarkdown.openai.baseUrl` at the server and `bilingualMarkdown.openai.model` at a model it serves. A server on your own computer needs no API key.
+
+| Server | `bilingualMarkdown.openai.baseUrl` |
+| --- | --- |
+| [Ollama](https://ollama.com) | `http://localhost:11434/v1` |
+| [LM Studio](https://lmstudio.ai) | `http://localhost:1234/v1` |
+| llama.cpp (`llama-server`) | `http://localhost:8080/v1` |
+
+Small models translate less accurately and more often drop the placeholders that stand for code and links; the preview then shows a warning on the row.
 
 ## Settings
 
 | Setting | Default | Description |
 | --- | --- | --- |
-| `bilingualMarkdown.provider` | `anthropic` | Translation provider: `anthropic` or `openai`. |
-| `bilingualMarkdown.targetLanguage` | `Japanese` | Language to translate into, written as you would tell a translator, such as `English` or `Simplified Chinese`. |
+| `bilingualMarkdown.provider` | `anthropic` | Translation provider: `anthropic`, `openai`, or `vscode` for a language model in VS Code. |
+| `bilingualMarkdown.targetLanguage` | `Japanese` | Language to translate into, written as you would tell a translator, such as `English` or `Simplified Chinese`. `translate-to` in a document's front matter overrides it. |
 | `bilingualMarkdown.anthropic.model` | `claude-haiku-5-5` | Anthropic model ID. |
 | `bilingualMarkdown.openai.model` | `gpt-6-luna` | OpenAI model ID. |
-| `bilingualMarkdown.openai.baseUrl` | (empty) | Base URL of an OpenAI-compatible API, such as a company gateway. Empty means `https://api.openai.com/v1`. Only `https://` URLs, and `http://` URLs to `localhost`, `127.0.0.1` or `[::1]`, are accepted. |
+| `bilingualMarkdown.openai.baseUrl` | (empty) | Base URL of an OpenAI-compatible API, such as a company gateway or a [local server](#local-models). Empty means `https://api.openai.com/v1`. Only `https://` URLs, and `http://` URLs to `localhost`, `127.0.0.1` or `[::1]`, are accepted. |
+| `bilingualMarkdown.vscode.model` | (empty) | Language model in VS Code, as a model ID or family. Empty means the first GitHub Copilot model. |
 | `bilingualMarkdown.reasoningEffort` | `none` | How much the model reasons before it answers: `none`, `low`, `medium`, `high` or `default`. `none` is usually enough for translation. |
 | `bilingualMarkdown.styleInstructions` | (empty) | Extra instructions for the translator, such as `Use the plain である style.` |
-| `bilingualMarkdown.glossary` | `{}` | Fixed translations for terms, such as `{ "pull request": "プルリクエスト" }`. |
+| `bilingualMarkdown.glossary` | `{}` | Fixed translations for terms, such as `{ "pull request": "プルリクエスト" }`. See [Glossary file](#glossary-file). |
 | `bilingualMarkdown.translateCodeComments` | `false` | Also translate the comments in code blocks. See [Translating code comments](#translating-code-comments). |
 | `bilingualMarkdown.maxConcurrentRequests` | `3` | Maximum number of translation requests in flight at once (1–8). |
 | `bilingualMarkdown.batchCharacterLimit` | `4000` | Approximate number of source characters in one request (500–20000). |
+| `bilingualMarkdown.tokenLimit` | `0` | Pause translation after this many tokens in one VS Code session. `0` means no limit. Counted for Anthropic, and for OpenAI at api.openai.com. |
 | `bilingualMarkdown.syncScroll` | `true` | Keeps the editor and the preview scrolled to the same place. |
 
-The provider, the models, the base URL, the reasoning effort, the number of requests and the request size can be changed only in your user settings. A workspace's settings do not change them.
+The provider, the models, the base URL, the reasoning effort, the number of requests, the request size and the token limit can be changed only in your user settings. A workspace's settings do not change them.
+
+## Glossary file
+
+A team can share its glossary in `.vscode/translation-glossary.json` at the root of the workspace:
+
+```json
+{
+  "pull request": "プルリクエスト",
+  "deploy": "デプロイ"
+}
+```
+
+The preview reads the file again when it changes. When a term is both in the file and in `bilingualMarkdown.glossary`, the setting wins.
+
+## Editing and saving the translation
+
+- Hover over a translation and click ✎ to correct it. **Save** (or Ctrl+Enter / Cmd+Enter) keeps your text; Escape cancels. An edited row shows **Edited**, and **Revert** goes back to the machine translation. Edits are kept on your computer, survive retranslation, and are not deleted by **Clear Translation Cache**.
+- Click ⤓ on the toolbar, or run **Bilingual Markdown: Save Translation as Markdown**, to save the translation as a Markdown file next to the document, such as `README.ja.md`. Code, links, front matter and blank lines are copied as written, and your edits are included. Text that is not translated yet is saved as written, and the extension tells you how much.
+
+## Math, diagrams and details
+
+- Math between `$…$` and `$$…$$` is rendered with KaTeX, as in VS Code's own Markdown preview. Math is never sent for translation.
+- Code blocks marked ```` ```mermaid ```` are drawn as diagrams. The diagram library loads only when a document has one.
+- A `<details>` block folds and opens on both sides together, and the text of its `<summary>` is translated.
 
 ## Translating code comments
 
@@ -83,18 +145,17 @@ Turn on `bilingualMarkdown.translateCodeComments` to translate the comments in c
 
 ## Security and privacy
 
-- The text to translate is sent only to the provider you choose: `https://api.anthropic.com`, `https://api.openai.com/v1`, or the `bilingualMarkdown.openai.baseUrl` in your user settings. Environment variables such as `ANTHROPIC_BASE_URL`, `OPENAI_BASE_URL`, `OPENAI_ORG_ID` and `OPENAI_PROJECT_ID` are not used.
-- Code blocks, front matter, inline code, URLs, link targets and HTML are not sent. With `bilingualMarkdown.translateCodeComments` on, the text of the comments in code blocks is sent.
-- In Restricted Mode (an untrusted workspace), the target language, style instructions, glossary and code comment translation also come only from your user settings.
+- The text to translate is sent only to the provider you choose: `https://api.anthropic.com`, `https://api.openai.com/v1`, the `bilingualMarkdown.openai.baseUrl` in your user settings, or the language model in VS Code that you allowed. Environment variables such as `ANTHROPIC_BASE_URL`, `OPENAI_BASE_URL`, `OPENAI_ORG_ID` and `OPENAI_PROJECT_ID` are not used.
+- Code blocks, front matter, inline code, math, URLs, link targets and HTML are not sent. With `bilingualMarkdown.translateCodeComments` on, the text of the comments in code blocks is sent.
+- In Restricted Mode (an untrusted workspace), the target language, style instructions, glossary and code comment translation also come only from your user settings. The glossary file and `translate-to` in front matter are not used.
 - The extension collects no telemetry.
 - The preview runs under a strict Content Security Policy, and HTML in the Markdown is sanitized with DOMPurify. Scripts and command URIs in a document never run.
 - `http`, `https` and `mailto` links open in your browser or mail app, and relative links open in VS Code. Links with other schemes do not open.
 
 ## Known limitations
 
-- Markdown inside an HTML block such as `<details>` is shown as separate rows, one per block, and cannot be folded.
-- Text already in the target language is recognized only when translating into Japanese. For other languages, such paragraphs and comments are sent for translation too.
-- Math and Mermaid diagrams are shown as written, not rendered.
+- Text already in the target language is recognized for Japanese, Chinese, Korean, Russian, Ukrainian, Greek, Arabic, Hebrew, Thai, Hindi, English, Spanish, French, German, Portuguese and Italian. It is recognized only when it is clearly in that language; short or mixed text is sent for translation.
+- Text in other HTML blocks than `<summary>` is not translated.
 - Comment translation does not translate Python docstrings or other text in strings, or the comments in indented code blocks and in code blocks without a language.
 
 ## Contributing
