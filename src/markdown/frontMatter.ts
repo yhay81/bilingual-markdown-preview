@@ -30,3 +30,25 @@ export function splitFrontMatter(text: string): SplitDocument {
     bodyLineOffset: lineCount,
   };
 }
+
+/** Front matter key that sets the language a document is translated into, as in `translate-to: English`. */
+export const TARGET_LANGUAGE_KEY = "translate-to";
+
+/**
+ * The language a document asks to be translated into, from its front matter. Only a plain one-line
+ * value of at most 60 characters counts, since it goes into the prompt.
+ */
+export function documentTargetLanguage(text: string): string | undefined {
+  const { frontMatter } = splitFrontMatter(text.replace(/\r\n?/g, "\n"));
+  if (!frontMatter) return undefined;
+  for (const line of frontMatter.raw.split("\n")) {
+    const match = /^translate-to[ \t]*:[ \t]*(.*?)[ \t]*$/.exec(line);
+    if (!match) continue;
+    let value = match[1]!.replace(/[ \t]+#.*$/, "");
+    const quoted = /^(["'])(.*)\1$/.exec(value);
+    if (quoted) value = quoted[2]!;
+    value = value.trim();
+    return value && value.length <= 60 && /^[\p{L}\p{M}\p{N} ()_-]+$/u.test(value) ? value : undefined;
+  }
+  return undefined;
+}

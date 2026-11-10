@@ -1,5 +1,6 @@
 import type { MarkdownIt } from "markdown-it";
 import * as vscode from "vscode";
+import { documentTargetLanguage } from "../markdown/frontMatter";
 import type { RowRenderer } from "../markdown/render";
 import type { Row, SegmentedDocument, Unit } from "../markdown/segment";
 import { segmentDocument } from "../markdown/segment";
@@ -57,6 +58,9 @@ interface Prepared {
   rows: PreparedRow[];
   /** Rows containing each key. Its size is the number of distinct segments to translate. */
   rowsByKey: Map<string, number[]>;
+  /** Set when the document's front matter chooses the language; otherwise the configured one is used. */
+  documentLanguage: string | undefined;
+  targetLanguage: string;
   label: string;
 }
 
@@ -241,9 +245,13 @@ export class BilingualPreview implements vscode.Disposable {
 
   private prepare(): Prepared {
     const config = this.context.getConfig();
-    const fingerprint = fingerprintOf(config);
-    const doc = segmentDocument(this.context.md, this.document.getText(), {
-      targetLanguage: config.targetLanguage,
+    const text = this.document.getText();
+    // Like the target language setting, the document's choice counts only in a trusted workspace.
+    const documentLanguage = vscode.workspace.isTrusted ? documentTargetLanguage(text) : undefined;
+    const targetLanguage = documentLanguage ?? config.targetLanguage;
+    const fingerprint = fingerprintOf({ ...config, targetLanguage });
+    const doc = segmentDocument(this.context.md, text, {
+      targetLanguage,
       translateCodeComments: config.translateCodeComments,
     });
     const slugger = new Slugger();
@@ -259,7 +267,15 @@ export class BilingualPreview implements vscode.Disposable {
       }
       return { row, sourceHtml: this.context.renderer.renderSource(row, doc.env, slugger), keys };
     });
-    return { version: ++this.version, doc, rows, rowsByKey, label: `${modelLabelOf(config)} → ${config.targetLanguage}` };
+    return {
+      version: ++this.version,
+      doc,
+      rows,
+      rowsByKey,
+      documentLanguage,
+      targetLanguage,
+      label: `${modelLabelOf(config)} → ${targetLanguage}`,
+    };
   }
 
   private requestTranslations(): void {
@@ -270,7 +286,16 @@ export class BilingualPreview implements vscode.Disposable {
     for (const { row, keys } of prepared.rows) {
       row.units.forEach((unit, k) => {
         const key = keys[k];
-        if (key) jobs.push({ key, masked: unit.masked, placeholders: unit.placeholders, line: row.startLine, kind: kindOf(unit) });
+        if (key) {
+          jobs.push({
+            key,
+            masked: unit.masked,
+            placeholders: unit.placeholders,
+            line: row.startLine,
+            kind: kindOf(unit),
+            targetLanguage: prepared.documentLanguage,
+          });
+        }
       });
     }
     this.context.service.request(this.owner, jobs);

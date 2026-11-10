@@ -15,7 +15,7 @@
   "config.provider.anthropic": "Anthropic (Claude)",
   "config.provider.openai": "OpenAI, or an OpenAI-compatible endpoint",
   "config.provider.vscode": "A language model in VS Code, such as GitHub Copilot: no API key",
-  "config.targetLanguage": "Language to translate into, written as you would tell a translator, e.g. `Japanese`, `English`, `Simplified Chinese`.",
+  "config.targetLanguage": "Language to translate into, written as you would tell a translator, e.g. `Japanese`, `English`, `Simplified Chinese`. A document can ask for another language with `translate-to: French` in its front matter.",
   "config.anthropic.model": "Anthropic model ID. Tuned for `claude-haiku-5-5`.",
   "config.openai.model": "OpenAI model ID. Tuned for `gpt-6-luna`.",
   "config.openai.baseUrl": "Base URL of an OpenAI-compatible API, e.g. a company gateway, or a local server such as Ollama (`http://localhost:11434/v1`) or LM Studio (`http://localhost:1234/v1`). Leave empty for api.openai.com. Must be `https://` (or `http://localhost`). A server on this machine needs no API key. Only user settings can set this, so a workspace cannot redirect your key.",
@@ -33,5 +33,5 @@
   "config.batchCharacterLimit": "Approximate number of source characters sent in one request.",
   "config.tokenLimit": "Pause translation after this many tokens (input and output) in one VS Code session, and ask before going on. `0` means no limit. Counted only for providers that report usage: Anthropic, and OpenAI at api.openai.com.",
   "config.syncScroll": "Keep the editor and the preview scrolled to the same place.",
-  "capabilities.untrustedWorkspaces": "In Restricted Mode, the target language, style instructions, glossary, and code comment translation come only from your user settings: the workspace's settings and its glossary file are not used."
+  "capabilities.untrustedWorkspaces": "In Restricted Mode, the target language, style instructions, glossary, and code comment translation come only from your user settings: the workspace's settings, its glossary file and `translate-to` in front matter are not used."
 }

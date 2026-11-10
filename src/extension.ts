@@ -102,7 +102,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     glossaryWatcher.onDidChange(() => void reloadGlossary()),
     glossaryWatcher.onDidDelete(() => void reloadGlossary()),
     vscode.workspace.onDidChangeWorkspaceFolders(() => void reloadGlossary()),
-    vscode.workspace.onDidGrantWorkspaceTrust(() => void reloadGlossary()),
+    vscode.workspace.onDidGrantWorkspaceTrust(() => {
+      void reloadGlossary();
+      // Documents may now choose their own target language.
+      manager.refreshAll();
+    }),
     keys.onDidChange(() => {
       factory.invalidate();
       service.unblock();

@@ -403,4 +403,14 @@ describe("TranslationService", () => {
     expect(limited.getResult("b")?.state).toBe("done");
     service.dispose();
   });
+
+  it("translates into a document's own language, never mixing languages in one request", async () => {
+    const { service, provider } = setup();
+    service.request("p1", [{ ...job("a", 0), targetLanguage: "English" }, job("b", 1), { ...job("c", 2), targetLanguage: "English" }]);
+    await settle();
+    const systems = provider.requests.map((request) => request.system);
+    expect(provider.sent()).toEqual([["Text a", "Text c"], ["Text b"]]);
+    expect(systems[0]).toContain("into English");
+    expect(systems[1]).toContain("into Japanese");
+  });
 });

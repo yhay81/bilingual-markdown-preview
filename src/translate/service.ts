@@ -24,6 +24,8 @@ export interface TranslationJob {
   line: number;
   /** Inline Markdown unless said otherwise. */
   kind?: SegmentKind;
+  /** Language to translate into when the document sets its own; otherwise the configured one. */
+  targetLanguage?: string;
 }
 
 export interface JobError {
@@ -79,6 +81,7 @@ interface Entry {
   masked: string;
   placeholderCount: number;
   kind: SegmentKind;
+  targetLanguage: string | undefined;
   state: "queued" | "inflight";
   attempts: number;
   /** Send alone: set after the segment failed inside a batch. */
@@ -265,6 +268,7 @@ export class TranslationService {
       masked: job.masked,
       placeholderCount: job.placeholders.length,
       kind: job.kind ?? "markdown",
+      targetLanguage: job.targetLanguage,
       state: "queued",
       attempts: 0,
       solo: false,
@@ -338,7 +342,8 @@ export class TranslationService {
     let chars = first.masked.length;
     for (let i = 1; i < queued.length && batch.length < MAX_SEGMENTS_PER_BATCH; i++) {
       const entry = queued[i]!.entry;
-      if (entry.solo) continue;
+      // One request translates into one language.
+      if (entry.solo || entry.targetLanguage !== first.targetLanguage) continue;
       // Stop rather than skip, so a batch stays a contiguous stretch of the document.
       if (chars + entry.masked.length > charLimit) break;
       batch.push(entry);
@@ -370,10 +375,12 @@ export class TranslationService {
       if (this.isLive(entry)) this.accept(entry, raw);
     });
     const chars = batch.entries.reduce((sum, entry) => sum + entry.masked.length, 0);
+    const first = batch.entries[0]!;
+    const prompt = first.targetLanguage ? { ...config.prompt, targetLanguage: first.targetLanguage } : config.prompt;
 
     try {
       const result = await provider.translate({
-        system: buildSystemPrompt(config.prompt, { comments: batch.entries.some((entry) => entry.kind === "comment") }),
+        system: buildSystemPrompt(prompt, { comments: batch.entries.some((entry) => entry.kind === "comment") }),
         user: buildUserMessage(batch.entries.map((entry, index) => ({ id: index + 1, text: entry.masked, kind: entry.kind }))),
         maxOutputTokens: maxOutputTokens(chars, batch.entries.length, config.usesReasoning),
         signal: batch.controller.signal,
