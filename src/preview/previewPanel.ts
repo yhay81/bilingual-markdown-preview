@@ -64,6 +64,9 @@ interface Prepared {
   label: string;
 }
 
+/** Characters of preceding text sent with a request, so terms and tone carry over between requests. */
+const CONTEXT_CHARS = 400;
+
 let nextOwner = 1;
 
 /** One preview panel showing one Markdown document with its translation. */
@@ -283,6 +286,7 @@ export class BilingualPreview implements vscode.Disposable {
     const prepared = this.current;
     if (!prepared || this.disposed) return;
     const jobs: TranslationJob[] = [];
+    let before = "";
     for (const { row, keys } of prepared.rows) {
       row.units.forEach((unit, k) => {
         const key = keys[k];
@@ -294,8 +298,10 @@ export class BilingualPreview implements vscode.Disposable {
             line: row.startLine,
             kind: kindOf(unit),
             targetLanguage: prepared.documentLanguage,
+            context: before || undefined,
           });
         }
+        if (!unit.comment) before = `${before}\n${contextText(unit.masked)}`.slice(-CONTEXT_CHARS);
       });
     }
     this.context.service.request(this.owner, jobs);
@@ -575,4 +581,9 @@ function definedKeys(keys: ReadonlyArray<string | undefined>): string[] {
 
 function sameUpdate(a: RowUpdate | undefined, b: RowUpdate): boolean {
   return a !== undefined && a.status === b.status && a.translationHtml === b.translationHtml && a.message === b.message;
+}
+
+/** Masked text as context: placeholders stand for code and links, which are not sent. */
+function contextText(masked: string): string {
+  return masked.replace(/⟦\d+⟧/g, "").replace(/[ \t]+/g, " ").trim();
 }

@@ -413,4 +413,11 @@ describe("TranslationService", () => {
     expect(systems[0]).toContain("into English");
     expect(systems[1]).toContain("into Japanese");
   });
+
+  it("sends the text before a request as context", async () => {
+    const { service, provider } = setup();
+    service.request("p1", [{ ...job("a", 0), context: "Earlier paragraph." }, { ...job("b", 1), context: "Text a" }]);
+    await settle();
+    expect(provider.requests[0]!.user).toBe('<context>Earlier paragraph.</context>\n<seg id="1">Text a</seg>\n<seg id="2">Text b</seg>');
+  });
 });

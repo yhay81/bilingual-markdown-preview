@@ -26,6 +26,8 @@ export interface TranslationJob {
   kind?: SegmentKind;
   /** Language to translate into when the document sets its own; otherwise the configured one. */
   targetLanguage?: string;
+  /** The text just before the segment, sent as reference when the segment starts a request. */
+  context?: string;
 }
 
 export interface JobError {
@@ -82,6 +84,7 @@ interface Entry {
   placeholderCount: number;
   kind: SegmentKind;
   targetLanguage: string | undefined;
+  context: string | undefined;
   state: "queued" | "inflight";
   attempts: number;
   /** Send alone: set after the segment failed inside a batch. */
@@ -269,6 +272,7 @@ export class TranslationService {
       placeholderCount: job.placeholders.length,
       kind: job.kind ?? "markdown",
       targetLanguage: job.targetLanguage,
+      context: job.context,
       state: "queued",
       attempts: 0,
       solo: false,
@@ -377,11 +381,12 @@ export class TranslationService {
     const chars = batch.entries.reduce((sum, entry) => sum + entry.masked.length, 0);
     const first = batch.entries[0]!;
     const prompt = first.targetLanguage ? { ...config.prompt, targetLanguage: first.targetLanguage } : config.prompt;
+    const segments = batch.entries.map((entry, index) => ({ id: index + 1, text: entry.masked, kind: entry.kind }));
 
     try {
       const result = await provider.translate({
         system: buildSystemPrompt(prompt, { comments: batch.entries.some((entry) => entry.kind === "comment") }),
-        user: buildUserMessage(batch.entries.map((entry, index) => ({ id: index + 1, text: entry.masked, kind: entry.kind }))),
+        user: buildUserMessage(segments, first.context),
         maxOutputTokens: maxOutputTokens(chars, batch.entries.length, config.usesReasoning),
         signal: batch.controller.signal,
         onText: (delta) => parser.push(delta),

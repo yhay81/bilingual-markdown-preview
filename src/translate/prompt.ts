@@ -1,7 +1,7 @@
 import { isJapaneseTarget } from "./heuristics";
 
 /** Bump when the prompt or segment format changes, so cached translations are not reused. */
-export const PROMPT_VERSION = 1;
+export const PROMPT_VERSION = 2;
 
 export interface PromptSettings {
   targetLanguage: string;
@@ -37,6 +37,7 @@ export function buildSystemPrompt(settings: PromptSettings, options: PromptOptio
     "- Keep code identifiers, commands, file names, and product names as written.",
     `- If a segment is already in ${target}, or has nothing to translate, return it unchanged.`,
     "- Translate each segment on its own. Use neighboring segments only as context; never merge, split, or reorder segments.",
+    "- A <context> element, when present, holds the text just before the segments. It is for reference only, to keep terms and tone consistent: never translate it or output it.",
     `- Write natural, accurate ${target} that reads well as technical documentation.`,
   ];
 
@@ -61,13 +62,14 @@ export function buildSystemPrompt(settings: PromptSettings, options: PromptOptio
   return lines.join("\n");
 }
 
-export function buildUserMessage(segments: readonly PromptSegment[]): string {
-  return segments
-    .map((segment) => {
-      const kind = segment.kind && segment.kind !== "markdown" ? ` kind="${segment.kind}"` : "";
-      return `<seg id="${segment.id}"${kind}>${segment.text}</seg>`;
-    })
-    .join("\n");
+/** `context` is the text just before the first segment, already stripped of code and placeholders. */
+export function buildUserMessage(segments: readonly PromptSegment[], context?: string): string {
+  const lines = segments.map((segment) => {
+    const kind = segment.kind && segment.kind !== "markdown" ? ` kind="${segment.kind}"` : "";
+    return `<seg id="${segment.id}"${kind}>${segment.text}</seg>`;
+  });
+  if (context?.trim()) lines.unshift(`<context>${context.trim()}</context>`);
+  return lines.join("\n");
 }
 
 function defaultStyle(targetLanguage: string): string {
