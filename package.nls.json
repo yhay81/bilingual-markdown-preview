@@ -5,6 +5,7 @@
   "command.openPreview": "Open Bilingual Preview",
   "command.openPreviewToSide": "Open Bilingual Preview to the Side",
   "command.retranslate": "Retranslate (Ignore Cache)",
+  "command.exportTranslation": "Save Translation as Markdown",
   "command.setApiKey": "Set API Key",
   "command.clearApiKey": "Clear API Key",
   "command.switchProvider": "Switch Translation Provider",

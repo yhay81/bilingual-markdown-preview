@@ -94,6 +94,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.commands.registerCommand("bilingualMarkdown.switchProvider", () => commands.switchProvider()),
     vscode.commands.registerCommand("bilingualMarkdown.clearCache", () => commands.clearCache()),
     vscode.commands.registerCommand("bilingualMarkdown.chooseModel", () => commands.chooseModel()),
+    vscode.commands.registerCommand("bilingualMarkdown.exportTranslation", (target?: unknown) => commands.exportTranslation(target)),
     vscode.workspace.onDidChangeConfiguration((event) => {
       if (event.affectsConfiguration(CONFIG_SECTION)) applyConfig();
     }),
@@ -157,10 +158,19 @@ class Commands {
   }
 
   retranslate(): void {
-    const editor = vscode.window.activeTextEditor;
-    const preview = this.manager.activePreview ?? (editor ? this.manager.previewFor(editor.document.uri) : undefined);
+    const preview = this.currentPreview();
     if (preview) preview.retranslate();
     else void vscode.window.showInformationMessage(vscode.l10n.t("Open a bilingual preview first."));
+  }
+
+  /** Saves the translation of the current preview. Tests pass the file to write to. */
+  async exportTranslation(target?: unknown): Promise<vscode.Uri | undefined> {
+    const preview = this.currentPreview();
+    if (!preview) {
+      void vscode.window.showInformationMessage(vscode.l10n.t("Open a bilingual preview first."));
+      return undefined;
+    }
+    return preview.exportTranslation(target instanceof vscode.Uri ? target : undefined);
   }
 
   /** Picks the model for the VS Code Language Model API from the models VS Code offers. */
@@ -275,6 +285,11 @@ class Commands {
     return this.pickProvider(placeHolder, current, candidates);
   }
 
+  private currentPreview() {
+    const editor = vscode.window.activeTextEditor;
+    return this.manager.activePreview ?? (editor ? this.manager.previewFor(editor.document.uri) : undefined);
+  }
+
   private async documentFor(uri: unknown): Promise<vscode.TextDocument | undefined> {
     if (uri instanceof vscode.Uri) return vscode.workspace.openTextDocument(uri);
     const editor = vscode.window.activeTextEditor;
@@ -304,6 +319,7 @@ async function runHostAction(action: HostAction, extensionId: string): Promise<v
     case "retranslate":
     case "retryFailed":
     case "resume":
+    case "exportTranslation":
       // Handled by the preview itself.
       break;
   }

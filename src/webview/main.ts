@@ -2,6 +2,7 @@ import DOMPurify from "dompurify";
 import {
   VIEW_MODES,
   isViewMode,
+  type HostAction,
   type HostToWebview,
   type InitData,
   type Notice,
@@ -118,10 +119,17 @@ function buildToolbar(): void {
   progressEl.className = "progress";
   const spacer = document.createElement("span");
   spacer.className = "spacer";
-  toolbar.append(group, progressEl, spacer, toolButton("↻", strings.retranslate, "retranslate"), toolButton("⚙", strings.settings, "openSettings"));
+  toolbar.append(
+    group,
+    progressEl,
+    spacer,
+    toolButton("⤓", strings.exportTranslation, "exportTranslation"),
+    toolButton("↻", strings.retranslate, "retranslate"),
+    toolButton("⚙", strings.settings, "openSettings"),
+  );
 }
 
-function toolButton(icon: string, label: string, action: "retranslate" | "openSettings"): HTMLButtonElement {
+function toolButton(icon: string, label: string, action: HostAction): HTMLButtonElement {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "tool";

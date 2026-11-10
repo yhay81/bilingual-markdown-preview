@@ -1,5 +1,6 @@
 import type { MarkdownIt } from "markdown-it";
 import * as vscode from "vscode";
+import { exportFileName, exportTranslation } from "../markdown/export";
 import { documentTargetLanguage } from "../markdown/frontMatter";
 import type { RowRenderer } from "../markdown/render";
 import type { Row, SegmentedDocument, Unit } from "../markdown/segment";
@@ -141,6 +142,35 @@ export class BilingualPreview implements vscode.Disposable {
     this.render(true);
   }
 
+  /** Writes the translated Markdown to a file, by default `README.ja.md` beside `README.md`. */
+  async exportTranslation(target?: vscode.Uri): Promise<vscode.Uri | undefined> {
+    const prepared = this.current ?? this.prepare();
+    const { markdown, untranslated } = exportTranslation(this.context.md, this.document.getText(), prepared.doc, (row, unit) =>
+      this.translationOf(prepared, row, unit),
+    );
+    let uri = target;
+    if (!uri) {
+      const name = exportFileName(this.document.uri.path.split("/").pop() || "document.md", prepared.targetLanguage);
+      const folder = this.document.uri.scheme === "untitled" ? vscode.workspace.workspaceFolders?.[0]?.uri : vscode.Uri.joinPath(this.document.uri, "..");
+      uri = await vscode.window.showSaveDialog({
+        defaultUri: folder ? vscode.Uri.joinPath(folder, name) : undefined,
+        filters: { Markdown: ["md"] },
+        saveLabel: vscode.l10n.t("Save Translation"),
+      });
+      if (!uri) return undefined;
+    }
+    await vscode.workspace.fs.writeFile(uri, new TextEncoder().encode(markdown));
+    if (!target) {
+      await vscode.window.showTextDocument(uri, { preview: false });
+      if (untranslated > 0) {
+        void vscode.window.showWarningMessage(
+          vscode.l10n.t("{0} segments are not translated yet, so they were saved as written.", untranslated),
+        );
+      }
+    }
+    return uri;
+  }
+
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
@@ -188,6 +218,16 @@ export class BilingualPreview implements vscode.Disposable {
     }
   }
 
+  /** The text shown for one unit: the finished translation with code and links restored. */
+  private translationOf(prepared: Prepared, rowIndex: number, unitIndex: number): string | undefined {
+    const entry = prepared.rows[rowIndex];
+    const key = entry?.keys[unitIndex];
+    const unit = entry?.row.units[unitIndex];
+    if (!key || !unit) return undefined;
+    const result = this.context.service.getResult(key);
+    return result?.state === "done" ? unmask(result.text, unit.placeholders) : undefined;
+  }
+
   private onAction(action: HostAction): void {
     switch (action) {
       case "retranslate":
@@ -195,6 +235,9 @@ export class BilingualPreview implements vscode.Disposable {
         break;
       case "resume":
         this.context.service.resume();
+        break;
+      case "exportTranslation":
+        void this.exportTranslation();
         break;
       case "retryFailed": {
         const prepared = this.current;
@@ -564,6 +607,7 @@ function uiStrings(): UiStrings {
     retranslate: vscode.l10n.t("Retranslate"),
     settings: vscode.l10n.t("Settings"),
     retry: vscode.l10n.t("Retry"),
+    exportTranslation: vscode.l10n.t("Save Translation as Markdown"),
     tokens: vscode.l10n.t("{0} tokens", "{0}"),
     // The webview fills in the placeholders.
     progress: vscode.l10n.t("{0}/{1} translated", "{0}", "{1}"),

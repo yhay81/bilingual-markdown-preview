@@ -86,6 +86,12 @@
         "icon": "$(refresh)"
       },
       {
+        "command": "bilingualMarkdown.exportTranslation",
+        "title": "%command.exportTranslation%",
+        "category": "%category%",
+        "icon": "$(save-as)"
+      },
+      {
         "command": "bilingualMarkdown.setApiKey",
         "title": "%command.setApiKey%",
         "category": "%category%",
@@ -123,6 +129,11 @@
           "command": "bilingualMarkdown.retranslate",
           "when": "activeWebviewPanelId == 'bilingualMarkdown.preview'",
           "group": "navigation"
+        },
+        {
+          "command": "bilingualMarkdown.exportTranslation",
+          "when": "activeWebviewPanelId == 'bilingualMarkdown.preview'",
+          "group": "navigation"
         }
       ],
       "explorer/context": [
@@ -140,6 +151,10 @@
         {
           "command": "bilingualMarkdown.openPreviewToSide",
           "when": "editorLangId == markdown"
+        },
+        {
+          "command": "bilingualMarkdown.exportTranslation",
+          "when": "editorLangId == markdown || activeWebviewPanelId == 'bilingualMarkdown.preview'"
         }
       ]
     },
