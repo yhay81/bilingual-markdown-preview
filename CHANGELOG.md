@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0
 
 - Settings, commands and the command category are named after the extension: `markdownTranslation.*` and **Markdown Translation: …**, no longer `bilingualMarkdown.*` and **Bilingual Markdown: …**. Your settings, stored API keys and view mode are moved to the new names when the extension starts. Keybindings to the old command IDs need updating.
 - Translate with your own key for OpenRouter, Vercel AI Gateway, Google Gemini, DeepSeek, Mistral AI or xAI, as well as Anthropic and OpenAI. Each provider keeps its own key and model.
