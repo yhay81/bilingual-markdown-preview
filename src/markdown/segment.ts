@@ -26,6 +26,8 @@ export interface Unit {
   translatable: boolean;
   /** A comment in a code block: which of the row's fenced code blocks holds it, and where. Inline Markdown has none. */
   comment?: { block: number; slot: CommentSlot };
+  /** The text of a `<summary>` in an HTML block, which the preview folds by. */
+  summary?: boolean;
 }
 
 export interface Row {
@@ -68,6 +70,11 @@ interface Context {
 }
 
 const COMMENT_RE = /<!--[\s\S]*?-->/g;
+const DETAILS_OPEN_RE = /^\s*<details(?=[\s>])([^>]*)>/i;
+const DETAILS_CLOSE_RE = /<\/details\s*>/i;
+const OPEN_ATTRIBUTE_RE = /(?:^|\s)open(?:[\s=]|$)/i;
+/** The text of a `<summary>`; also used to find it again when rendering. */
+export const SUMMARY_RE = /(<summary(?=[\s>])[^>]*>)([\s\S]*?)(<\/summary\s*>)/i;
 
 export function segmentDocument(md: MarkdownIt, text: string, options: SegmentOptions): SegmentedDocument {
   const { frontMatter, body, bodyLineOffset } = splitFrontMatter(text.replace(/\r\n?/g, "\n"));
@@ -167,7 +174,7 @@ function createRow(context: Context, type: RowType, map: readonly [number, numbe
   if (type === "html" && source.replace(COMMENT_RE, "").trim() === "") return undefined;
 
   const hasUnits = type === "block" || type === "listItem" || (type === "code" && context.translateCodeComments);
-  const units = hasUnits ? unitsOf(context, source) : [];
+  const units = hasUnits ? unitsOf(context, source) : type === "html" ? summaryUnits(context, source, classes) : [];
   return {
     type,
     shared: units.every((unit) => !unit.translatable),
@@ -192,6 +199,25 @@ function unitsOf(context: Context, source: string): Unit[] {
     });
   }
   return units;
+}
+
+/**
+ * `<details>` blocks: the opening row is marked so the preview can fold the rows up to the closing
+ * one, and the text of its `<summary>` is translated.
+ */
+function summaryUnits(context: Context, source: string, classes: string[]): Unit[] {
+  const open = DETAILS_OPEN_RE.exec(source);
+  if (open && !DETAILS_CLOSE_RE.test(source)) {
+    classes.push("details-open");
+    if (OPEN_ATTRIBUTE_RE.test(open[1]!)) classes.push("details-start-open");
+  } else if (!open && source.replace(COMMENT_RE, "").trim().replace(DETAILS_CLOSE_RE, "") === "") {
+    classes.push("details-close");
+  }
+  const summary = SUMMARY_RE.exec(source);
+  const text = summary?.[2]!.trim();
+  if (!text) return [];
+  const unit = textUnit(context, text, false);
+  return unit.translatable ? [{ ...unit, summary: true }] : [];
 }
 
 function textUnit(context: Context, source: string, plainText: boolean): Unit {

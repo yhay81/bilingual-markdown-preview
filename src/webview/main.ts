@@ -59,6 +59,8 @@ let views: RowView[] = [];
 let suppressScrollUntil = 0;
 let scrollFrame = 0;
 let lastSentLine = -1;
+/** Whether each `<details>` row is open, by its line, kept across renders. */
+const detailsOpen = new Map<number, boolean>();
 let mermaidLoad: Promise<MermaidApi | undefined> | undefined;
 let diagrams: Promise<void> = Promise.resolve();
 
@@ -77,6 +79,7 @@ function onMessage(message: HostToWebview): void {
     case "render":
       version = message.version;
       renderRows(message.rows);
+      applyFolding();
       showProgress(message.progress);
       showNotice(message.notice);
       drawDiagrams();
@@ -275,6 +278,13 @@ function onClick(event: MouseEvent): void {
     if (Number.isInteger(index)) api.postMessage({ type: "retryRow", index });
     return;
   }
+  const summary = target?.closest(".row.details-open summary");
+  if (summary && !target?.closest("a")) {
+    event.preventDefault();
+    const view = views.find((candidate) => candidate.el.contains(summary));
+    if (view) toggleDetails(view);
+    return;
+  }
   const anchor = target?.closest("a");
   const href = anchor?.getAttribute("href");
   if (!href) return;
@@ -307,6 +317,47 @@ function onScroll(): void {
     lastSentLine = line;
     api.postMessage({ type: "visibleLine", line });
   });
+}
+
+/**
+ * `<details>` spans several rows: the opening row, the rows of its content, and the closing row.
+ * The browser cannot fold across rows, so the rows inside a closed one are hidden here.
+ */
+function applyFolding(): void {
+  const stack: boolean[] = [];
+  for (const view of views) {
+    const classes = view.el.classList;
+    const hidden = stack.includes(false);
+    if (classes.contains("details-open")) {
+      const open = detailsOpen.get(view.line) ?? classes.contains("details-start-open");
+      for (const details of view.el.querySelectorAll("details")) details.open = open;
+      setFolded(view, hidden, stack.length > 0);
+      stack.push(open);
+    } else if (classes.contains("details-close") && stack.length > 0) {
+      setFolded(view, hidden, true);
+      stack.pop();
+    } else {
+      setFolded(view, hidden, stack.length > 0);
+    }
+  }
+}
+
+function setFolded(view: RowView, folded: boolean, inside: boolean): void {
+  view.el.classList.toggle("folded", folded);
+  view.el.classList.toggle("in-details", inside);
+}
+
+function toggleDetails(view: RowView): void {
+  const anchor = currentLine();
+  const open = !(detailsOpen.get(view.line) ?? view.el.classList.contains("details-start-open"));
+  detailsOpen.set(view.line, open);
+  applyFolding();
+  if (anchor !== undefined && !open) scrollToLine(Math.min(anchor, view.line));
+}
+
+/** Rows on the page now; folded rows have no position to scroll to. */
+function shownViews(): RowView[] {
+  return views.filter((view) => !view.el.classList.contains("folded"));
 }
 
 /** Draws the Mermaid diagrams that are not drawn yet, loading Mermaid the first time one appears. */
@@ -344,6 +395,7 @@ function loadMermaid(): Promise<MermaidApi | undefined> {
 
 /** Document line at the top of the viewport, interpolated within the row there. */
 function currentLine(): number | undefined {
+  const views = shownViews();
   if (views.length === 0) return undefined;
   const top = toolbar.getBoundingClientRect().bottom;
   let lo = 0;
@@ -365,6 +417,7 @@ function currentLine(): number | undefined {
 }
 
 function scrollToLine(line: number): void {
+  const views = shownViews();
   if (views.length === 0) return;
   let lo = 0;
   let hi = views.length - 1;

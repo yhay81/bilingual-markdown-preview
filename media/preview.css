@@ -308,6 +308,27 @@ body.paused .skeleton span {
   color: var(--vscode-editorWarning-foreground, #cca700);
 }
 
+/* <details> folded across rows */
+
+.row.folded {
+  display: none;
+}
+
+/* On the cells, so both columns keep their place and the divider stays straight. */
+.row.in-details > .cell {
+  padding-left: 12px;
+  border-left: 2px solid var(--bm-border);
+}
+
+.row.details-open summary {
+  cursor: pointer;
+}
+
+.row.details-open details,
+.row.details-open .cell > :last-child {
+  margin-bottom: 0;
+}
+
 /* Math and diagrams */
 
 .katex-block {

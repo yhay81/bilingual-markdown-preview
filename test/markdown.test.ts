@@ -237,18 +237,52 @@ describe("code comment translation", () => {
   });
 });
 
-describe("math and diagrams", () => {
-  it("renders math with KaTeX", () => {
-    const doc = segment("$$\nx^2\n$$");
-    expect(renderer.renderSource(doc.rows[0]!, doc.env, new Slugger())).toContain('class="katex-block"');
+describe("details, math and diagrams", () => {
+  const source = [
+    "<details open>",
+    "<summary>More <b>options</b></summary>",
+    "",
+    "Hidden text.",
+    "",
+    "</details>",
+    "",
+    "$$",
+    "x^2",
+    "$$",
+    "",
+    "```mermaid",
+    "graph TD; A-->B",
+    "```",
+  ].join("\n");
+  const doc = segment(source);
+
+  it("marks the rows of a details block and translates its summary", () => {
+    expect(doc.rows.map((row) => [row.type, row.shared, row.classes.filter((name) => name.startsWith("details"))])).toEqual([
+      ["html", false, ["details-open", "details-start-open"]],
+      ["block", false, []],
+      ["html", true, ["details-close"]],
+      ["block", true, []],
+      ["code", true, []],
+    ]);
+    expect(doc.rows[0]!.units).toMatchObject([{ source: "More <b>options</b>", masked: "More ⟦1⟧options⟦2⟧", summary: true }]);
+  });
+
+  it("does not translate a summary already in the target language", () => {
+    expect(segment("<details>\n<summary>詳細はこちらです</summary>\n\n本文\n\n</details>").rows[0]!.shared).toBe(true);
+  });
+
+  it("renders the translated summary in place", () => {
+    const html = renderer.renderTranslation(doc.rows[0]!, doc.env, ["その他の<b>オプション</b>"]);
+    expect(html).toBe("<details open>\n<summary>その他の<b>オプション</b></summary>");
+  });
+
+  it("renders math with KaTeX and leaves diagrams to the webview", () => {
+    const slugger = new Slugger();
+    expect(renderer.renderSource(doc.rows[3]!, doc.env, slugger)).toContain('class="katex-block"');
+    expect(renderer.renderSource(doc.rows[4]!, doc.env, slugger)).toBe('<pre class="mermaid">graph TD; A--&gt;B\n</pre>\n');
     const inline = segment("The area is $\\pi r^2$.").rows[0]!;
     expect(inline.units[0]!.masked).toBe("The area is ⟦1⟧.");
     expect(renderer.renderTranslation(inline, doc.env, ["面積は $\\pi r^2$ です。"])).toContain('<span class="katex">');
-  });
-
-  it("leaves diagrams to the webview", () => {
-    const doc = segment("```mermaid\ngraph TD; A-->B\n```");
-    expect(renderer.renderSource(doc.rows[0]!, doc.env, new Slugger())).toBe('<pre class="mermaid">graph TD; A--&gt;B\n</pre>\n');
   });
 });
 

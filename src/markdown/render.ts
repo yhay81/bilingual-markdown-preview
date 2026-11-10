@@ -1,6 +1,6 @@
 import type { Env, MarkdownIt, Token } from "markdown-it";
 import { spliceComments, type CommentEdit } from "./codeComments";
-import { fencesOf, forkEnv, inlineTokensOf, type Row } from "./segment";
+import { fencesOf, forkEnv, inlineTokensOf, SUMMARY_RE, type Row } from "./segment";
 import type { Slugger } from "./slug";
 
 /**
@@ -38,6 +38,15 @@ export class RowRenderer {
       const text = texts[k];
       if (unit.comment) {
         if (text !== undefined) edits.set(unit.comment.block, [...(edits.get(unit.comment.block) ?? []), { slot: unit.comment.slot, text }]);
+        return;
+      }
+      if (unit.summary) {
+        const block = tokens.find((token) => token.type === "html_block");
+        if (block && text !== undefined) {
+          block.content = block.content.replace(SUMMARY_RE, (_match, open: string, _inner: string, close: string) => {
+            return `${open}${this.md.renderInline(text, forkEnv(env))}${close}`;
+          });
+        }
         return;
       }
       const inline = inlines[nextInline++];
