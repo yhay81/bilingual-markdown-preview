@@ -28,6 +28,7 @@
   "config.translateCodeComments": "Also translate the comments in fenced code blocks, and show the code with its comments translated beside the original. Only the comment text is sent, never the code. The block's language must be named after the opening fence, as in ```` ```python ````; common languages such as JavaScript, TypeScript, Python, Go, Rust, Java, C, shell, YAML, SQL and HTML are supported.",
   "config.maxConcurrentRequests": "Maximum number of translation requests in flight at once.",
   "config.batchCharacterLimit": "Approximate number of source characters sent in one request.",
+  "config.tokenLimit": "Pause translation after this many tokens (input and output) in one VS Code session, and ask before going on. `0` means no limit. Counted only for providers that report usage: Anthropic, and OpenAI at api.openai.com.",
   "config.syncScroll": "Keep the editor and the preview scrolled to the same place.",
   "capabilities.untrustedWorkspaces": "In Restricted Mode, the target language, style instructions, glossary, and code comment translation come only from your user settings, not from the workspace."
 }

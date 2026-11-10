@@ -240,11 +240,19 @@
           "scope": "machine",
           "order": 10
         },
+        "bilingualMarkdown.tokenLimit": {
+          "type": "integer",
+          "default": 0,
+          "minimum": 0,
+          "markdownDescription": "%config.tokenLimit%",
+          "scope": "machine",
+          "order": 11
+        },
         "bilingualMarkdown.syncScroll": {
           "type": "boolean",
           "default": true,
           "markdownDescription": "%config.syncScroll%",
-          "order": 11
+          "order": 12
         }
       }
     }

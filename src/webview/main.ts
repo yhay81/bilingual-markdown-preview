@@ -227,6 +227,7 @@ function showProgress(progress: ProgressInfo): void {
     parts.push(strings.progress.replace("{0}", String(progress.done)).replace("{1}", String(progress.total)));
   }
   if (progress.failed > 0) parts.push(strings.failed.replace("{0}", String(progress.failed)));
+  if (progress.tokens) parts.push(strings.tokens.replace("{0}", progress.tokens.toLocaleString(init.lang)));
   parts.push(progress.label);
   progressEl.textContent = parts.join(" · ");
   progressEl.title = progressEl.textContent;

@@ -5,6 +5,7 @@ import {
   errorKindForStatus,
   type ReasoningEffortSetting,
   type StopReason,
+  type TokenUsage,
   type TranslateRequest,
   type TranslateResult,
   type TranslationProvider,
@@ -15,6 +16,8 @@ export const OPENAI_API_URL = "https://api.openai.com/v1";
 export class OpenAIProvider implements TranslationProvider {
   readonly id = "openai";
   private readonly client: OpenAI;
+  /** Usage in the stream is an OpenAI extension that not every compatible server accepts. */
+  private readonly askForUsage: boolean;
 
   constructor(
     apiKey: string,
@@ -25,6 +28,7 @@ export class OpenAIProvider implements TranslationProvider {
     // Explicit endpoint, organization and project, so OPENAI_BASE_URL, OPENAI_ORG_ID and
     // OPENAI_PROJECT_ID meant for other tools neither redirect the key nor scope it elsewhere.
     this.client = new OpenAI({ apiKey, baseURL: baseURL || OPENAI_API_URL, organization: null, project: null, maxRetries: 3 });
+    this.askForUsage = !baseURL || baseURL === OPENAI_API_URL;
   }
 
   async translate(request: TranslateRequest): Promise<TranslateResult> {
@@ -39,20 +43,23 @@ export class OpenAIProvider implements TranslationProvider {
             { role: "user", content: request.user },
           ],
           max_completion_tokens: request.maxOutputTokens,
+          ...(this.askForUsage ? { stream_options: { include_usage: true } } : {}),
           ...openaiReasoningParams(this.effort),
         },
         { signal: request.signal },
       );
       let finishReason: string | null = null;
       let refused = false;
+      let usage: TokenUsage | undefined;
       for await (const chunk of stream) {
+        if (chunk.usage) usage = { inputTokens: chunk.usage.prompt_tokens, outputTokens: chunk.usage.completion_tokens };
         const choice = chunk.choices[0];
         if (!choice) continue;
         if (choice.delta?.content) request.onText(choice.delta.content);
         if (choice.delta?.refusal) refused = true;
         if (choice.finish_reason) finishReason = choice.finish_reason;
       }
-      return { stopReason: refused ? "refusal" : stopReasonOf(finishReason) };
+      return { stopReason: refused ? "refusal" : stopReasonOf(finishReason), usage };
     } catch (error) {
       throw toProviderError(error);
     }

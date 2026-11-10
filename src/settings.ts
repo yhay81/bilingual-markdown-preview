@@ -17,6 +17,8 @@ export interface ExtensionConfig {
   translateCodeComments: boolean;
   maxConcurrentRequests: number;
   batchCharacterLimit: number;
+  /** Tokens (input and output) after which translation pauses in one session, or 0 for no limit. */
+  tokenLimit: number;
   syncScroll: boolean;
 }
 
@@ -32,6 +34,7 @@ export const DEFAULT_CONFIG: ExtensionConfig = {
   translateCodeComments: false,
   maxConcurrentRequests: 3,
   batchCharacterLimit: 4000,
+  tokenLimit: 0,
   syncScroll: true,
 };
 
@@ -52,6 +55,7 @@ export function sanitizeConfig(raw: RawConfig): ExtensionConfig {
     translateCodeComments: raw.translateCodeComments === true,
     maxConcurrentRequests: clampInt(raw.maxConcurrentRequests, 1, 8, DEFAULT_CONFIG.maxConcurrentRequests),
     batchCharacterLimit: clampInt(raw.batchCharacterLimit, 500, 20_000, DEFAULT_CONFIG.batchCharacterLimit),
+    tokenLimit: clampInt(raw.tokenLimit, 0, 1_000_000_000, DEFAULT_CONFIG.tokenLimit),
     syncScroll: typeof raw.syncScroll === "boolean" ? raw.syncScroll : DEFAULT_CONFIG.syncScroll,
   };
 }
@@ -79,6 +83,7 @@ export function serviceConfigOf(config: ExtensionConfig): ServiceConfig {
     maxConcurrentRequests: config.maxConcurrentRequests,
     batchCharacterLimit: config.batchCharacterLimit,
     usesReasoning: usesReasoning(config.provider, modelOf(config), config.reasoningEffort),
+    tokenLimit: config.tokenLimit,
   };
 }
 

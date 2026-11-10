@@ -40,7 +40,8 @@ export class AnthropicProvider implements TranslationProvider {
       );
       stream.on("text", (delta) => request.onText(delta));
       const message = await stream.finalMessage();
-      return { stopReason: stopReasonOf(message.stop_reason) };
+      const usage = { inputTokens: message.usage.input_tokens, outputTokens: message.usage.output_tokens };
+      return { stopReason: stopReasonOf(message.stop_reason), usage };
     } catch (error) {
       throw toProviderError(error);
     }

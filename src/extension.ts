@@ -215,6 +215,7 @@ async function runHostAction(action: HostAction, extensionId: string): Promise<v
       break;
     case "retranslate":
     case "retryFailed":
+    case "resume":
       // Handled by the preview itself.
       break;
   }

@@ -17,6 +17,7 @@ export function readConfig(): ExtensionConfig {
     translateCodeComments: config.get("translateCodeComments"),
     maxConcurrentRequests: config.get("maxConcurrentRequests"),
     batchCharacterLimit: config.get("batchCharacterLimit"),
+    tokenLimit: config.get("tokenLimit"),
     syncScroll: config.get("syncScroll"),
   });
 }

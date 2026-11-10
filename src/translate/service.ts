@@ -1,4 +1,4 @@
-import { ProviderError, type ProviderErrorKind, type StopReason, type TranslationProvider } from "../providers/types";
+import { ProviderError, type ProviderErrorKind, type StopReason, type TokenUsage, type TranslationProvider } from "../providers/types";
 import type { TranslationCache } from "./cache";
 import { buildSystemPrompt, buildUserMessage, type PromptSettings, type SegmentKind } from "./prompt";
 import { SegStreamParser } from "./segProtocol";
@@ -44,7 +44,7 @@ export type ProviderResolution =
   | { ok: true; provider: TranslationProvider }
   | { ok: false; reason: "missingKey" | "invalidBaseUrl" };
 
-export type BlockReason = "missingKey" | "invalidBaseUrl" | "auth" | "permission" | "notFound";
+export type BlockReason = "missingKey" | "invalidBaseUrl" | "auth" | "permission" | "notFound" | "tokenLimit";
 
 export interface Block {
   reason: BlockReason;
@@ -57,6 +57,8 @@ export interface ServiceConfig {
   batchCharacterLimit: number;
   /** Leave room in the output budget for reasoning tokens. */
   usesReasoning: boolean;
+  /** Tokens after which translation pauses until `resume`, or 0 for no limit. */
+  tokenLimit: number;
 }
 
 export interface ServiceDependencies {
@@ -104,6 +106,9 @@ export class TranslationService {
   private activeOwner: string | undefined;
   private block: Block | undefined;
   private lastError: JobError | undefined;
+  private readonly usage: TokenUsage = { inputTokens: 0, outputTokens: 0 };
+  /** Tokens used since the session started or the token limit was last lifted. */
+  private tokensSinceResume = 0;
   private changedKeys = new Set<string>();
   private stateChanged = false;
   private emitScheduled = false;
@@ -146,6 +151,11 @@ export class TranslationService {
     return this.lastError;
   }
 
+  /** Tokens reported by the API in this session, over all previews. */
+  getUsage(): TokenUsage {
+    return { ...this.usage };
+  }
+
   /** Drops the final results of `keys` (errors and flawed translations) and queues them again. */
   retry(keys: Iterable<string>): void {
     let changed = false;
@@ -173,6 +183,12 @@ export class TranslationService {
     this.deps.cache.delete(forgotten);
     this.abortDeadBatches();
     this.scheduleEmit();
+  }
+
+  /** Continues after the user chose to: lifts the token limit for another round, and retries a block. */
+  resume(): void {
+    if (this.block?.reason === "tokenLimit") this.tokensSinceResume = 0;
+    this.unblock();
   }
 
   /** Clears the pause after the API key or configuration changed. */
@@ -277,11 +293,23 @@ export class TranslationService {
   }
 
   private pump(): void {
-    if (this.disposed || this.block) return;
+    if (this.disposed) return;
     const config = this.deps.getConfig();
+    const overLimit = config.tokenLimit > 0 && this.tokensSinceResume >= config.tokenLimit;
+    if (this.block?.reason === "tokenLimit" && !overLimit) {
+      // The limit was raised or removed.
+      this.block = undefined;
+      this.stateChanged = true;
+      this.scheduleEmit();
+    }
+    if (this.block) return;
     while (this.batches.size < config.maxConcurrentRequests) {
       const entries = this.takeBatch(config.batchCharacterLimit);
       if (entries.length === 0) return;
+      if (overLimit) {
+        this.setBlock({ reason: "tokenLimit" });
+        return;
+      }
       const resolution = this.deps.resolveProvider();
       if (!resolution.ok) {
         this.setBlock({ reason: resolution.reason });
@@ -351,6 +379,7 @@ export class TranslationService {
         signal: batch.controller.signal,
         onText: (delta) => parser.push(delta),
       });
+      if (result.usage) this.addUsage(result.usage);
       if (batch.controller.signal.aborted) return;
       parser.finish(result.stopReason === "end" || result.stopReason === "other");
       const missing = missingError(result.stopReason);
@@ -418,6 +447,14 @@ export class TranslationService {
     this.pending.delete(entry.key);
     this.results.set(entry.key, result);
     this.changedKeys.add(entry.key);
+    this.scheduleEmit();
+  }
+
+  private addUsage(usage: TokenUsage): void {
+    this.usage.inputTokens += usage.inputTokens;
+    this.usage.outputTokens += usage.outputTokens;
+    this.tokensSinceResume += usage.inputTokens + usage.outputTokens;
+    this.stateChanged = true;
     this.scheduleEmit();
   }
 

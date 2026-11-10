@@ -22,8 +22,15 @@ export interface TranslateRequest {
 
 export type StopReason = "end" | "max_tokens" | "refusal" | "other";
 
+export interface TokenUsage {
+  inputTokens: number;
+  outputTokens: number;
+}
+
 export interface TranslateResult {
   stopReason: StopReason;
+  /** Tokens billed for the request, when the API reports them. */
+  usage?: TokenUsage;
 }
 
 export interface TranslationProvider {

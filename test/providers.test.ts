@@ -228,7 +228,10 @@ describe("AnthropicProvider", () => {
     vi.stubEnv("ANTHROPIC_BASE_URL", "https://elsewhere.example.com");
     const captured = stubFetch(() => messageStream(['<seg id="1">こん', "にちは</seg>"], "end_turn"));
     const request = translateRequest();
-    await expect(new AnthropicProvider(ANTHROPIC_TEST_KEY, "claude-haiku-5-5", "none").translate(request)).resolves.toEqual({ stopReason: "end" });
+    await expect(new AnthropicProvider(ANTHROPIC_TEST_KEY, "claude-haiku-5-5", "none").translate(request)).resolves.toEqual({
+      stopReason: "end",
+      usage: { inputTokens: 10, outputTokens: 12 },
+    });
     expect(request.deltas.join("")).toBe('<seg id="1">こんにちは</seg>');
     expect(captured).toHaveLength(1);
     const call = captured[0]!;
@@ -256,7 +259,7 @@ describe("AnthropicProvider", () => {
     for (const [apiReason, expected] of cases) {
       stubFetch(() => messageStream(["x"], apiReason));
       const provider = new AnthropicProvider(ANTHROPIC_TEST_KEY, "claude-haiku-5-5", "none");
-      await expect(provider.translate(translateRequest())).resolves.toEqual({ stopReason: expected });
+      await expect(provider.translate(translateRequest())).resolves.toMatchObject({ stopReason: expected });
     }
   });
 
@@ -320,6 +323,16 @@ describe("OpenAIProvider", () => {
         { role: "user", content: '<seg id="1">Hello</seg>' },
       ],
     });
+    // Not every OpenAI-compatible server accepts stream options.
+    expect(call.body).not.toHaveProperty("stream_options");
+  });
+
+  it("asks api.openai.com for token usage", async () => {
+    const usage = { id: "chatcmpl-test", object: "chat.completion.chunk", created: 1, model: "gpt-6-luna", choices: [], usage: { prompt_tokens: 20, completion_tokens: 30, total_tokens: 50 } };
+    const captured = stubFetch(() => sse([{ data: chunk({ content: "x" }, "stop") }, { data: usage }, { data: "[DONE]" }]));
+    const result = await new OpenAIProvider(OPENAI_TEST_KEY, "gpt-6-luna", "none", undefined).translate(translateRequest());
+    expect(result).toEqual({ stopReason: "end", usage: { inputTokens: 20, outputTokens: 30 } });
+    expect(captured[0]!.body).toMatchObject({ stream_options: { include_usage: true } });
   });
 
   it("uses api.openai.com and ignores OpenAI environment variables meant for other tools", async () => {

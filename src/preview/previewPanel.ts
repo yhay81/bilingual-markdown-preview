@@ -185,6 +185,9 @@ export class BilingualPreview implements vscode.Disposable {
       case "retranslate":
         this.retranslate();
         break;
+      case "resume":
+        this.context.service.resume();
+        break;
       case "retryFailed": {
         const prepared = this.current;
         if (!prepared) return;
@@ -310,7 +313,9 @@ export class BilingualPreview implements vscode.Disposable {
       if (state === "done") done++;
       else if (state === "error") failed++;
     }
-    return { total: prepared.rowsByKey.size, done, failed, label: prepared.label };
+    const usage = this.context.service.getUsage();
+    const tokens = usage.inputTokens + usage.outputTokens;
+    return { total: prepared.rowsByKey.size, done, failed, label: prepared.label, ...(tokens > 0 ? { tokens } : {}) };
   }
 
   private notice(prepared: Prepared): Notice | null {
@@ -324,6 +329,13 @@ export class BilingualPreview implements vscode.Disposable {
     const detail = block?.message ? ` (${block.message})` : "";
 
     switch (block?.reason) {
+      case "tokenLimit":
+        return {
+          severity: "info",
+          blocking: true,
+          message: vscode.l10n.t("Translation paused: this session reached the token limit of {0}.", config.tokenLimit.toLocaleString()),
+          actions: [{ label: vscode.l10n.t("Continue"), action: "resume" }, openSettings],
+        };
       case "missingKey":
         return {
           severity: "info",
@@ -493,6 +505,7 @@ function uiStrings(): UiStrings {
     retranslate: vscode.l10n.t("Retranslate"),
     settings: vscode.l10n.t("Settings"),
     retry: vscode.l10n.t("Retry"),
+    tokens: vscode.l10n.t("{0} tokens", "{0}"),
     // The webview fills in the placeholders.
     progress: vscode.l10n.t("{0}/{1} translated", "{0}", "{1}"),
     failed: vscode.l10n.t("{0} failed", "{0}"),

@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { ProviderError, type StopReason, type TranslateRequest, type TranslateResult, type TranslationProvider } from "../src/providers/types";
+import {
+  ProviderError,
+  type StopReason,
+  type TokenUsage,
+  type TranslateRequest,
+  type TranslateResult,
+  type TranslationProvider,
+} from "../src/providers/types";
 import { TranslationCache } from "../src/translate/cache";
 import {
   MAX_ATTEMPTS,
@@ -50,13 +57,15 @@ class FakeProvider implements TranslationProvider {
   readonly model = "fake-model";
   readonly requests: TranslateRequest[] = [];
   handler: Handler = (segments) => reply(segments);
+  /** Reported with every response when set. */
+  usage: TokenUsage | undefined;
 
   async translate(request: TranslateRequest): Promise<TranslateResult> {
     this.requests.push(request);
     const { output, stopReason = "end" } = await this.handler(segmentsOf(request.user), request);
     // Stream in small pieces, as the real APIs do.
     for (let i = 0; i < output.length; i += 7) request.onText(output.slice(i, i + 7));
-    return { stopReason };
+    return this.usage ? { stopReason, usage: this.usage } : { stopReason };
   }
 
   /** The source texts of each request, in order. */
@@ -73,6 +82,7 @@ function setup(overrides: Partial<ServiceConfig> = {}) {
     maxConcurrentRequests: 3,
     batchCharacterLimit: 4000,
     usesReasoning: false,
+    tokenLimit: 0,
     ...overrides,
   };
   let resolution: ProviderResolution = { ok: true, provider };
@@ -349,5 +359,48 @@ describe("TranslationService", () => {
     await settle();
     expect(cache.size).toBe(0);
     expect(service.getResult("a")).toBeUndefined();
+  });
+
+  it("adds up token usage and pauses at the token limit until resumed", async () => {
+    const { service, provider } = setup({ tokenLimit: 100, batchCharacterLimit: 10, maxConcurrentRequests: 1 });
+    provider.usage = { inputTokens: 40, outputTokens: 30 };
+    service.request("p1", ["a", "b", "c"].map((key, line) => job(key, line, key.repeat(8))));
+    await settle();
+    await settle();
+    // 70 tokens after the first request, 140 after the second: the third waits.
+    expect(provider.requests).toHaveLength(2);
+    expect(service.getUsage()).toEqual({ inputTokens: 80, outputTokens: 60 });
+    expect(service.getBlock()).toEqual({ reason: "tokenLimit" });
+    expect(service.getResult("c")).toEqual({ state: "queued" });
+
+    service.unblock();
+    await settle();
+    expect(provider.requests).toHaveLength(2);
+
+    service.resume();
+    await settle();
+    expect(provider.requests).toHaveLength(3);
+    expect(service.getResult("c")?.state).toBe("done");
+  });
+
+  it("lifts the token limit pause when the limit is raised", async () => {
+    let limit = 50;
+    const { service, provider } = setup({ batchCharacterLimit: 10, maxConcurrentRequests: 1 });
+    const config = { prompt: { targetLanguage: "Japanese", styleInstructions: "", glossary: {} }, maxConcurrentRequests: 1, batchCharacterLimit: 10, usesReasoning: false };
+    const limited = new TranslationService({
+      cache: new TranslationCache(),
+      resolveProvider: () => ({ ok: true, provider }),
+      getConfig: () => ({ ...config, tokenLimit: limit }),
+    });
+    provider.usage = { inputTokens: 40, outputTokens: 30 };
+    limited.request("p1", ["a", "b"].map((key, line) => job(key, line, key.repeat(8))));
+    await settle();
+    expect(limited.getBlock()?.reason).toBe("tokenLimit");
+    limit = 0;
+    limited.kick();
+    await settle();
+    expect(limited.getBlock()).toBeUndefined();
+    expect(limited.getResult("b")?.state).toBe("done");
+    service.dispose();
   });
 });

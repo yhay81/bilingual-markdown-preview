@@ -41,11 +41,13 @@ export interface ProgressInfo {
   failed: number;
   /** For example "claude-haiku-5-5 → Japanese". */
   label: string;
+  /** Tokens used in this session, over all previews, when the API reports them. */
+  tokens?: number;
 }
 
-export type HostAction = "setApiKey" | "switchProvider" | "openSettings" | "retryFailed" | "retranslate";
+export type HostAction = "setApiKey" | "switchProvider" | "openSettings" | "retryFailed" | "retranslate" | "resume";
 
-export const HOST_ACTIONS: readonly HostAction[] = ["setApiKey", "switchProvider", "openSettings", "retryFailed", "retranslate"];
+export const HOST_ACTIONS: readonly HostAction[] = ["setApiKey", "switchProvider", "openSettings", "retryFailed", "retranslate", "resume"];
 
 export interface NoticeAction {
   label: string;
@@ -67,6 +69,8 @@ export interface UiStrings {
   retranslate: string;
   settings: string;
   retry: string;
+  /** Template with {0} = number of tokens. */
+  tokens: string;
   /** Template with {0} = done and {1} = total. */
   progress: string;
   /** Template with {0} = number of failed segments. */
