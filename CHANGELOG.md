@@ -1,14 +1,12 @@
 # Changelog
 
-## 未リリース
-
-- コードブロックのコメントを翻訳する設定 `bilingualMarkdown.translateCodeComments`（既定はオフ）。コメントを訳したコードを原文の横に並べます。送るのはコメントの文章だけです。
-
 ## 0.1.0
 
-- 最初のリリース。
-- Markdown を原文と訳文で左右に並べるプレビュー（原文のみ・訳文のみへの切り替え、スクロールの連動、狭いパネルでの縦並び）。
-- BYOK による翻訳: Anthropic（`claude-haiku-5-5`）と OpenAI（`gpt-6-luna`、OpenAI 互換のベース URL にも対応）。キーは Secret Storage に保存。
-- 見えている部分から優先するストリーミング翻訳、記号の欠けた訳文の自動再翻訳、行ごとの再試行。
-- 翻訳結果のキャッシュ、用語集、翻訳者への追加の指示。
-- 日本語と英語の表示。
+The first release.
+
+- A preview that shows Markdown and its translation side by side, block by block. The toolbar switches between the source, both, and the translation alone. The editor and the preview scroll together, and in a narrow panel the translation goes under the source.
+- Translation with your own API key: Anthropic (`claude-haiku-5-5`) or OpenAI (`gpt-6-luna`, or any OpenAI-compatible base URL). Keys are kept in VS Code Secret Storage.
+- Streaming translation that starts with what is on screen, automatic retranslation when a translation drops a placeholder, and a Retry button on each row.
+- Translation of the comments in code blocks, shown beside the original code (`bilingualMarkdown.translateCodeComments`, off by default). Only the comment text is sent.
+- A cache of translations, a glossary, and style instructions for the translator.
+- An interface in English and Japanese.
