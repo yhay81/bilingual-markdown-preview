@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { PROVIDER_IDS, type ProviderId } from "./providers/types";
+import { KEY_PROVIDER_IDS, type KeyProviderId } from "./providers/types";
 
 const SECRET_PREFIX = "bilingualMarkdown.apiKey.";
 
@@ -8,37 +8,37 @@ const SECRET_PREFIX = "bilingualMarkdown.apiKey.";
  * A copy is kept in memory so the translation queue can read it synchronously.
  */
 export class ApiKeyStore implements vscode.Disposable {
-  private readonly keys = new Map<ProviderId, string>();
-  private readonly emitter = new vscode.EventEmitter<ProviderId>();
+  private readonly keys = new Map<KeyProviderId, string>();
+  private readonly emitter = new vscode.EventEmitter<KeyProviderId>();
   private readonly subscription: vscode.Disposable;
   readonly onDidChange = this.emitter.event;
 
   constructor(private readonly secrets: vscode.SecretStorage) {
     // Also fires when another VS Code window changes a key.
     this.subscription = secrets.onDidChange((event) => {
-      const provider = PROVIDER_IDS.find((id) => secretName(id) === event.key);
+      const provider = KEY_PROVIDER_IDS.find((id) => secretName(id) === event.key);
       if (provider) void this.refresh(provider);
     });
   }
 
   async load(): Promise<void> {
-    await Promise.all(PROVIDER_IDS.map((provider) => this.refresh(provider)));
+    await Promise.all(KEY_PROVIDER_IDS.map((provider) => this.refresh(provider)));
   }
 
-  get(provider: ProviderId): string | undefined {
+  get(provider: KeyProviderId): string | undefined {
     return this.keys.get(provider);
   }
 
-  has(provider: ProviderId): boolean {
+  has(provider: KeyProviderId): boolean {
     return this.keys.has(provider);
   }
 
-  async set(provider: ProviderId, apiKey: string): Promise<void> {
+  async set(provider: KeyProviderId, apiKey: string): Promise<void> {
     await this.secrets.store(secretName(provider), apiKey);
     this.update(provider, apiKey);
   }
 
-  async delete(provider: ProviderId): Promise<void> {
+  async delete(provider: KeyProviderId): Promise<void> {
     await this.secrets.delete(secretName(provider));
     this.update(provider, undefined);
   }
@@ -48,7 +48,7 @@ export class ApiKeyStore implements vscode.Disposable {
     this.emitter.dispose();
   }
 
-  private async refresh(provider: ProviderId): Promise<void> {
+  private async refresh(provider: KeyProviderId): Promise<void> {
     try {
       this.update(provider, await this.secrets.get(secretName(provider)));
     } catch {
@@ -56,7 +56,7 @@ export class ApiKeyStore implements vscode.Disposable {
     }
   }
 
-  private update(provider: ProviderId, apiKey: string | undefined): void {
+  private update(provider: KeyProviderId, apiKey: string | undefined): void {
     if (this.keys.get(provider) === (apiKey || undefined)) return;
     if (apiKey) this.keys.set(provider, apiKey);
     else this.keys.delete(provider);
@@ -64,6 +64,6 @@ export class ApiKeyStore implements vscode.Disposable {
   }
 }
 
-function secretName(provider: ProviderId): string {
+function secretName(provider: KeyProviderId): string {
   return `${SECRET_PREFIX}${provider}`;
 }

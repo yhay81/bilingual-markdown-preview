@@ -45,9 +45,17 @@ export interface ProgressInfo {
   tokens?: number;
 }
 
-export type HostAction = "setApiKey" | "switchProvider" | "openSettings" | "retryFailed" | "retranslate" | "resume";
+export type HostAction = "setApiKey" | "switchProvider" | "chooseModel" | "openSettings" | "retryFailed" | "retranslate" | "resume";
 
-export const HOST_ACTIONS: readonly HostAction[] = ["setApiKey", "switchProvider", "openSettings", "retryFailed", "retranslate", "resume"];
+export const HOST_ACTIONS: readonly HostAction[] = [
+  "setApiKey",
+  "switchProvider",
+  "chooseModel",
+  "openSettings",
+  "retryFailed",
+  "retranslate",
+  "resume",
+];
 
 export interface NoticeAction {
   label: string;

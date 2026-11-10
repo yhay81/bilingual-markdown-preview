@@ -4,7 +4,7 @@ import type { RowRenderer } from "../markdown/render";
 import type { Row, SegmentedDocument, Unit } from "../markdown/segment";
 import { segmentDocument } from "../markdown/segment";
 import { Slugger } from "../markdown/slug";
-import { fingerprintOf, modelOf, providerLabel, type ExtensionConfig } from "../settings";
+import { fingerprintOf, modelLabelOf, providerLabel, type ExtensionConfig } from "../settings";
 import {
   parseWebviewMessage,
   type HostAction,
@@ -259,7 +259,7 @@ export class BilingualPreview implements vscode.Disposable {
       }
       return { row, sourceHtml: this.context.renderer.renderSource(row, doc.env, slugger), keys };
     });
-    return { version: ++this.version, doc, rows, rowsByKey, label: `${modelOf(config)} → ${config.targetLanguage}` };
+    return { version: ++this.version, doc, rows, rowsByKey, label: `${modelLabelOf(config)} → ${config.targetLanguage}` };
   }
 
   private requestTranslations(): void {
@@ -321,12 +321,39 @@ export class BilingualPreview implements vscode.Disposable {
   private notice(prepared: Prepared): Notice | null {
     const config = this.context.getConfig();
     const provider = providerLabel(config.provider);
-    const model = modelOf(config);
+    const model = modelLabelOf(config);
     const setKey: NoticeAction = { label: vscode.l10n.t("Set API Key"), action: "setApiKey" };
     const switchProvider: NoticeAction = { label: vscode.l10n.t("Switch Provider"), action: "switchProvider" };
     const openSettings: NoticeAction = { label: vscode.l10n.t("Open Settings"), action: "openSettings" };
+    const chooseModel: NoticeAction = { label: vscode.l10n.t("Choose Model"), action: "chooseModel" };
+    const tryAgain: NoticeAction = { label: vscode.l10n.t("Try Again"), action: "resume" };
     const block = this.context.service.getBlock();
     const detail = block?.message ? ` (${block.message})` : "";
+
+    if (config.provider === "vscode") {
+      switch (block?.reason) {
+        case "permission":
+          return {
+            severity: "error",
+            blocking: true,
+            message:
+              vscode.l10n.t(
+                "VS Code did not allow this extension to use the language model. Allow it in the Accounts menu under Manage Language Model Access, then try again.",
+              ) + detail,
+            actions: [tryAgain, switchProvider],
+          };
+        case "notFound":
+        case "auth":
+          return {
+            severity: "error",
+            blocking: true,
+            message: vscode.l10n.t("No language model is available in VS Code. Install GitHub Copilot and sign in, or choose another model.") + detail,
+            actions: [chooseModel, tryAgain, switchProvider],
+          };
+        default:
+          break;
+      }
+    }
 
     switch (block?.reason) {
       case "tokenLimit":

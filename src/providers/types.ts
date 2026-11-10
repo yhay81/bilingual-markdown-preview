@@ -1,9 +1,19 @@
-export type ProviderId = "anthropic" | "openai";
+/** `vscode` is the VS Code Language Model API (for example GitHub Copilot), which needs no API key. */
+export type ProviderId = "anthropic" | "openai" | "vscode";
 
-export const PROVIDER_IDS: readonly ProviderId[] = ["anthropic", "openai"];
+/** Providers that are used with the user's own API key. */
+export type KeyProviderId = "anthropic" | "openai";
+
+export const PROVIDER_IDS: readonly ProviderId[] = ["anthropic", "openai", "vscode"];
+
+export const KEY_PROVIDER_IDS: readonly KeyProviderId[] = ["anthropic", "openai"];
 
 export function isProviderId(value: unknown): value is ProviderId {
   return typeof value === "string" && (PROVIDER_IDS as readonly string[]).includes(value);
+}
+
+export function isKeyProviderId(value: unknown): value is KeyProviderId {
+  return typeof value === "string" && (KEY_PROVIDER_IDS as readonly string[]).includes(value);
 }
 
 /** `default` sends no reasoning parameter at all, for models or gateways that reject one. */

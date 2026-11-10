@@ -1,4 +1,4 @@
-import type { ReasoningEffortSetting } from "./types";
+import type { ProviderId, ReasoningEffortSetting } from "./types";
 
 /** Claude models that reject `thinking: { type: "disabled" }`. */
 const ALWAYS_THINKING_RE = /^claude-(?:opus|sonnet)-5|^claude-(?:fable|mythos)/;
@@ -37,7 +37,9 @@ export function openaiReasoningParams(effort: ReasoningEffortSetting): OpenAIRea
 }
 
 /** Whether the model may spend output tokens on reasoning, so the output budget needs headroom. */
-export function usesReasoning(provider: "anthropic" | "openai", model: string, effort: ReasoningEffortSetting): boolean {
+export function usesReasoning(provider: ProviderId, model: string, effort: ReasoningEffortSetting): boolean {
+  // The VS Code Language Model API takes no output limit or reasoning setting.
+  if (provider === "vscode") return false;
   if (effort !== "none") return true;
   return provider === "anthropic" && !canDisableThinking(model);
 }

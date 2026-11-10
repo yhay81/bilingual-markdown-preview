@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AnthropicProvider } from "../src/providers/anthropic";
-import { ProviderFactory, createProvider, isAllowedBaseUrl, type ProviderSettings } from "../src/providers/factory";
+import { LOCAL_SERVER_KEY, ProviderFactory, createProvider, isAllowedBaseUrl, isLoopbackUrl, type ProviderSettings } from "../src/providers/factory";
 import { OpenAIProvider } from "../src/providers/openai";
 import { anthropicReasoningParams, canDisableThinking, openaiReasoningParams, usesReasoning } from "../src/providers/params";
-import { ProviderError, errorKindForStatus, type ProviderId, type TranslateRequest } from "../src/providers/types";
+import { ProviderError, errorKindForStatus, type KeyProviderId, type TranslateRequest } from "../src/providers/types";
 
 // Dummy keys: requests go to a stubbed fetch, never to the network.
 const ANTHROPIC_TEST_KEY = "sk-ant-test-dummy";
@@ -33,6 +33,7 @@ describe("reasoning parameters", () => {
     expect(usesReasoning("anthropic", "claude-haiku-5-5", "none")).toBe(false);
     expect(usesReasoning("openai", "gpt-6-luna", "none")).toBe(false);
     expect(usesReasoning("anthropic", "claude-opus-5-5", "none")).toBe(true);
+    expect(usesReasoning("vscode", "", "high")).toBe(false);
     expect(usesReasoning("openai", "gpt-6-luna", "default")).toBe(true);
   });
 });
@@ -77,7 +78,7 @@ describe("ProviderFactory", () => {
   const anthropic: ProviderSettings = { provider: "anthropic", model: "claude-haiku-5-5", baseUrl: "", reasoningEffort: "none" };
   const openai: ProviderSettings = { provider: "openai", model: "gpt-6-luna", baseUrl: "", reasoningEffort: "none" };
 
-  function factoryWith(settings: ProviderSettings, keys: Partial<Record<ProviderId, string>>) {
+  function factoryWith(settings: ProviderSettings, keys: Partial<Record<KeyProviderId, string>>) {
     let current = settings;
     const created: string[] = [];
     const factory = new ProviderFactory(
@@ -108,8 +109,30 @@ describe("ProviderFactory", () => {
     expect(factory.resolve()).toEqual({ ok: false, reason: "invalidBaseUrl" });
   });
 
+  it("needs no key for the VS Code Language Model API", () => {
+    const { factory, created } = factoryWith({ provider: "vscode", model: "", baseUrl: "", reasoningEffort: "none" }, {});
+    expect(factory.resolve().ok).toBe(true);
+    expect(created).toEqual([""]);
+  });
+
+  it("needs no key for an OpenAI-compatible server on this machine", () => {
+    const local = factoryWith({ ...openai, baseUrl: "http://localhost:11434/v1" }, {});
+    expect(local.factory.resolve().ok).toBe(true);
+    expect(local.created).toEqual([LOCAL_SERVER_KEY]);
+    const stored = factoryWith({ ...openai, baseUrl: "http://127.0.0.1:1234/v1" }, { openai: OPENAI_TEST_KEY });
+    stored.factory.resolve();
+    expect(stored.created).toEqual([OPENAI_TEST_KEY]);
+    const remote = factoryWith({ ...openai, baseUrl: "https://gateway.example.com/v1" }, {});
+    expect(remote.factory.resolve()).toEqual({ ok: false, reason: "missingKey" });
+  });
+
+  it("recognizes loopback URLs", () => {
+    expect(["http://localhost:11434/v1", "https://127.0.0.1", "http://[::1]:8080"].every((url) => isLoopbackUrl(url))).toBe(true);
+    expect(["", "https://api.openai.com/v1", "http://localhost.example.com", "file:///tmp"].some((url) => isLoopbackUrl(url))).toBe(false);
+  });
+
   it("reuses the provider until the settings or the key change", () => {
-    const keys: Partial<Record<ProviderId, string>> = { anthropic: `${ANTHROPIC_TEST_KEY}-1` };
+    const keys: Partial<Record<KeyProviderId, string>> = { anthropic: `${ANTHROPIC_TEST_KEY}-1` };
     const { factory, created, setSettings } = factoryWith(anthropic, keys);
     const first = factory.resolve();
     const second = factory.resolve();
@@ -131,6 +154,7 @@ describe("ProviderFactory", () => {
     expect(claude).toBeInstanceOf(AnthropicProvider);
     expect(gpt).toBeInstanceOf(OpenAIProvider);
     expect([claude.model, gpt.model]).toEqual(["claude-haiku-5-5", "gpt-6-luna"]);
+    expect(() => createProvider({ provider: "vscode", model: "", baseUrl: "", reasoningEffort: "none" }, "")).toThrow();
   });
 });
 

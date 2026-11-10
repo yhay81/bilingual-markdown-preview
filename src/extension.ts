@@ -4,10 +4,11 @@ import { createMarkdownEngine } from "./markdown/engine";
 import { RowRenderer } from "./markdown/render";
 import { PreviewManager } from "./preview/previewManager";
 import { VIEW_TYPE } from "./preview/previewPanel";
-import { ProviderFactory } from "./providers/factory";
-import { PROVIDER_IDS, type ProviderId } from "./providers/types";
+import { ProviderFactory, createProvider } from "./providers/factory";
+import { KEY_PROVIDER_IDS, PROVIDER_IDS, isKeyProviderId, type KeyProviderId, type ProviderId } from "./providers/types";
+import { COPILOT_VENDOR, VsCodeLmProvider } from "./providers/vscodeLm";
 import { ApiKeyStore } from "./secrets";
-import { providerLabel, providerSettingsOf, serviceConfigOf, translationSettingsChanged } from "./settings";
+import { modelLabelOf, providerLabel, providerSettingsOf, serviceConfigOf, translationSettingsChanged } from "./settings";
 import { isViewMode, type HostAction } from "./shared/protocol";
 import { TranslationCache, type CacheStore } from "./translate/cache";
 import { TranslationService } from "./translate/service";
@@ -23,9 +24,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   await Promise.all([cache.load(), keys.load()]);
 
   let config = readConfig();
+  const justification = vscode.l10n.t("Markdown Translation Preview translates the Markdown you preview.");
   const factory = new ProviderFactory(
     (provider) => keys.get(provider),
     () => providerSettingsOf(config),
+    (settings, apiKey) => (settings.provider === "vscode" ? new VsCodeLmProvider(settings.model, justification) : createProvider(settings, apiKey)),
   );
   const service = new TranslationService({
     cache,
@@ -60,6 +63,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.commands.registerCommand("bilingualMarkdown.clearApiKey", () => commands.clearApiKey()),
     vscode.commands.registerCommand("bilingualMarkdown.switchProvider", () => commands.switchProvider()),
     vscode.commands.registerCommand("bilingualMarkdown.clearCache", () => commands.clearCache()),
+    vscode.commands.registerCommand("bilingualMarkdown.chooseModel", () => commands.chooseModel()),
     vscode.workspace.onDidChangeConfiguration((event) => {
       if (!event.affectsConfiguration(CONFIG_SECTION)) return;
       const before = config;
@@ -75,6 +79,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       }
     }),
     keys.onDidChange(() => {
+      factory.invalidate();
+      service.unblock();
+    }),
+    vscode.lm.onDidChangeChatModels(() => {
+      if (config.provider !== "vscode") return;
       factory.invalidate();
       service.unblock();
     }),
@@ -109,11 +118,34 @@ class Commands {
     else void vscode.window.showInformationMessage(vscode.l10n.t("Open a bilingual preview first."));
   }
 
+  /** Picks the model for the VS Code Language Model API from the models VS Code offers. */
+  async chooseModel(): Promise<void> {
+    const models = await vscode.lm.selectChatModels();
+    if (models.length === 0) {
+      void vscode.window.showWarningMessage(vscode.l10n.t("No language models are available in VS Code. Install GitHub Copilot and sign in."));
+      return;
+    }
+    const current = readConfig().vscodeModel;
+    const automatic = { id: "", label: vscode.l10n.t("Automatic"), description: vscode.l10n.t("The first GitHub Copilot model") };
+    const items = [
+      automatic,
+      ...models
+        .sort((a, b) => Number(b.vendor === COPILOT_VENDOR) - Number(a.vendor === COPILOT_VENDOR) || a.name.localeCompare(b.name))
+        .map((model) => ({ id: model.id, label: model.name, description: `${model.vendor} · ${model.id}` })),
+    ].map((item) => ({ ...item, picked: item.id === current }));
+    const picked = await vscode.window.showQuickPick(items, { placeHolder: vscode.l10n.t("Translate with which language model?") });
+    if (!picked) return;
+    const settings = vscode.workspace.getConfiguration(CONFIG_SECTION);
+    await settings.update("vscode.model", picked.id, vscode.ConfigurationTarget.Global);
+    if (readConfig().provider !== "vscode") await setProvider("vscode");
+  }
+
   async setApiKey(requested?: unknown): Promise<void> {
-    const current = readConfig().provider;
-    const provider = PROVIDER_IDS.includes(requested as ProviderId)
-      ? (requested as ProviderId)
-      : await this.pickProvider(vscode.l10n.t("Which provider's API key do you want to set?"), current);
+    const configured = readConfig().provider;
+    const current = isKeyProviderId(configured) ? configured : "anthropic";
+    const provider = isKeyProviderId(requested)
+      ? requested
+      : await this.pickKeyProvider(vscode.l10n.t("Which provider's API key do you want to set?"), current);
     if (!provider) return;
     const label = providerLabel(provider);
     const value = await vscode.window.showInputBox({
@@ -130,7 +162,7 @@ class Commands {
     });
     if (value === undefined) return;
     await this.keys.set(provider, value.trim());
-    if (provider === current) {
+    if (provider === configured) {
       void vscode.window.showInformationMessage(vscode.l10n.t("Saved the {0} API key.", label));
       return;
     }
@@ -140,13 +172,16 @@ class Commands {
   }
 
   async clearApiKey(): Promise<void> {
-    const stored = PROVIDER_IDS.filter((provider) => this.keys.has(provider));
+    const stored = KEY_PROVIDER_IDS.filter((provider) => this.keys.has(provider));
     if (stored.length === 0) {
       void vscode.window.showInformationMessage(vscode.l10n.t("No API keys are stored."));
       return;
     }
+    const configured = readConfig().provider;
     const provider =
-      stored.length === 1 ? stored[0] : await this.pickProvider(vscode.l10n.t("Which API key do you want to delete?"), readConfig().provider, stored);
+      stored.length === 1
+        ? stored[0]
+        : await this.pickKeyProvider(vscode.l10n.t("Which API key do you want to delete?"), isKeyProviderId(configured) ? configured : "anthropic", stored);
     if (!provider) return;
     const remove = vscode.l10n.t("Delete");
     const answer = await vscode.window.showWarningMessage(
@@ -159,10 +194,10 @@ class Commands {
 
   async switchProvider(): Promise<void> {
     const current = readConfig().provider;
-    const provider = await this.pickProvider(vscode.l10n.t("Translate with"), current);
+    const provider = await this.pickProvider(vscode.l10n.t("Translate with"), current, PROVIDER_IDS);
     if (!provider || provider === current) return;
     await setProvider(provider);
-    if (!this.keys.has(provider)) await this.setApiKey(provider);
+    if (isKeyProviderId(provider) && !this.keys.has(provider) && !readConfig().openaiBaseUrl) await this.setApiKey(provider);
   }
 
   async clearCache(): Promise<void> {
@@ -173,21 +208,26 @@ class Commands {
     void vscode.window.showInformationMessage(vscode.l10n.t("Cleared the translation cache."));
   }
 
-  private async pickProvider(
-    placeHolder: string,
-    current: ProviderId,
-    candidates: readonly ProviderId[] = PROVIDER_IDS,
-  ): Promise<ProviderId | undefined> {
+  private async pickProvider<T extends ProviderId>(placeHolder: string, current: ProviderId, candidates: readonly T[]): Promise<T | undefined> {
     const config = readConfig();
     const items = [...candidates]
       .sort((a, b) => Number(b === current) - Number(a === current))
       .map((id) => ({
         id,
         label: providerLabel(id),
-        description: id === "anthropic" ? config.anthropicModel : config.openaiModel,
-        detail: this.keys.has(id) ? vscode.l10n.t("API key stored") : vscode.l10n.t("No API key yet"),
+        description: modelLabelOf({ ...config, provider: id }),
+        detail:
+          id === "vscode"
+            ? vscode.l10n.t("No API key needed: uses GitHub Copilot or another model in VS Code")
+            : this.keys.has(id)
+              ? vscode.l10n.t("API key stored")
+              : vscode.l10n.t("No API key yet"),
       }));
     return (await vscode.window.showQuickPick(items, { placeHolder }))?.id;
+  }
+
+  private pickKeyProvider(placeHolder: string, current: KeyProviderId, candidates: readonly KeyProviderId[] = KEY_PROVIDER_IDS) {
+    return this.pickProvider(placeHolder, current, candidates);
   }
 
   private async documentFor(uri: unknown): Promise<vscode.TextDocument | undefined> {
@@ -209,6 +249,9 @@ async function runHostAction(action: HostAction, extensionId: string): Promise<v
       break;
     case "switchProvider":
       await vscode.commands.executeCommand("bilingualMarkdown.switchProvider");
+      break;
+    case "chooseModel":
+      await vscode.commands.executeCommand("bilingualMarkdown.chooseModel");
       break;
     case "openSettings":
       await vscode.commands.executeCommand("workbench.action.openSettings", `@ext:${extensionId}`);

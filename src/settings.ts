@@ -11,6 +11,8 @@ export interface ExtensionConfig {
   anthropicModel: string;
   openaiModel: string;
   openaiBaseUrl: string;
+  /** VS Code Language Model API: a model ID, or "" for the first Copilot model. */
+  vscodeModel: string;
   reasoningEffort: ReasoningEffortSetting;
   styleInstructions: string;
   glossary: Record<string, string>;
@@ -28,6 +30,7 @@ export const DEFAULT_CONFIG: ExtensionConfig = {
   anthropicModel: "claude-haiku-5-5",
   openaiModel: "gpt-6-luna",
   openaiBaseUrl: "",
+  vscodeModel: "",
   reasoningEffort: "none",
   styleInstructions: "",
   glossary: {},
@@ -47,6 +50,7 @@ export function sanitizeConfig(raw: RawConfig): ExtensionConfig {
     anthropicModel: nonEmpty(raw.anthropicModel) ?? DEFAULT_CONFIG.anthropicModel,
     openaiModel: nonEmpty(raw.openaiModel) ?? DEFAULT_CONFIG.openaiModel,
     openaiBaseUrl: typeof raw.openaiBaseUrl === "string" ? raw.openaiBaseUrl.trim().replace(/\/+$/, "") : "",
+    vscodeModel: typeof raw.vscodeModel === "string" ? raw.vscodeModel.trim() : "",
     reasoningEffort: (REASONING_EFFORTS as readonly unknown[]).includes(raw.reasoningEffort)
       ? (raw.reasoningEffort as ReasoningEffortSetting)
       : DEFAULT_CONFIG.reasoningEffort,
@@ -60,8 +64,21 @@ export function sanitizeConfig(raw: RawConfig): ExtensionConfig {
   };
 }
 
+/** The configured model. For the VS Code Language Model API, "" means the first Copilot model. */
 export function modelOf(config: ExtensionConfig): string {
-  return config.provider === "anthropic" ? config.anthropicModel : config.openaiModel;
+  switch (config.provider) {
+    case "anthropic":
+      return config.anthropicModel;
+    case "openai":
+      return config.openaiModel;
+    case "vscode":
+      return config.vscodeModel;
+  }
+}
+
+/** The model as shown to the user. */
+export function modelLabelOf(config: ExtensionConfig): string {
+  return modelOf(config) || "Copilot";
 }
 
 export function providerSettingsOf(config: ExtensionConfig): ProviderSettings {
@@ -92,7 +109,7 @@ export function fingerprintOf(config: ExtensionConfig): string {
   const provider = providerSettingsOf(config);
   return settingsFingerprint({
     provider: provider.provider,
-    model: provider.model,
+    model: provider.model || "auto",
     endpoint: provider.baseUrl,
     targetLanguage: config.targetLanguage,
     styleInstructions: config.styleInstructions,
@@ -106,7 +123,14 @@ export function translationSettingsChanged(before: ExtensionConfig, after: Exten
 }
 
 export function providerLabel(provider: ProviderId): string {
-  return provider === "anthropic" ? "Anthropic" : "OpenAI";
+  switch (provider) {
+    case "anthropic":
+      return "Anthropic";
+    case "openai":
+      return "OpenAI";
+    case "vscode":
+      return "VS Code Language Model";
+  }
 }
 
 function nonEmpty(value: unknown): string | undefined {

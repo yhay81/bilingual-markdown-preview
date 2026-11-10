@@ -41,6 +41,8 @@
     "anthropic",
     "openai",
     "gpt",
+    "copilot",
+    "ollama",
     "byok"
   ],
   "main": "./dist/extension.js",
@@ -101,6 +103,11 @@
         "command": "bilingualMarkdown.clearCache",
         "title": "%command.clearCache%",
         "category": "%category%"
+      },
+      {
+        "command": "bilingualMarkdown.chooseModel",
+        "title": "%command.chooseModel%",
+        "category": "%category%"
       }
     ],
     "menus": {
@@ -141,11 +148,13 @@
           "type": "string",
           "enum": [
             "anthropic",
-            "openai"
+            "openai",
+            "vscode"
           ],
           "enumDescriptions": [
             "%config.provider.anthropic%",
-            "%config.provider.openai%"
+            "%config.provider.openai%",
+            "%config.provider.vscode%"
           ],
           "default": "anthropic",
           "markdownDescription": "%config.provider%",
@@ -179,6 +188,13 @@
           "scope": "machine",
           "order": 4
         },
+        "bilingualMarkdown.vscode.model": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "%config.vscode.model%",
+          "scope": "machine",
+          "order": 5
+        },
         "bilingualMarkdown.reasoningEffort": {
           "type": "string",
           "enum": [
@@ -198,14 +214,14 @@
           "default": "none",
           "markdownDescription": "%config.reasoningEffort%",
           "scope": "machine",
-          "order": 5
+          "order": 6
         },
         "bilingualMarkdown.styleInstructions": {
           "type": "string",
           "default": "",
           "editPresentation": "multilineText",
           "markdownDescription": "%config.styleInstructions%",
-          "order": 6
+          "order": 7
         },
         "bilingualMarkdown.glossary": {
           "type": "object",
@@ -214,13 +230,13 @@
             "type": "string"
           },
           "markdownDescription": "%config.glossary%",
-          "order": 7
+          "order": 8
         },
         "bilingualMarkdown.translateCodeComments": {
           "type": "boolean",
           "default": false,
           "markdownDescription": "%config.translateCodeComments%",
-          "order": 8
+          "order": 9
         },
         "bilingualMarkdown.maxConcurrentRequests": {
           "type": "integer",
@@ -229,7 +245,7 @@
           "maximum": 8,
           "markdownDescription": "%config.maxConcurrentRequests%",
           "scope": "machine",
-          "order": 9
+          "order": 10
         },
         "bilingualMarkdown.batchCharacterLimit": {
           "type": "integer",
@@ -238,7 +254,7 @@
           "maximum": 20000,
           "markdownDescription": "%config.batchCharacterLimit%",
           "scope": "machine",
-          "order": 10
+          "order": 11
         },
         "bilingualMarkdown.tokenLimit": {
           "type": "integer",
@@ -246,13 +262,13 @@
           "minimum": 0,
           "markdownDescription": "%config.tokenLimit%",
           "scope": "machine",
-          "order": 11
+          "order": 12
         },
         "bilingualMarkdown.syncScroll": {
           "type": "boolean",
           "default": true,
           "markdownDescription": "%config.syncScroll%",
-          "order": 12
+          "order": 13
         }
       }
     }

@@ -11,6 +11,7 @@ export function readConfig(): ExtensionConfig {
     anthropicModel: config.get("anthropic.model"),
     openaiModel: config.get("openai.model"),
     openaiBaseUrl: config.get("openai.baseUrl"),
+    vscodeModel: config.get("vscode.model"),
     reasoningEffort: config.get("reasoningEffort"),
     styleInstructions: config.get("styleInstructions"),
     glossary: config.get("glossary"),
