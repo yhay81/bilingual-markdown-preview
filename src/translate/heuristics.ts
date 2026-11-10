@@ -44,6 +44,11 @@ const STOPWORDS: Record<string, ReadonlySet<string>> = {
   de: new Set("der die das und ist nicht mit ein eine den dem zu für auf im sich auch sie wird werden oder von bei wenn kann".split(" ")),
   pt: new Set("o os e do da dos das em que é para com um uma não por no na ao mais você são está também".split(" ")),
   it: new Set("il gli e di che è per con un una non del della dei si sono da al alla più questo come anche".split(" ")),
+  nl: new Set("de het een en van is dat niet op te voor met zijn er die je ook als aan bij of worden kan wordt naar".split(" ")),
+  pl: new Set("i w na z do nie się jest to że od jak po dla są co ale przez może być tak lub jeśli oraz".split(" ")),
+  tr: new Set("ve bir bu için ile olarak olan daha çok gibi ne var değil ama kadar sonra veya mi her şu ise".split(" ")),
+  vi: new Set("và của là có được trong cho các những một không với này để người khi đã từ thì cũng như bạn".split(" ")),
+  id: new Set("dan yang di ini itu dengan untuk dari tidak ke dalam akan pada juga adalah atau bisa ada anda oleh".split(" ")),
 };
 
 function stopwordRatios(text: string): Map<string, number> {
@@ -93,6 +98,11 @@ const LANGUAGES: readonly Language[] = [
   { codes: ["de", "deu", "ger"], names: ["german", "deutsch"], test: inLatinLanguage("de") },
   { codes: ["pt", "por"], names: ["portuguese", "português"], test: inLatinLanguage("pt") },
   { codes: ["it", "ita"], names: ["italian", "italiano"], test: inLatinLanguage("it") },
+  { codes: ["nl", "nld", "dut"], names: ["dutch", "nederlands"], test: inLatinLanguage("nl") },
+  { codes: ["pl", "pol"], names: ["polish", "polski"], test: inLatinLanguage("pl") },
+  { codes: ["tr", "tur"], names: ["turkish", "türkçe"], test: inLatinLanguage("tr") },
+  { codes: ["vi", "vie"], names: ["vietnamese", "tiếng việt"], test: inLatinLanguage("vi") },
+  { codes: ["id", "ind"], names: ["indonesian", "bahasa indonesia"], test: inLatinLanguage("id") },
 ];
 
 const languageCache = new Map<string, Language | undefined>();

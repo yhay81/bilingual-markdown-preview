@@ -176,7 +176,7 @@ Turn on `markdownTranslation.translateCodeComments` to translate the comments in
 
 ## Known limitations
 
-- Text already in the target language is recognized for Japanese, Chinese, Korean, Russian, Ukrainian, Greek, Arabic, Hebrew, Thai, Hindi, English, Spanish, French, German, Portuguese and Italian. It is recognized only when it is clearly in that language; short or mixed text is sent for translation.
+- Text already in the target language is recognized for Japanese, Chinese, Korean, Russian, Ukrainian, Greek, Arabic, Hebrew, Thai, Hindi, Vietnamese, English, Spanish, French, German, Portuguese, Italian, Dutch, Polish, Turkish and Indonesian. It is recognized only when it is clearly in that language; short or mixed text is sent for translation.
 - Text in other HTML blocks than `<summary>` is not translated.
 - Comment translation does not translate Python docstrings or other text in strings, or the comments in indented code blocks and in code blocks without a language.
 

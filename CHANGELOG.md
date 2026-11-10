@@ -15,7 +15,7 @@
 - The toolbar shows the tokens used, and `markdownTranslation.tokenLimit` pauses translation after that many.
 - Each request carries the text just before it, for consistent terms and tone.
 - Math is rendered with KaTeX and Mermaid diagrams are drawn. `<details>` blocks fold on both sides, and their summaries are translated.
-- Text already in the target language is now recognized for Chinese, Korean, Russian, Ukrainian, Greek, Arabic, Hebrew, Thai, Hindi, English, Spanish, French, German, Portuguese and Italian too, not only Japanese.
+- Text already in the target language is now recognized for Chinese, Korean, Russian, Ukrainian, Greek, Arabic, Hebrew, Thai, Hindi, Vietnamese, English, Spanish, French, German, Portuguese, Italian, Dutch, Polish, Turkish and Indonesian too, not only Japanese.
 - An interface in Simplified Chinese and Korean.
 - Translations made by earlier versions are translated again once, because the prompt changed.
 

@@ -108,6 +108,14 @@ describe("heuristics", () => {
     expect(looksLikeTargetLanguage("Ceci est le guide pour la nouvelle version.", "French")).toBe(true);
     expect(looksLikeTargetLanguage("Das ist die Anleitung für die neue Version.", "de-DE")).toBe(true);
     expect(looksLikeTargetLanguage("Esta es la guía para la nueva versión.", "English")).toBe(false);
+    expect(looksLikeTargetLanguage("Dit is de handleiding voor de nieuwe versie van het pakket.", "Dutch")).toBe(true);
+    expect(looksLikeTargetLanguage("To jest przewodnik po nowej wersji i jak jej używać.", "Polish")).toBe(true);
+    expect(looksLikeTargetLanguage("Bu, yeni sürüm için bir kılavuz ve daha çok bilgi.", "Turkish")).toBe(true);
+    expect(looksLikeTargetLanguage("Đây là hướng dẫn cho phiên bản mới của gói và các tính năng.", "Vietnamese")).toBe(true);
+    expect(looksLikeTargetLanguage("Ini adalah panduan untuk versi baru dari paket yang ada.", "Indonesian")).toBe(true);
+    expect(looksLikeTargetLanguage("Dit is de handleiding voor de nieuwe versie van het pakket.", "German")).toBe(false);
+    expect(looksLikeTargetLanguage("Ini adalah panduan untuk versi baru dari paket yang ada.", "English")).toBe(false);
+    expect(looksLikeTargetLanguage("This is the guide for the new release of the package.", "Dutch")).toBe(false);
     // Too short to tell, so it is translated.
     expect(looksLikeTargetLanguage("Release notes", "English")).toBe(false);
     expect(looksLikeTargetLanguage("Das ist gut.", "Klingon")).toBe(false);
