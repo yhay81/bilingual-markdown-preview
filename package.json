@@ -39,7 +39,8 @@
       "restrictedConfigurations": [
         "bilingualMarkdown.targetLanguage",
         "bilingualMarkdown.styleInstructions",
-        "bilingualMarkdown.glossary"
+        "bilingualMarkdown.glossary",
+        "bilingualMarkdown.translateCodeComments"
       ]
     },
     "virtualWorkspaces": false
@@ -199,6 +200,12 @@
           "markdownDescription": "%config.glossary%",
           "order": 7
         },
+        "bilingualMarkdown.translateCodeComments": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "%config.translateCodeComments%",
+          "order": 8
+        },
         "bilingualMarkdown.maxConcurrentRequests": {
           "type": "integer",
           "default": 3,
@@ -206,7 +213,7 @@
           "maximum": 8,
           "markdownDescription": "%config.maxConcurrentRequests%",
           "scope": "machine",
-          "order": 8
+          "order": 9
         },
         "bilingualMarkdown.batchCharacterLimit": {
           "type": "integer",
@@ -215,13 +222,13 @@
           "maximum": 20000,
           "markdownDescription": "%config.batchCharacterLimit%",
           "scope": "machine",
-          "order": 9
+          "order": 10
         },
         "bilingualMarkdown.syncScroll": {
           "type": "boolean",
           "default": true,
           "markdownDescription": "%config.syncScroll%",
-          "order": 10
+          "order": 11
         }
       }
     }

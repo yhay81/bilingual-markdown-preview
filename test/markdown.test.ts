@@ -171,6 +171,57 @@ describe("RowRenderer", () => {
   });
 });
 
+describe("code comment translation", () => {
+  const code = ["```js", "// Adds two numbers.", "const sum = a + b; // the result", "```"].join("\n");
+  const withComments = (text: string) => segmentDocument(md, text, { targetLanguage: "Japanese", translateCodeComments: true });
+
+  it("is off by default, so code blocks span both columns", () => {
+    const [row] = segment(code).rows;
+    expect([row?.type, row?.shared, row?.units]).toEqual(["code", true, []]);
+  });
+
+  it("splits the comments of a code block out for translation", () => {
+    const [row] = withComments(code).rows;
+    expect(row?.shared).toBe(false);
+    expect(row?.units.map((unit) => [unit.masked, unit.comment?.block])).toEqual([
+      ["Adds two numbers.", 0],
+      ["the result", 0],
+    ]);
+  });
+
+  it("shares code blocks whose comments have nothing to translate", () => {
+    const [row] = withComments(["```ts", '/// <reference types="node" />', "// 日本語のコメントです。", "let x = 1;", "```"].join("\n")).rows;
+    expect(row?.shared).toBe(true);
+    expect(row?.units).toEqual([]);
+  });
+
+  it("masks code in comments but does not read brackets as links", () => {
+    const doc = withComments(["[x]: https://example.com", "", "```c", "// see [x] and `f()`", "```"].join("\n"));
+    expect(doc.rows.at(-1)?.units[0]).toMatchObject({ masked: "see [x] and ⟦1⟧", placeholders: ["`f()`"] });
+  });
+
+  it("renders the code with its comments translated", () => {
+    const doc = withComments(code);
+    const row = doc.rows[0]!;
+    expect(renderer.renderTranslation(row, doc.env, ["2 つの数を足します。", "結果"])).toBe(
+      '<pre><code class="language-js">// 2 つの数を足します。\nconst sum = a + b; // 結果\n</code></pre>\n',
+    );
+    expect(renderer.renderTranslation(row, doc.env, [undefined, "結果"])).toContain("// Adds two numbers.\n");
+  });
+
+  it("finds comments in code blocks inside list items", () => {
+    const doc = withComments(["- Run:", "", "  ```sh", "  # Install it", "  npm i", "  ```"].join("\n"));
+    const row = doc.rows[0]!;
+    expect(row.units.map((unit) => [unit.masked, unit.comment?.block])).toEqual([
+      ["Run:", undefined],
+      ["Install it", 0],
+    ]);
+    const html = renderer.renderTranslation(row, doc.env, ["実行:", "インストールする"]);
+    expect(html).toContain("<p>実行:</p>");
+    expect(html).toContain('<pre><code class="language-sh"># インストールする\nnpm i\n</code></pre>');
+  });
+});
+
 describe("Slugger", () => {
   it("makes GitHub-style unique slugs", () => {
     const slugger = new Slugger();

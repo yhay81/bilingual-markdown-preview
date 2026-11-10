@@ -26,6 +26,7 @@ describe("sanitizeConfig", () => {
       maxConcurrentRequests: 100,
       batchCharacterLimit: 10,
       syncScroll: "yes",
+      translateCodeComments: "yes",
     });
     expect(config).toEqual({
       ...DEFAULT_CONFIG,
@@ -45,6 +46,11 @@ describe("sanitizeConfig", () => {
       glossary: {},
     });
     expect(sanitizeConfig({ maxConcurrentRequests: 0, glossary: null }).maxConcurrentRequests).toBe(1);
+  });
+
+  it("translates code comments only when turned on", () => {
+    expect(DEFAULT_CONFIG.translateCodeComments).toBe(false);
+    expect(sanitizeConfig({ translateCodeComments: true }).translateCodeComments).toBe(true);
   });
 });
 
@@ -75,7 +81,14 @@ describe("derived settings", () => {
   it("fingerprints exactly what changes a translation", () => {
     const base = fingerprintOf(DEFAULT_CONFIG);
     expect(
-      fingerprintOf({ ...DEFAULT_CONFIG, maxConcurrentRequests: 8, batchCharacterLimit: 900, syncScroll: false, openaiBaseUrl: "https://x.example" }),
+      fingerprintOf({
+        ...DEFAULT_CONFIG,
+        maxConcurrentRequests: 8,
+        batchCharacterLimit: 900,
+        syncScroll: false,
+        openaiBaseUrl: "https://x.example",
+        translateCodeComments: true,
+      }),
     ).toBe(base);
     const changes = [
       { targetLanguage: "French" },
@@ -93,5 +106,6 @@ describe("derived settings", () => {
     expect(translationSettingsChanged(DEFAULT_CONFIG, { ...DEFAULT_CONFIG, reasoningEffort: "high" })).toBe(true);
     expect(translationSettingsChanged(DEFAULT_CONFIG, { ...DEFAULT_CONFIG, targetLanguage: "German" })).toBe(true);
     expect(translationSettingsChanged(DEFAULT_CONFIG, { ...DEFAULT_CONFIG, maxConcurrentRequests: 1, syncScroll: false })).toBe(false);
+    expect(translationSettingsChanged(DEFAULT_CONFIG, { ...DEFAULT_CONFIG, translateCodeComments: true })).toBe(false);
   });
 });

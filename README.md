@@ -6,6 +6,7 @@ Markdown を原文と訳文で左右に並べてプレビューする VS Code �
 
 - 見出し・段落・リスト項目・表・引用をブロック単位で翻訳し、原文と訳文の高さを揃えて表示します。
 - コードブロック、front matter、画像だけの段落、すでに訳文の言語で書かれた段落は翻訳せず、2 列にまたがって表示します。
+- 設定でオンにすると、コードブロックのコメントも翻訳します。コメントを訳したコードを原文の横に並べます（送るのはコメントの文章だけです）。
 - ツールバーで「原文」「並べて表示」「訳文」を切り替えられます。エディターとプレビューのスクロールは連動します。
 - 画面に見えている部分から先に翻訳し、訳文は届いたそばから表示します。
 - インラインコード、URL、リンク先、HTML は記号（`⟦1⟧` など）に置き換えて翻訳に出し、訳文に元のまま戻します。記号が欠けた訳文は自動で訳し直し、それでも直らなければ行に警告を出します。
@@ -48,25 +49,39 @@ Markdown を原文と訳文で左右に並べてプレビューする VS Code �
 | `bilingualMarkdown.reasoningEffort` | `none` | 回答の前にモデルが推論する量（`none` / `low` / `medium` / `high` / `default`）。翻訳には通常 `none` で足ります。 |
 | `bilingualMarkdown.styleInstructions` | （空欄） | 翻訳者への追加の指示（例: `である調で書く`）。 |
 | `bilingualMarkdown.glossary` | `{}` | 訳語を固定する用語集。`{ "pull request": "プルリクエスト" }` のように書きます。 |
+| `bilingualMarkdown.translateCodeComments` | `false` | コードブロックのコメントも翻訳します。詳しくは「[コードのコメントの翻訳](#コードのコメントの翻訳)」を見てください。 |
 | `bilingualMarkdown.maxConcurrentRequests` | `3` | 同時に送る翻訳リクエストの上限（1〜8）。 |
 | `bilingualMarkdown.batchCharacterLimit` | `4000` | 1 回のリクエストで送る原文のおおよその文字数（500〜20000）。 |
 | `bilingualMarkdown.syncScroll` | `true` | エディターとプレビューのスクロールを連動させます。 |
 
 プロバイダー、モデル、ベース URL、推論の量、同時リクエスト数、1 回の文字数はユーザー設定でだけ変えられます。ワークスペースの設定ファイルでは変わりません。
 
+## コードのコメントの翻訳
+
+`bilingualMarkdown.translateCodeComments` をオンにすると、コードブロックのコメントも翻訳します。コメントがあるコードブロックは、左に原文のコード、右にコメントを訳したコードを並べて表示します。
+
+- 送るのはコメントの文章だけで、コードは送りません。文字列の中の `//` や `#` はコメントとして扱いません。
+- 何行も続くコメントは 1 つの文章としてまとめて訳し、元のコメントの幅で折り返します。行末のコメントは 1 行のまま訳します。
+- `eslint-disable`、`@ts-ignore`、`# noqa`、`//go:build` のような、ツールが読むコメントは訳しません。すでに訳文の言語で書かれたコメントも訳しません。
+- 対象は、```` ```python ```` のように開始フェンスに言語名を書いたコードブロックです。対応している言語は次のとおりです。
+  - `//` と `/* */`: JavaScript、TypeScript、C、C++、C#、Java、Kotlin、Scala、Swift、Dart、Go、Rust、PHP、Protocol Buffers、JSON（コメント付き）
+  - `#`: Python、Ruby、Perl、R、Elixir、シェル（sh、bash、zsh など）、PowerShell、YAML、TOML、Dockerfile、Makefile、CMake、Terraform（HCL）、GraphQL、nginx
+  - そのほか: CSS、SCSS、Less、SQL、Lua、Haskell、Clojure などの Lisp、INI、HTML、XML
+
 ## セキュリティとプライバシー
 
 - 翻訳する文章は、選んだプロバイダーの API に送ります。送信先は `https://api.anthropic.com`、`https://api.openai.com/v1`、またはユーザー設定の `bilingualMarkdown.openai.baseUrl` だけです。`ANTHROPIC_BASE_URL`、`OPENAI_BASE_URL`、`OPENAI_ORG_ID`、`OPENAI_PROJECT_ID` などの環境変数は使いません。
-- コードブロック、front matter、インラインコード、URL、リンク先、HTML は送りません。
-- 制限モード（信頼していないワークスペース）では、翻訳先の言語・追加の指示・用語集もユーザー設定の値だけを使います。
+- コードブロック、front matter、インラインコード、URL、リンク先、HTML は送りません。ただし `bilingualMarkdown.translateCodeComments` をオンにしたときは、コードブロックのコメントの文章を送ります。
+- 制限モード（信頼していないワークスペース）では、翻訳先の言語・追加の指示・用語集・コメントの翻訳もユーザー設定の値だけを使います。
 - プレビューは厳格な Content Security Policy の下で表示し、Markdown 中の HTML は DOMPurify で無害化します。文書中のスクリプトやコマンド URI は実行しません。
 - リンクは `http`、`https`、`mailto` をブラウザーなどの外部アプリで開き、相対パスは VS Code で開きます。それ以外のスキームは開きません。
 
 ## 既知の制限
 
 - `<details>` など HTML ブロックの中に Markdown を書くと、ブロックごとに別の行として表示されます（開閉はできません）。
-- 「すでに訳文の言語で書かれた段落」を見分けられるのは、翻訳先が日本語のときだけです。ほかの言語では、その言語で書かれた段落も翻訳に送ります。
+- すでに訳文の言語で書かれた段落やコメントを見分けられるのは、翻訳先が日本語のときだけです。ほかの言語では、その言語で書かれた段落やコメントも翻訳に送ります。
 - 数式や Mermaid の図は描画せず、元の記法のまま表示します。
+- コメントの翻訳は、Python の docstring や文字列の中の文章を訳しません。インデントで書いたコードブロックや、言語名のないコードブロックのコメントも訳しません。
 
 ## 開発
 

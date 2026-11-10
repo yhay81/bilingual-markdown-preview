@@ -25,8 +25,9 @@
   "config.reasoningEffort.default": "推論パラメーターを送らず、モデルの既定に任せる（このパラメーターを受け付けないモデル向け）",
   "config.styleInstructions": "翻訳者への追加指示（例: `である調で書く`）。",
   "config.glossary": "用語の固定訳。`{ \"原語\": \"訳語\" }` の形式で書きます。",
+  "config.translateCodeComments": "コードブロックのコメントも翻訳し、コメントを訳したコードを原文の横に並べます。送るのはコメントの文章だけで、コードは送りません。```` ```python ```` のように開始フェンスに言語名を書いたコードブロックが対象で、JavaScript、TypeScript、Python、Go、Rust、Java、C、シェル、YAML、SQL、HTML など主な言語に対応しています。",
   "config.maxConcurrentRequests": "同時に送る翻訳リクエストの上限。",
   "config.batchCharacterLimit": "1 回のリクエストで送る原文のおおよその文字数。",
   "config.syncScroll": "エディターとプレビューのスクロール位置を連動させます。",
-  "capabilities.untrustedWorkspaces": "制限モードでは、翻訳先の言語・翻訳者への追加指示・用語集にワークスペースの設定を使わず、ユーザー設定の値だけを使います。"
+  "capabilities.untrustedWorkspaces": "制限モードでは、翻訳先の言語・翻訳者への追加指示・用語集・コードのコメントの翻訳にワークスペースの設定を使わず、ユーザー設定の値だけを使います。"
 }

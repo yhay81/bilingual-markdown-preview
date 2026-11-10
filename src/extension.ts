@@ -69,6 +69,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         service.reset();
         manager.refreshAll();
       } else {
+        // Comment translation changes what is split out for translation, not how it is translated.
+        if (before.translateCodeComments !== config.translateCodeComments) manager.refreshAll();
         service.kick();
       }
     }),

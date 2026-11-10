@@ -1,6 +1,7 @@
 import type { Env, MarkdownIt, Token } from "markdown-it";
 import { hasTranslatableText, looksLikeTargetLanguage } from "../translate/heuristics";
 import { maskInline } from "../translate/mask";
+import { findComments, type CommentSlot } from "./codeComments";
 import { splitFrontMatter } from "./frontMatter";
 
 /**
@@ -9,7 +10,8 @@ import { splitFrontMatter } from "./frontMatter";
  * A row is one top-level block (paragraph, heading, table, quote, code, ...), or one item of a
  * top-level list. The preview shows each row's source and translation side by side, so rows are
  * the unit of alignment. Within a row, every inline token (a paragraph's text, a table cell, a
- * nested list item) is one translation unit.
+ * nested list item) is one translation unit. With comment translation on, so is every comment in
+ * the row's fenced code blocks.
  */
 
 export type RowType = "block" | "listItem" | "code" | "html" | "rule" | "frontMatter";
@@ -22,6 +24,8 @@ export interface Unit {
   placeholders: string[];
   /** False when there is nothing to translate: only code, links or images, or already in the target language. */
   translatable: boolean;
+  /** A comment in a code block: which of the row's fenced code blocks holds it, and where. Inline Markdown has none. */
+  comment?: { block: number; slot: CommentSlot };
 }
 
 export interface Row {
@@ -49,6 +53,8 @@ export interface SegmentedDocument {
 
 export interface SegmentOptions {
   targetLanguage: string;
+  /** Also translate the comments in fenced code blocks. */
+  translateCodeComments?: boolean;
 }
 
 interface Context {
@@ -58,6 +64,7 @@ interface Context {
   lineOffset: number;
   referenceLabels: ReadonlySet<string>;
   targetLanguage: string;
+  translateCodeComments: boolean;
 }
 
 const COMMENT_RE = /<!--[\s\S]*?-->/g;
@@ -86,6 +93,7 @@ export function segmentDocument(md: MarkdownIt, text: string, options: SegmentOp
     lineOffset: bodyLineOffset,
     referenceLabels: new Set(Object.keys(env.references ?? {})),
     targetLanguage: options.targetLanguage,
+    translateCodeComments: options.translateCodeComments ?? false,
   };
 
   for (let i = 0; i < tokens.length; i++) {
@@ -110,6 +118,11 @@ export function forkEnv(env: Env): Env {
 /** Inline tokens that carry text, in order. Segmentation and rendering must agree on this list. */
 export function inlineTokensOf(tokens: readonly Token[]): Token[] {
   return tokens.filter((token) => token.type === "inline" && token.content.trim() !== "");
+}
+
+/** Fenced code blocks, in order, also inside lists and quotes. A comment unit's `block` indexes this list. */
+export function fencesOf(tokens: readonly Token[]): Token[] {
+  return tokens.filter((token) => token.type === "fence");
 }
 
 function listRows(context: Context, tokens: readonly Token[], open: number, close: number): Row[] {
@@ -153,7 +166,8 @@ function createRow(context: Context, type: RowType, map: readonly [number, numbe
   const source = context.lines.slice(first, end).join("\n");
   if (type === "html" && source.replace(COMMENT_RE, "").trim() === "") return undefined;
 
-  const units = type === "block" || type === "listItem" ? unitsOf(context, source) : [];
+  const hasUnits = type === "block" || type === "listItem" || (type === "code" && context.translateCodeComments);
+  const units = hasUnits ? unitsOf(context, source) : [];
   return {
     type,
     shared: units.every((unit) => !unit.translatable),
@@ -167,14 +181,28 @@ function createRow(context: Context, type: RowType, map: readonly [number, numbe
 
 function unitsOf(context: Context, source: string): Unit[] {
   const tokens = context.md.parse(source, forkEnv(context.env));
-  return inlineTokensOf(tokens).map((token) => {
-    const { masked, placeholders } = maskInline(token.content, {
-      referenceLabels: context.referenceLabels,
-      normalizeLabel: context.md.utils.normalizeReference,
+  const units = inlineTokensOf(tokens).map((token) => textUnit(context, token.content, false));
+  if (context.translateCodeComments) {
+    fencesOf(tokens).forEach((fence, block) => {
+      for (const comment of findComments(fence.content, fence.info)) {
+        const unit = textUnit(context, comment.text, true);
+        // Comments with nothing to translate are left out: the code is shown as written around them.
+        if (unit.translatable) units.push({ ...unit, comment: { block, slot: comment.slot } });
+      }
     });
-    const translatable = hasTranslatableText(masked) && !looksLikeTargetLanguage(masked, context.targetLanguage);
-    return { source: token.content, masked, placeholders, translatable };
+  }
+  return units;
+}
+
+function textUnit(context: Context, source: string, plainText: boolean): Unit {
+  const { masked, placeholders } = maskInline(source, {
+    // A bracketed word in a comment is not a link.
+    referenceLabels: plainText ? undefined : context.referenceLabels,
+    normalizeLabel: context.md.utils.normalizeReference,
+    plainText,
   });
+  const translatable = hasTranslatableText(masked) && !looksLikeTargetLanguage(masked, context.targetLanguage);
+  return { source, masked, placeholders, translatable };
 }
 
 function findClose(tokens: readonly Token[], open: number): number {

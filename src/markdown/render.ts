@@ -1,11 +1,13 @@
 import type { Env, MarkdownIt, Token } from "markdown-it";
-import { forkEnv, inlineTokensOf, type Row } from "./segment";
+import { spliceComments, type CommentEdit } from "./codeComments";
+import { fencesOf, forkEnv, inlineTokensOf, type Row } from "./segment";
 import type { Slugger } from "./slug";
 
 /**
  * Renders one row as HTML. The translation is rendered from the row's own token tree with each
  * inline token's children replaced by the parsed translation, so block structure (lists, tables,
- * quotes) is identical on both sides.
+ * quotes) is identical on both sides. Translated code comments are written into the code of their
+ * fenced code blocks.
  */
 export class RowRenderer {
   constructor(private readonly md: MarkdownIt) {}
@@ -25,19 +27,32 @@ export class RowRenderer {
     return this.md.renderer.render(tokens, this.md.options, rowEnv);
   }
 
-  /** `texts[k]` is the translated inline Markdown of unit k, or undefined to keep the source. */
+  /** `texts[k]` is the translation of unit k (inline Markdown, or a comment's plain text), or undefined to keep the source. */
   renderTranslation(row: Row, env: Env, texts: ReadonlyArray<string | undefined>): string {
     const rowEnv = forkEnv(env);
     const tokens = this.parse(row, rowEnv);
-    inlineTokensOf(tokens).forEach((inline, k) => {
+    const inlines = inlineTokensOf(tokens);
+    const edits = new Map<number, CommentEdit[]>();
+    let nextInline = 0;
+    row.units.forEach((unit, k) => {
       const text = texts[k];
-      if (text === undefined) return;
+      if (unit.comment) {
+        if (text !== undefined) edits.set(unit.comment.block, [...(edits.get(unit.comment.block) ?? []), { slot: unit.comment.slot, text }]);
+        return;
+      }
+      const inline = inlines[nextInline++];
+      if (!inline || text === undefined) return;
       const children = this.md.parseInline(text, forkEnv(env))[0]?.children ?? [];
       const checkbox = inline.meta?.task ? inline.children?.[0] : undefined;
       if (checkbox) children.unshift(checkbox);
       inline.children = children;
       inline.content = text;
     });
+    const fences = fencesOf(tokens);
+    for (const [block, blockEdits] of edits) {
+      const fence = fences[block];
+      if (fence) fence.content = spliceComments(fence.content, blockEdits);
+    }
     return this.md.renderer.render(tokens, this.md.options, rowEnv);
   }
 

@@ -14,6 +14,7 @@ export function readConfig(): ExtensionConfig {
     reasoningEffort: config.get("reasoningEffort"),
     styleInstructions: config.get("styleInstructions"),
     glossary: config.get("glossary"),
+    translateCodeComments: config.get("translateCodeComments"),
     maxConcurrentRequests: config.get("maxConcurrentRequests"),
     batchCharacterLimit: config.get("batchCharacterLimit"),
     syncScroll: config.get("syncScroll"),

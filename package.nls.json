@@ -25,8 +25,9 @@
   "config.reasoningEffort.default": "Send no reasoning parameter and use the model's default (for models that reject the parameter)",
   "config.styleInstructions": "Extra instructions for the translator, e.g. `Use the plain である style.`",
   "config.glossary": "Fixed translations for terms, as `{ \"source term\": \"translation\" }`.",
+  "config.translateCodeComments": "Also translate the comments in fenced code blocks, and show the code with its comments translated beside the original. Only the comment text is sent, never the code. The block's language must be named after the opening fence, as in ```` ```python ````; common languages such as JavaScript, TypeScript, Python, Go, Rust, Java, C, shell, YAML, SQL and HTML are supported.",
   "config.maxConcurrentRequests": "Maximum number of translation requests in flight at once.",
   "config.batchCharacterLimit": "Approximate number of source characters sent in one request.",
   "config.syncScroll": "Keep the editor and the preview scrolled to the same place.",
-  "capabilities.untrustedWorkspaces": "In Restricted Mode, the target language, style instructions, and glossary come only from your user settings, not from the workspace."
+  "capabilities.untrustedWorkspaces": "In Restricted Mode, the target language, style instructions, glossary, and code comment translation come only from your user settings, not from the workspace."
 }

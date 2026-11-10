@@ -198,6 +198,21 @@ body[data-mode="translation"] .row.pair .source {
   display: none;
 }
 
+/* Code with translated comments: side by side, both copies of the code are as tall as the taller one.
+   Only in the "both" mode, so the rules above still hide the other column; a cell hidden with the
+   hidden attribute stays hidden. */
+body[data-mode="both"] .row.pair.kind-fence > .cell:not([hidden]),
+body[data-mode="both"] .row.pair.kind-fence > .cell > .content {
+  display: flex;
+  flex-direction: column;
+}
+
+body[data-mode="both"] .row.pair.kind-fence > .cell > pre,
+body[data-mode="both"] .row.pair.kind-fence > .cell > .content,
+body[data-mode="both"] .row.pair.kind-fence > .cell > .content > pre {
+  flex: 1 0 auto;
+}
+
 .cell > .content > :first-child,
 .cell > :first-child {
   margin-top: 0;

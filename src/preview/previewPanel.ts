@@ -1,7 +1,7 @@
 import type { MarkdownIt } from "markdown-it";
 import * as vscode from "vscode";
 import type { RowRenderer } from "../markdown/render";
-import type { Row, SegmentedDocument } from "../markdown/segment";
+import type { Row, SegmentedDocument, Unit } from "../markdown/segment";
 import { segmentDocument } from "../markdown/segment";
 import { Slugger } from "../markdown/slug";
 import { fingerprintOf, modelOf, providerLabel, type ExtensionConfig } from "../settings";
@@ -20,6 +20,7 @@ import {
 } from "../shared/protocol";
 import { translationKey } from "../translate/keys";
 import { unmask } from "../translate/mask";
+import type { SegmentKind } from "../translate/prompt";
 import type { ServiceChange, TranslationJob, TranslationService } from "../translate/service";
 import { buildWebviewHtml } from "./html";
 
@@ -238,13 +239,16 @@ export class BilingualPreview implements vscode.Disposable {
   private prepare(): Prepared {
     const config = this.context.getConfig();
     const fingerprint = fingerprintOf(config);
-    const doc = segmentDocument(this.context.md, this.document.getText(), { targetLanguage: config.targetLanguage });
+    const doc = segmentDocument(this.context.md, this.document.getText(), {
+      targetLanguage: config.targetLanguage,
+      translateCodeComments: config.translateCodeComments,
+    });
     const slugger = new Slugger();
     const rowsByKey = new Map<string, number[]>();
     const rows = doc.rows.map((row, index): PreparedRow => {
       const keys = row.shared
         ? []
-        : row.units.map((unit) => (unit.translatable ? translationKey(fingerprint, unit.masked, unit.placeholders) : undefined));
+        : row.units.map((unit) => (unit.translatable ? translationKey(fingerprint, unit.masked, unit.placeholders, kindOf(unit)) : undefined));
       for (const key of definedKeys(keys)) {
         const indexes = rowsByKey.get(key);
         if (!indexes) rowsByKey.set(key, [index]);
@@ -263,7 +267,7 @@ export class BilingualPreview implements vscode.Disposable {
     for (const { row, keys } of prepared.rows) {
       row.units.forEach((unit, k) => {
         const key = keys[k];
-        if (key) jobs.push({ key, masked: unit.masked, placeholders: unit.placeholders, line: row.startLine });
+        if (key) jobs.push({ key, masked: unit.masked, placeholders: unit.placeholders, line: row.startLine, kind: kindOf(unit) });
       });
     }
     this.context.service.request(this.owner, jobs);
@@ -272,7 +276,7 @@ export class BilingualPreview implements vscode.Disposable {
   private rowState(prepared: Prepared, index: number): RowUpdate {
     const entry = prepared.rows[index]!;
     if (entry.row.shared) return { index, status: "shared" };
-    const texts: string[] = [];
+    const texts: Array<string | undefined> = [];
     let pending = false;
     let warning = false;
     let error: string | undefined;
@@ -280,7 +284,7 @@ export class BilingualPreview implements vscode.Disposable {
       const key = entry.keys[k];
       const result = key ? this.context.service.getResult(key) : undefined;
       if (!key) {
-        texts.push(unit.source);
+        texts.push(undefined);
       } else if (!result || result.state === "queued" || result.state === "inflight") {
         pending = true;
       } else if (result.state === "error") {
@@ -494,6 +498,10 @@ function uiStrings(): UiStrings {
     failed: vscode.l10n.t("{0} failed", "{0}"),
     warning: vscode.l10n.t("Check this translation"),
   };
+}
+
+function kindOf(unit: Unit): SegmentKind {
+  return unit.comment ? "comment" : "markdown";
 }
 
 function definedKeys(keys: ReadonlyArray<string | undefined>): string[] {

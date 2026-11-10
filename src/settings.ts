@@ -14,6 +14,7 @@ export interface ExtensionConfig {
   reasoningEffort: ReasoningEffortSetting;
   styleInstructions: string;
   glossary: Record<string, string>;
+  translateCodeComments: boolean;
   maxConcurrentRequests: number;
   batchCharacterLimit: number;
   syncScroll: boolean;
@@ -28,6 +29,7 @@ export const DEFAULT_CONFIG: ExtensionConfig = {
   reasoningEffort: "none",
   styleInstructions: "",
   glossary: {},
+  translateCodeComments: false,
   maxConcurrentRequests: 3,
   batchCharacterLimit: 4000,
   syncScroll: true,
@@ -47,6 +49,7 @@ export function sanitizeConfig(raw: RawConfig): ExtensionConfig {
       : DEFAULT_CONFIG.reasoningEffort,
     styleInstructions: typeof raw.styleInstructions === "string" ? raw.styleInstructions.trim().slice(0, 4000) : "",
     glossary: sanitizeGlossary(raw.glossary),
+    translateCodeComments: raw.translateCodeComments === true,
     maxConcurrentRequests: clampInt(raw.maxConcurrentRequests, 1, 8, DEFAULT_CONFIG.maxConcurrentRequests),
     batchCharacterLimit: clampInt(raw.batchCharacterLimit, 500, 20_000, DEFAULT_CONFIG.batchCharacterLimit),
     syncScroll: typeof raw.syncScroll === "boolean" ? raw.syncScroll : DEFAULT_CONFIG.syncScroll,
