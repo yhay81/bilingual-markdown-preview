@@ -1,9 +1,7 @@
 **
 !package.json
 !package.nls.json
-!package.nls.ja.json
-!package.nls.zh-cn.json
-!package.nls.ko.json
+!package.nls.*.json
 !dist/extension.js
 !dist/webview/main.js
 !dist/webview/mermaid.js

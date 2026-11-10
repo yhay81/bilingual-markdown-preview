@@ -23,7 +23,7 @@ Preview Markdown with an LLM translation beside it, block by block, into any lan
 - Lets you pick a model from the ones your provider offers: click the model name in the preview's toolbar.
 - Can pause after a number of tokens, and shows how many tokens were used.
 - In a narrow panel, the translation goes under the source.
-- The interface is in English, Japanese, Simplified Chinese and Korean.
+- The interface is in English, Japanese, Simplified Chinese, Traditional Chinese, Korean, Spanish, French, German, Brazilian Portuguese, Russian and Italian.
 
 ## Getting started
 

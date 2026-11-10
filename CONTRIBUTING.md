@@ -32,7 +32,7 @@ The tests never call a translation API. To see real translations in the Extensio
 - `src/preview/`: the preview panels and their HTML.
 - `src/webview/`: the script that runs inside the preview.
 - `src/shared/`: the messages between the extension and the preview.
-- `l10n/` and `package.nls*.json`: the strings in English, Japanese, Simplified Chinese and Korean. A new string needs an entry in every language.
+- `l10n/` and `package.nls*.json`: the strings in English, Japanese, Simplified Chinese, Traditional Chinese, Korean, Spanish, French, German, Brazilian Portuguese, Russian and Italian. A new string needs an entry in every language.
 - `test/`: the tests, run with Vitest. `test/e2e/`: the end-to-end test.
 
 ## Try the package
