@@ -27,4 +27,9 @@ describe("validateTranslation", () => {
   it("reports unbalanced link brackets", () => {
     expect(validateTranslation("[docs]⟦1⟧", "ドキュメント⟦1⟧", 1)).toEqual(["brackets"]);
   });
+
+  it("does not count brackets in plain text such as code comments", () => {
+    expect(validateTranslation("see [x] and ⟦1⟧", "x と ⟦1⟧ を参照", 1, false)).toEqual([]);
+    expect(validateTranslation("see [x] and ⟦1⟧", "x を参照", 1, false)).toEqual(["missingPlaceholders"]);
+  });
 });

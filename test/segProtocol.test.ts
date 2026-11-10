@@ -48,4 +48,11 @@ describe("SegStreamParser", () => {
       [4, "b"],
     ]);
   });
+
+  it("ignores attributes the model copies from the request", () => {
+    expect(parse(['<seg id="1" kind="comment">a</seg><seg id=2 kind=comment >b</seg>'])).toEqual([
+      [1, "a"],
+      [2, "b"],
+    ]);
+  });
 });

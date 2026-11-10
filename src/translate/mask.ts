@@ -14,6 +14,8 @@ export interface MaskOptions {
   referenceLabels?: ReadonlySet<string>;
   /** Normalizes a label the same way the parser did (markdown-it's `normalizeReference`). */
   normalizeLabel?: (label: string) => string;
+  /** Plain text such as a code comment: a backslash or spaces before a line break are kept, not read as a hard break. */
+  plainText?: boolean;
 }
 
 export interface MaskResult {
@@ -60,7 +62,7 @@ function scan(src: string, start: number, end: number, hold: Hold, options: Mask
     const ch = src[i]!;
     switch (ch) {
       case "\\": {
-        if (i + 1 < end && src[i + 1] === "\n") {
+        if (!options.plainText && i + 1 < end && src[i + 1] === "\n") {
           out += `${hold("<br>")}\n`;
           i += 2;
           continue;
@@ -70,7 +72,7 @@ function scan(src: string, start: number, end: number, hold: Hold, options: Mask
         continue;
       }
       case " ": {
-        const match = HARD_BREAK_RE.exec(src.slice(i, end));
+        const match = options.plainText ? null : HARD_BREAK_RE.exec(src.slice(i, end));
         if (match) {
           out += `${hold("<br>")}\n`;
           i += match[0].length;

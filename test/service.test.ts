@@ -25,7 +25,7 @@ interface Reply {
 type Handler = (segments: Segment[], request: TranslateRequest) => Reply | Promise<Reply>;
 
 function segmentsOf(user: string): Segment[] {
-  return [...user.matchAll(/<seg id="(\d+)">([\s\S]*?)<\/seg>/g)].map((match) => ({ id: Number(match[1]), text: match[2]! }));
+  return [...user.matchAll(/<seg id="(\d+)"[^>]*>([\s\S]*?)<\/seg>/g)].map((match) => ({ id: Number(match[1]), text: match[2]! }));
 }
 
 /** A well-formed response; `translate` returning undefined leaves that segment out. */
@@ -161,6 +161,22 @@ describe("TranslationService", () => {
     expect(service.getResult("plain")).toEqual({ state: "done", text: "訳:Plain", problems: [] });
     expect(service.getResult("code")).toEqual({ state: "done", text: "コードを実行", problems: ["missingPlaceholders"] });
     expect(cache.get("code")).toBeUndefined();
+  });
+
+  it("sends code comments with their own rules and does not count their brackets", async () => {
+    const { service, cache, provider } = setup();
+    provider.handler = (segments) => reply(segments, (text) => (text.startsWith("see") ? "x と ⟦1⟧ を参照" : `訳:${text}`));
+    service.request("p1", [{ ...job("comment", 0, "see [x] and ⟦1⟧", ["`f()`"]), kind: "comment" }]);
+    await settle();
+    expect(provider.requests).toHaveLength(1);
+    expect(provider.requests[0]!.system).toContain('kind="comment"');
+    expect(provider.requests[0]!.user).toBe('<seg id="1" kind="comment">see [x] and ⟦1⟧</seg>');
+    expect(service.getResult("comment")).toEqual({ state: "done", text: "x と ⟦1⟧ を参照", problems: [] });
+    expect(cache.get("comment")).toBe("x と ⟦1⟧ を参照");
+
+    service.request("p1", [job("prose", 1, "Hello")]);
+    await settle();
+    expect(provider.requests[1]!.system).not.toContain('kind="comment"');
   });
 
   it("caches a later attempt that passes validation", async () => {

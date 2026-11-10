@@ -15,8 +15,11 @@ export function normalizeTranslation(raw: string): string {
   return text.trim();
 }
 
-/** Checks that a translation kept everything the renderer depends on. */
-export function validateTranslation(masked: string, translated: string, placeholderCount: number): ValidationProblem[] {
+/**
+ * Checks that a translation kept everything the renderer depends on. Brackets matter for links in
+ * Markdown; in plain text such as code comments they are just characters, so `brackets` can be off.
+ */
+export function validateTranslation(masked: string, translated: string, placeholderCount: number, brackets = true): ValidationProblem[] {
   if (translated.trim() === "") return ["empty"];
   const problems: ValidationProblem[] = [];
   const seen = new Set<number>();
@@ -28,7 +31,7 @@ export function validateTranslation(masked: string, translated: string, placehol
   }
   if (seen.size < placeholderCount) problems.push("missingPlaceholders");
   if (unexpected) problems.push("unexpectedPlaceholders");
-  if (count(masked, "[") !== count(translated, "[") || count(masked, "]") !== count(translated, "]")) {
+  if (brackets && (count(masked, "[") !== count(translated, "[") || count(masked, "]") !== count(translated, "]"))) {
     problems.push("brackets");
   }
   return problems;

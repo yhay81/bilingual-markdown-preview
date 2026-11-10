@@ -18,11 +18,24 @@ describe("buildSystemPrompt", () => {
     expect(prompt).toContain("Glossary (always use these translations):\n- pull request → プルリクエスト\n");
     expect(prompt).not.toContain("→ x");
   });
+
+  it("adds the rules for code comments only to batches that have them", () => {
+    const settings = { targetLanguage: "Japanese", styleInstructions: "", glossary: {} };
+    expect(buildSystemPrompt(settings)).not.toContain('kind="comment"');
+    expect(buildSystemPrompt(settings, { comments: false })).toBe(buildSystemPrompt(settings));
+    expect(buildSystemPrompt(settings, { comments: true })).toContain('Segments marked kind="comment" are comments from source code');
+  });
 });
 
 describe("buildUserMessage", () => {
   it("wraps segments in numbered tags", () => {
     expect(buildUserMessage([{ id: 1, text: "Hello" }, { id: 2, text: "a\nb" }])).toBe('<seg id="1">Hello</seg>\n<seg id="2">a\nb</seg>');
+  });
+
+  it("marks code comments", () => {
+    expect(buildUserMessage([{ id: 1, text: "Adds", kind: "comment" }, { id: 2, text: "Hello", kind: "markdown" }])).toBe(
+      '<seg id="1" kind="comment">Adds</seg>\n<seg id="2">Hello</seg>',
+    );
   });
 });
 
@@ -51,6 +64,13 @@ describe("translation keys", () => {
     expect(translationKey(fingerprint, "Run ⟦1⟧ now", ["`npm test`"])).not.toBe(key);
     expect(settingsFingerprint({ ...settings, endpoint: "https://gateway.example.com/v1" })).not.toBe(fingerprint);
     expect(settingsFingerprint({ ...settings, model: "claude-sonnet-5-5" })).not.toBe(fingerprint);
+  });
+
+  it("tell a code comment from Markdown with the same text, and keep the keys of Markdown as they were", () => {
+    const fingerprint = settingsFingerprint(settings);
+    const key = translationKey(fingerprint, "Run ⟦1⟧", ["`npm test`"]);
+    expect(translationKey(fingerprint, "Run ⟦1⟧", ["`npm test`"], "markdown")).toBe(key);
+    expect(translationKey(fingerprint, "Run ⟦1⟧", ["`npm test`"], "comment")).not.toBe(key);
   });
 });
 

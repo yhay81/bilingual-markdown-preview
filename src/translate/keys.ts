@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { PROMPT_VERSION, type PromptSettings } from "./prompt";
+import { PROMPT_VERSION, type PromptSettings, type SegmentKind } from "./prompt";
 
 export interface FingerprintInput extends PromptSettings {
   provider: string;
@@ -24,9 +24,12 @@ export function settingsFingerprint(input: FingerprintInput): string {
   );
 }
 
-/** Cache key of one segment: the masked text and its placeholders fully determine the request and the result. */
-export function translationKey(fingerprint: string, masked: string, placeholders: readonly string[]): string {
-  return digest(JSON.stringify([fingerprint, masked, placeholders]));
+/**
+ * Cache key of one segment: the masked text, its placeholders and its kind fully determine the request and
+ * the result. The same words in a paragraph and in a code comment are translated as different kinds of text.
+ */
+export function translationKey(fingerprint: string, masked: string, placeholders: readonly string[], kind: SegmentKind = "markdown"): string {
+  return digest(JSON.stringify(kind === "markdown" ? [fingerprint, masked, placeholders] : [fingerprint, masked, placeholders, kind]));
 }
 
 function digest(value: string): string {

@@ -1,4 +1,5 @@
-const START_RE = /<seg\s+id\s*=\s*["']?(\d+)["']?\s*>/i;
+// Models sometimes echo attributes such as kind="comment" in their output; they are ignored.
+const START_RE = /<seg\s+id\s*=\s*["']?(\d+)["']?(?:\s+[a-z-]+\s*=\s*(?:"[^"<>]*"|'[^'<>]*'|[^\s"'<>]+))*\s*>/i;
 const CLOSE_RE = /<\/seg\s*>/i;
 const NEXT_START_RE = /<seg\s+id\s*=/i;
 

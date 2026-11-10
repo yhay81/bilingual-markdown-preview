@@ -1,6 +1,6 @@
 import { ProviderError, type ProviderErrorKind, type StopReason, type TranslationProvider } from "../providers/types";
 import type { TranslationCache } from "./cache";
-import { buildSystemPrompt, buildUserMessage, type PromptSettings } from "./prompt";
+import { buildSystemPrompt, buildUserMessage, type PromptSettings, type SegmentKind } from "./prompt";
 import { SegStreamParser } from "./segProtocol";
 import { normalizeTranslation, validateTranslation, type ValidationProblem } from "./validate";
 
@@ -22,6 +22,8 @@ export interface TranslationJob {
   placeholders: readonly string[];
   /** Document line of the segment, for ordering. */
   line: number;
+  /** Inline Markdown unless said otherwise. */
+  kind?: SegmentKind;
 }
 
 export interface JobError {
@@ -74,6 +76,7 @@ interface Entry {
   key: string;
   masked: string;
   placeholderCount: number;
+  kind: SegmentKind;
   state: "queued" | "inflight";
   attempts: number;
   /** Send alone: set after the segment failed inside a batch. */
@@ -245,6 +248,7 @@ export class TranslationService {
       key: job.key,
       masked: job.masked,
       placeholderCount: job.placeholders.length,
+      kind: job.kind ?? "markdown",
       state: "queued",
       attempts: 0,
       solo: false,
@@ -341,8 +345,8 @@ export class TranslationService {
 
     try {
       const result = await provider.translate({
-        system: buildSystemPrompt(config.prompt),
-        user: buildUserMessage(batch.entries.map((entry, index) => ({ id: index + 1, text: entry.masked }))),
+        system: buildSystemPrompt(config.prompt, { comments: batch.entries.some((entry) => entry.kind === "comment") }),
+        user: buildUserMessage(batch.entries.map((entry, index) => ({ id: index + 1, text: entry.masked, kind: entry.kind }))),
         maxOutputTokens: maxOutputTokens(chars, batch.entries.length, config.usesReasoning),
         signal: batch.controller.signal,
         onText: (delta) => parser.push(delta),
@@ -381,7 +385,7 @@ export class TranslationService {
 
   private accept(entry: Entry, raw: string): void {
     const text = normalizeTranslation(raw);
-    const problems = validateTranslation(entry.masked, text, entry.placeholderCount);
+    const problems = validateTranslation(entry.masked, text, entry.placeholderCount, entry.kind === "markdown");
     if (problems.length === 0) {
       this.deps.cache.set(entry.key, text);
       this.pending.delete(entry.key);
