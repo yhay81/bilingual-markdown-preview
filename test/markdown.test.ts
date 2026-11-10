@@ -237,6 +237,16 @@ describe("code comment translation", () => {
   });
 });
 
+describe("math", () => {
+  it("renders math with KaTeX", () => {
+    const doc = segment("$$\nx^2\n$$");
+    expect(renderer.renderSource(doc.rows[0]!, doc.env, new Slugger())).toContain('class="katex-block"');
+    const inline = segment("The area is $\\pi r^2$.").rows[0]!;
+    expect(inline.units[0]!.masked).toBe("The area is ⟦1⟧.");
+    expect(renderer.renderTranslation(inline, doc.env, ["面積は $\\pi r^2$ です。"])).toContain('<span class="katex">');
+  });
+});
+
 describe("Slugger", () => {
   it("makes GitHub-style unique slugs", () => {
     const slugger = new Slugger();

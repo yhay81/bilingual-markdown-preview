@@ -308,6 +308,13 @@ body.paused .skeleton span {
   color: var(--vscode-editorWarning-foreground, #cca700);
 }
 
+/* Math */
+
+.katex-block {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
 .link-button {
   padding: 0;
   border: 0;

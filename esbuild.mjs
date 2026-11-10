@@ -1,6 +1,7 @@
 // Bundles the extension host code (Node, CommonJS) and the preview webview script (browser, IIFE).
-import { readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { copyFileSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
+import { dirname, join, relative } from "node:path";
 import * as esbuild from "esbuild";
 
 const production = process.argv.includes("--production");
@@ -21,8 +22,8 @@ const common = {
  * in them is collected into one file that ships with the extension.
  * @param {import("esbuild").Metafile[]} metafiles
  */
-function writeThirdPartyNotices(metafiles, outfile) {
-  const packageDirs = new Set();
+function writeThirdPartyNotices(metafiles, outfile, extraPackageDirs) {
+  const packageDirs = new Set(extraPackageDirs.map((dir) => relative(process.cwd(), dir)));
   for (const metafile of metafiles) {
     for (const input of Object.keys(metafile.inputs)) {
       // The last node_modules segment names the package, also for nested installs.
@@ -51,6 +52,23 @@ function writeThirdPartyNotices(metafiles, outfile) {
   console.log(`${outfile}: ${notices.map(({ title }) => title).join(", ")}`);
 }
 
+const require = createRequire(import.meta.url);
+/** The KaTeX that the Markdown plugin renders with, whose stylesheet and fonts must match its output. */
+const katexDir = dirname(dirname(require.resolve("katex", { paths: [dirname(require.resolve("@vscode/markdown-it-katex"))] })));
+
+/** Files the webview loads as they are: KaTeX's stylesheet with only its WOFF2 fonts. */
+function copyWebviewAssets() {
+  mkdirSync("dist/katex/fonts", { recursive: true });
+  const css = readFileSync(join(katexDir, "dist", "katex.min.css"), "utf8").replace(
+    /,url\(fonts\/[^)]+\.woff\) format\("woff"\),url\(fonts\/[^)]+\.ttf\) format\("truetype"\)/g,
+    "",
+  );
+  writeFileSync("dist/katex/katex.min.css", css);
+  for (const name of readdirSync(join(katexDir, "dist", "fonts")).filter((file) => file.endsWith(".woff2"))) {
+    copyFileSync(join(katexDir, "dist", "fonts", name), join("dist/katex/fonts", name));
+  }
+}
+
 const contexts = await Promise.all([
   esbuild.context({
     ...common,
@@ -71,12 +89,15 @@ const contexts = await Promise.all([
   }),
 ]);
 
+copyWebviewAssets();
 if (watch) {
   await Promise.all(contexts.map((context) => context.watch()));
 } else {
   try {
     const results = await Promise.all(contexts.map((context) => context.rebuild()));
-    if (production) writeThirdPartyNotices(results.map((result) => result.metafile), "dist/ThirdPartyNotices.txt");
+    if (production) {
+      writeThirdPartyNotices(results.map((result) => result.metafile), "dist/ThirdPartyNotices.txt", [katexDir]);
+    }
   } finally {
     await Promise.all(contexts.map((context) => context.dispose()));
   }

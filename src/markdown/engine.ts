@@ -1,3 +1,4 @@
+import katex from "@vscode/markdown-it-katex";
 import markdownIt from "markdown-it";
 import type { MarkdownIt, StateCore } from "markdown-it";
 
@@ -11,6 +12,8 @@ export interface TaskMeta {
 export function createMarkdownEngine(): MarkdownIt {
   const md = markdownIt({ html: true, linkify: true, typographer: false, breaks: false });
   md.core.ruler.push("bilingual_task_lists", taskLists);
+  // `$…$` and `$$…$$`, as in VS Code's own Markdown preview.
+  md.use(katex, { throwOnError: false });
   return md;
 }
 

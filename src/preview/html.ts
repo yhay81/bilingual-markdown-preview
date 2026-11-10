@@ -10,6 +10,7 @@ export function buildWebviewHtml(webview: vscode.Webview, extensionUri: vscode.U
   const nonce = randomBytes(18).toString("base64");
   const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, "dist", "webview", "main.js"));
   const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, "media", "preview.css"));
+  const katexUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, "dist", "katex", "katex.min.css"));
   const base = documentUri.scheme === "untitled" ? "" : `<base href="${escapeAttribute(webview.asWebviewUri(documentUri).toString())}">`;
   const csp = [
     "default-src 'none'",
@@ -28,6 +29,7 @@ export function buildWebviewHtml(webview: vscode.Webview, extensionUri: vscode.U
 <meta http-equiv="Content-Security-Policy" content="${csp}">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 ${base}
+<link rel="stylesheet" href="${escapeAttribute(katexUri.toString())}">
 <link rel="stylesheet" href="${escapeAttribute(styleUri.toString())}">
 </head>
 <body data-mode="${escapeAttribute(init.mode)}">

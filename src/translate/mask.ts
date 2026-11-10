@@ -2,7 +2,7 @@
  * Placeholder masking for inline Markdown.
  *
  * Before a segment goes to the model, everything that must come back unchanged (code spans,
- * URLs, link destinations, HTML, entities, hard line breaks) is replaced by a numbered token
+ * URLs, link destinations, HTML, entities, math, hard line breaks) is replaced by a numbered token
  * such as ⟦1⟧. Link text, emphasis and prose stay visible so the model can translate them.
  */
 
@@ -102,6 +102,15 @@ function scan(src: string, start: number, end: number, hold: Hold, options: Mask
         }
         break;
       }
+      case "$": {
+        const close = options.plainText ? -1 : findMathClose(src, i, end);
+        if (close >= 0) {
+          out += hold(src.slice(i, close));
+          i = close;
+          continue;
+        }
+        break;
+      }
       case "&": {
         const match = ENTITY_RE.exec(src.slice(i, end));
         if (match) {
@@ -191,6 +200,42 @@ function maskBracket(
     return { text: hold(src.slice(open, close + 1)), next: close + 1 };
   }
   return undefined;
+}
+
+const ASCII_WORD_RE = /^\w$/;
+
+/** Whether `$` at `at` can open or close inline math, by the rules of `@vscode/markdown-it-katex`. */
+function mathDelimiter(src: string, at: number, end: number): { open: boolean; close: boolean } {
+  const before = src[at - 1];
+  const after = at + 1 < end ? src[at + 1] : undefined;
+  const open = before !== "$" && before !== "\\" && (before === undefined || !ASCII_WORD_RE.test(before));
+  const close = after !== "$" && (after === undefined || !ASCII_WORD_RE.test(after));
+  return { open, close };
+}
+
+/** End of `$…$` or `$$…$$` starting at `open` (exclusive), or -1 when it is not math. */
+function findMathClose(src: string, open: number, end: number): number {
+  if (src[open + 1] === "$") {
+    // `$$…$$` within a line.
+    if (src[open - 1] === "$" || src[open + 2] === "$") return -1;
+    const close = findUnescaped(src, "$$", open + 2, end);
+    return close > open + 2 ? close + 2 : -1;
+  }
+  if (!mathDelimiter(src, open, end).open) return -1;
+  const close = findUnescaped(src, "$", open + 1, end);
+  if (close <= open + 1 || !mathDelimiter(src, close, end).close) return -1;
+  return close + 1;
+}
+
+function findUnescaped(src: string, needle: string, from: number, end: number): number {
+  let at = src.indexOf(needle, from);
+  while (at >= 0 && at + needle.length <= end) {
+    let backslashes = 0;
+    while (src[at - 1 - backslashes] === "\\") backslashes++;
+    if (backslashes % 2 === 0) return at;
+    at = src.indexOf(needle, at + 1);
+  }
+  return -1;
 }
 
 function findBracketClose(src: string, open: number, end: number): number {

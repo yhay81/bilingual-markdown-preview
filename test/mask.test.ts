@@ -76,3 +76,22 @@ describe("unmask", () => {
     expect(unmask("a⟦3⟧b", ["x"])).toBe("ab");
   });
 });
+
+describe("math", () => {
+  it("masks inline math and inline display math", () => {
+    expect(maskInline("Energy is $E = mc^2$, and $$\\sum_i x_i$$ adds up.")).toEqual({
+      masked: "Energy is ⟦1⟧, and ⟦2⟧ adds up.",
+      placeholders: ["$E = mc^2$", "$$\\sum_i x_i$$"],
+    });
+  });
+
+  it("leaves dollar amounts and escaped dollars alone, as the parser does", () => {
+    expect(maskInline("It costs $5 or $10.").masked).toBe("It costs $5 or $10.");
+    expect(maskInline("Pay \\$5 and $x$.").masked).toBe("Pay \\$5 and ⟦1⟧.");
+    expect(maskInline("a$b$c").masked).toBe("a$b$c");
+  });
+
+  it("does not read dollars in comments as math", () => {
+    expect(maskInline("costs $x$ here", { plainText: true }).masked).toBe("costs $x$ here");
+  });
+});

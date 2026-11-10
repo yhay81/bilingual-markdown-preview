@@ -43,7 +43,8 @@
     "gpt",
     "copilot",
     "ollama",
-    "byok"
+    "byok",
+    "katex"
   ],
   "main": "./dist/extension.js",
   "l10n": "./l10n",
@@ -284,6 +285,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.6.0",
+    "@vscode/markdown-it-katex": "^1.1.2",
     "dompurify": "^3.4.17",
     "markdown-it": "^15.0.3",
     "openai": "^7.53.0"
