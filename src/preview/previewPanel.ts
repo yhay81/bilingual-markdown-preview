@@ -28,7 +28,7 @@ import type { SegmentKind } from "../translate/prompt";
 import type { ServiceChange, TranslationJob, TranslationService } from "../translate/service";
 import { buildWebviewHtml } from "./html";
 
-export const VIEW_TYPE = "bilingualMarkdown.preview";
+export const VIEW_TYPE = "markdownTranslation.preview";
 
 const RENDER_DELAY_MS = 200;
 const TRANSLATE_DELAY_MS = 1000;
@@ -75,7 +75,7 @@ const CONTEXT_CHARS = 400;
 let nextOwner = 1;
 
 /** One preview panel showing one Markdown document with its translation. */
-export class BilingualPreview implements vscode.Disposable {
+export class TranslationPreview implements vscode.Disposable {
   readonly owner = `preview-${nextOwner++}`;
   private document: vscode.TextDocument;
   private ready = false;
@@ -642,7 +642,7 @@ export class BilingualPreview implements vscode.Disposable {
 
 export function titleOf(document: vscode.TextDocument): string {
   const name = document.uri.path.split("/").pop() || document.fileName;
-  return vscode.l10n.t("Bilingual: {0}", name);
+  return vscode.l10n.t("Translation: {0}", name);
 }
 
 export function webviewOptions(extensionUri: vscode.Uri, documentUri: vscode.Uri): vscode.WebviewOptions {

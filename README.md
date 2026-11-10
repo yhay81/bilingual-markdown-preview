@@ -30,11 +30,11 @@ Preview Markdown with an LLM translation beside it, block by block. Translate wi
 You need VS Code 1.101 or later, and one of these: GitHub Copilot, an API key from Anthropic, OpenAI, OpenRouter, Google Gemini, DeepSeek, Mistral AI or xAI, or a local server such as Ollama or LM Studio.
 
 1. Install **Markdown Translation Preview** from the Visual Studio Marketplace.
-2. Open a Markdown file and click the globe icon (**Open Bilingual Preview to the Side**) at the top right of the editor. You can also right-click the file in the Explorer, or run **Bilingual Markdown: Open Bilingual Preview** from the Command Palette.
+2. Open a Markdown file and click the globe icon (**Open Translation Preview to the Side**) at the top right of the editor. You can also right-click the file in the Explorer, or run **Markdown Translation: Open Translation Preview** from the Command Palette.
 3. The first time, the preview asks for an API key. Click **Set API Key** and enter the key, or click **Switch Provider** and choose **VS Code Language Model** to use GitHub Copilot.
 4. Translation starts. If a row fails, click **Retry** on that row.
 
-The preview translates into Japanese. To translate into another language, set `bilingualMarkdown.targetLanguage`, for example to `English` or `Simplified Chinese`. A single document can ask for another language in its front matter:
+The preview translates into Japanese. To translate into another language, set `markdownTranslation.targetLanguage`, for example to `English` or `Simplified Chinese`. A single document can ask for another language in its front matter:
 
 ```markdown
 ---
@@ -46,29 +46,29 @@ translate-to: French
 
 | Command | What it does |
 | --- | --- |
-| Bilingual Markdown: Open Bilingual Preview | Opens the preview. |
-| Bilingual Markdown: Open Bilingual Preview to the Side | Opens the preview beside the editor. |
-| Bilingual Markdown: Retranslate (Ignore Cache) | Translates the document in the preview again, without the cache. |
-| Bilingual Markdown: Save Translation as Markdown | Saves the translation as a Markdown file. Also on the preview's toolbar. |
-| Bilingual Markdown: Set API Key | Stores an API key. |
-| Bilingual Markdown: Clear API Key | Deletes a stored API key. |
-| Bilingual Markdown: Switch Translation Provider | Switches to another provider, such as OpenRouter or a language model in VS Code. |
-| Bilingual Markdown: Choose Model | Chooses the model of the current provider from the models it offers, or takes a model ID you type. Clicking the model name in the preview's toolbar does the same. |
-| Bilingual Markdown: Clear Translation Cache | Deletes the cached translations. |
+| Markdown Translation: Open Translation Preview | Opens the preview. |
+| Markdown Translation: Open Translation Preview to the Side | Opens the preview beside the editor. |
+| Markdown Translation: Retranslate (Ignore Cache) | Translates the document in the preview again, without the cache. |
+| Markdown Translation: Save Translation as Markdown | Saves the translation as a Markdown file. Also on the preview's toolbar. |
+| Markdown Translation: Set API Key | Stores an API key. |
+| Markdown Translation: Clear API Key | Deletes a stored API key. |
+| Markdown Translation: Switch Translation Provider | Switches to another provider, such as OpenRouter or a language model in VS Code. |
+| Markdown Translation: Choose Model | Chooses the model of the current provider from the models it offers, or takes a model ID you type. Clicking the model name in the preview's toolbar does the same. |
+| Markdown Translation: Clear Translation Cache | Deletes the cached translations. |
 
 ## Providers and cost
 
 ### GitHub Copilot and other language models in VS Code
 
-Set `bilingualMarkdown.provider` to `vscode`, or run **Bilingual Markdown: Switch Translation Provider** and choose **VS Code Language Model**. No API key is needed: the extension uses a language model that another extension, such as GitHub Copilot, makes available in VS Code.
+Set `markdownTranslation.provider` to `vscode`, or run **Markdown Translation: Switch Translation Provider** and choose **VS Code Language Model**. No API key is needed: the extension uses a language model that another extension, such as GitHub Copilot, makes available in VS Code.
 
 - The first time, VS Code asks whether this extension may use the model. If you declined, allow it again from the Accounts menu under **Manage Language Model Access**.
-- **Bilingual Markdown: Choose Model** lists the models you can use. With `bilingualMarkdown.vscode.model` empty, the first GitHub Copilot model is used.
+- **Markdown Translation: Choose Model** lists the models you can use. With `markdownTranslation.vscode.model` empty, the first GitHub Copilot model is used.
 - Requests count against your Copilot plan, as chat does.
 
 ### Your own API key
 
-| Provider | `bilingualMarkdown.provider` | Default model |
+| Provider | `markdownTranslation.provider` | Default model |
 | --- | --- | --- |
 | [Anthropic](https://www.anthropic.com) | `anthropic` | `claude-haiku-5-5` |
 | [OpenAI](https://openai.com) | `openai` | `gpt-6-luna` |
@@ -78,22 +78,22 @@ Set `bilingualMarkdown.provider` to `vscode`, or run **Bilingual Markdown: Switc
 | [Mistral AI](https://mistral.ai) | `mistral` | `mistral-small-2603` |
 | [xAI](https://x.ai) | `xai` | `grok-4.3` |
 
-Run **Bilingual Markdown: Switch Translation Provider**, choose a provider and enter its key. Each provider keeps its own key and its own model, so you can switch back and forth.
+Run **Markdown Translation: Switch Translation Provider**, choose a provider and enter its key. Each provider keeps its own key and its own model, so you can switch back and forth.
 
-- To use another model, run **Bilingual Markdown: Choose Model**, or click the model name in the preview's toolbar. It lists the models your key can use; you can also type a model ID. The model is stored in `bilingualMarkdown.<provider>.model`.
+- To use another model, run **Markdown Translation: Choose Model**, or click the model name in the preview's toolbar. It lists the models your key can use; you can also type a model ID. The model is stored in `markdownTranslation.<provider>.model`.
 - OpenRouter reaches many providers' models with one key and one bill. Its model IDs name the provider, as in `anthropic/claude-haiku-5.5` or `openai/gpt-6-luna`.
 - Translation is billed to the account that issued the key.
 - You enter the key in a password box. It is kept in VS Code Secret Storage (your OS keychain), never in `settings.json`.
 - If the provider rejects the key (an authentication or permission error), translation stops, and the preview offers to set the key again or to switch providers.
-- With `bilingualMarkdown.reasoningEffort` at `none`, models that cannot stop reasoning, such as Gemini and Grok models, reason at their lowest level. When a model rejects a reasoning setting, the next lower one is tried, and finally none at all.
+- With `markdownTranslation.reasoningEffort` at `none`, models that cannot stop reasoning, such as Gemini and Grok models, reason at their lowest level. When a model rejects a reasoning setting, the next lower one is tried, and finally none at all.
 - The Gemini API's free tier may use what you send to improve Google's products, and people may read it. Do not send confidential documents on the free tier.
-- The toolbar shows the tokens used in this VS Code session. `bilingualMarkdown.tokenLimit` pauses translation after that many tokens, until you click **Continue**.
+- The toolbar shows the tokens used in this VS Code session. `markdownTranslation.tokenLimit` pauses translation after that many tokens, until you click **Continue**.
 
 ### Local models
 
-Any server with an OpenAI-compatible API works. Set `bilingualMarkdown.provider` to `openai`, and in your user settings point `bilingualMarkdown.openai.baseUrl` at the server and `bilingualMarkdown.openai.model` at a model it serves. A server on your own computer needs no API key.
+Any server with an OpenAI-compatible API works. Set `markdownTranslation.provider` to `openai`, and in your user settings point `markdownTranslation.openai.baseUrl` at the server and `markdownTranslation.openai.model` at a model it serves. A server on your own computer needs no API key.
 
-| Server | `bilingualMarkdown.openai.baseUrl` |
+| Server | `markdownTranslation.openai.baseUrl` |
 | --- | --- |
 | [Ollama](https://ollama.com) | `http://localhost:11434/v1` |
 | [LM Studio](https://lmstudio.ai) | `http://localhost:1234/v1` |
@@ -105,25 +105,25 @@ Small models translate less accurately and more often drop the placeholders that
 
 | Setting | Default | Description |
 | --- | --- | --- |
-| `bilingualMarkdown.provider` | `anthropic` | Translation provider: `anthropic`, `openai`, `openrouter`, `gemini`, `deepseek`, `mistral`, `xai`, or `vscode` for a language model in VS Code. |
-| `bilingualMarkdown.targetLanguage` | `Japanese` | Language to translate into, written as you would tell a translator, such as `English` or `Simplified Chinese`. `translate-to` in a document's front matter overrides it. |
-| `bilingualMarkdown.anthropic.model` | `claude-haiku-5-5` | Anthropic model ID. |
-| `bilingualMarkdown.openai.model` | `gpt-6-luna` | OpenAI model ID. |
-| `bilingualMarkdown.openai.baseUrl` | (empty) | Base URL of an OpenAI-compatible API, such as a company gateway or a [local server](#local-models). Empty means `https://api.openai.com/v1`. Only `https://` URLs, and `http://` URLs to `localhost`, `127.0.0.1` or `[::1]`, are accepted. |
-| `bilingualMarkdown.openrouter.model` | `google/gemini-3.8-flash` | OpenRouter model ID, as `provider/model`. |
-| `bilingualMarkdown.gemini.model` | `gemini-3.8-flash` | Gemini model ID. |
-| `bilingualMarkdown.deepseek.model` | `deepseek-flash` | DeepSeek model ID. |
-| `bilingualMarkdown.mistral.model` | `mistral-small-2603` | Mistral model ID. |
-| `bilingualMarkdown.xai.model` | `grok-4.3` | xAI model ID. |
-| `bilingualMarkdown.vscode.model` | (empty) | Language model in VS Code, as a model ID or family. Empty means the first GitHub Copilot model. |
-| `bilingualMarkdown.reasoningEffort` | `none` | How much the model reasons before it answers: `none`, `low`, `medium`, `high` or `default`. `none` is usually enough for translation. |
-| `bilingualMarkdown.styleInstructions` | (empty) | Extra instructions for the translator, such as `Use the plain である style.` |
-| `bilingualMarkdown.glossary` | `{}` | Fixed translations for terms, such as `{ "pull request": "プルリクエスト" }`. See [Glossary file](#glossary-file). |
-| `bilingualMarkdown.translateCodeComments` | `false` | Also translate the comments in code blocks. See [Translating code comments](#translating-code-comments). |
-| `bilingualMarkdown.maxConcurrentRequests` | `3` | Maximum number of translation requests in flight at once (1–8). |
-| `bilingualMarkdown.batchCharacterLimit` | `4000` | Approximate number of source characters in one request (500–20000). |
-| `bilingualMarkdown.tokenLimit` | `0` | Pause translation after this many tokens in one VS Code session. `0` means no limit. Counted when the provider reports token usage; language models in VS Code and some local servers do not. |
-| `bilingualMarkdown.syncScroll` | `true` | Keeps the editor and the preview scrolled to the same place. |
+| `markdownTranslation.provider` | `anthropic` | Translation provider: `anthropic`, `openai`, `openrouter`, `gemini`, `deepseek`, `mistral`, `xai`, or `vscode` for a language model in VS Code. |
+| `markdownTranslation.targetLanguage` | `Japanese` | Language to translate into, written as you would tell a translator, such as `English` or `Simplified Chinese`. `translate-to` in a document's front matter overrides it. |
+| `markdownTranslation.anthropic.model` | `claude-haiku-5-5` | Anthropic model ID. |
+| `markdownTranslation.openai.model` | `gpt-6-luna` | OpenAI model ID. |
+| `markdownTranslation.openai.baseUrl` | (empty) | Base URL of an OpenAI-compatible API, such as a company gateway or a [local server](#local-models). Empty means `https://api.openai.com/v1`. Only `https://` URLs, and `http://` URLs to `localhost`, `127.0.0.1` or `[::1]`, are accepted. |
+| `markdownTranslation.openrouter.model` | `google/gemini-3.8-flash` | OpenRouter model ID, as `provider/model`. |
+| `markdownTranslation.gemini.model` | `gemini-3.8-flash` | Gemini model ID. |
+| `markdownTranslation.deepseek.model` | `deepseek-flash` | DeepSeek model ID. |
+| `markdownTranslation.mistral.model` | `mistral-small-2603` | Mistral model ID. |
+| `markdownTranslation.xai.model` | `grok-4.3` | xAI model ID. |
+| `markdownTranslation.vscode.model` | (empty) | Language model in VS Code, as a model ID or family. Empty means the first GitHub Copilot model. |
+| `markdownTranslation.reasoningEffort` | `none` | How much the model reasons before it answers: `none`, `low`, `medium`, `high` or `default`. `none` is usually enough for translation. |
+| `markdownTranslation.styleInstructions` | (empty) | Extra instructions for the translator, such as `Use the plain である style.` |
+| `markdownTranslation.glossary` | `{}` | Fixed translations for terms, such as `{ "pull request": "プルリクエスト" }`. See [Glossary file](#glossary-file). |
+| `markdownTranslation.translateCodeComments` | `false` | Also translate the comments in code blocks. See [Translating code comments](#translating-code-comments). |
+| `markdownTranslation.maxConcurrentRequests` | `3` | Maximum number of translation requests in flight at once (1–8). |
+| `markdownTranslation.batchCharacterLimit` | `4000` | Approximate number of source characters in one request (500–20000). |
+| `markdownTranslation.tokenLimit` | `0` | Pause translation after this many tokens in one VS Code session. `0` means no limit. Counted when the provider reports token usage; language models in VS Code and some local servers do not. |
+| `markdownTranslation.syncScroll` | `true` | Keeps the editor and the preview scrolled to the same place. |
 
 The provider, the models, the base URL, the reasoning effort, the number of requests, the request size and the token limit can be changed only in your user settings. A workspace's settings do not change them.
 
@@ -138,12 +138,12 @@ A team can share its glossary in `.vscode/translation-glossary.json` at the root
 }
 ```
 
-The preview reads the file again when it changes. When a term is both in the file and in `bilingualMarkdown.glossary`, the setting wins.
+The preview reads the file again when it changes. When a term is both in the file and in `markdownTranslation.glossary`, the setting wins.
 
 ## Editing and saving the translation
 
 - Hover over a translation and click ✎ to correct it. **Save** (or Ctrl+Enter / Cmd+Enter) keeps your text; Escape cancels. An edited row shows **Edited**, and **Revert** goes back to the machine translation. Edits are kept on your computer, survive retranslation, and are not deleted by **Clear Translation Cache**.
-- Click ⤓ on the toolbar, or run **Bilingual Markdown: Save Translation as Markdown**, to save the translation as a Markdown file next to the document, such as `README.ja.md`. Code, links, front matter and blank lines are copied as written, and your edits are included. Text that is not translated yet is saved as written, and the extension tells you how much.
+- Click ⤓ on the toolbar, or run **Markdown Translation: Save Translation as Markdown**, to save the translation as a Markdown file next to the document, such as `README.ja.md`. Code, links, front matter and blank lines are copied as written, and your edits are included. Text that is not translated yet is saved as written, and the extension tells you how much.
 
 ## Math, diagrams and details
 
@@ -153,7 +153,7 @@ The preview reads the file again when it changes. When a term is both in the fil
 
 ## Translating code comments
 
-Turn on `bilingualMarkdown.translateCodeComments` to translate the comments in code blocks too. A code block with comments then shows the original code on the left and the code with its comments translated on the right.
+Turn on `markdownTranslation.translateCodeComments` to translate the comments in code blocks too. A code block with comments then shows the original code on the left and the code with its comments translated on the right.
 
 ![A JavaScript function with English comments beside the same function with its comments in Japanese](images/code-comments.png)
 
@@ -167,8 +167,8 @@ Turn on `bilingualMarkdown.translateCodeComments` to translate the comments in c
 
 ## Security and privacy
 
-- The text to translate is sent only to the provider you choose: `https://api.anthropic.com`, `https://api.openai.com/v1`, `https://openrouter.ai/api/v1`, `https://generativelanguage.googleapis.com`, `https://api.deepseek.com`, `https://api.mistral.ai/v1`, `https://api.x.ai/v1`, the `bilingualMarkdown.openai.baseUrl` in your user settings, or the language model in VS Code that you allowed. Each key is sent only to its own provider. Environment variables such as `ANTHROPIC_BASE_URL`, `OPENAI_BASE_URL`, `OPENAI_ORG_ID` and `OPENAI_PROJECT_ID` are not used.
-- Code blocks, front matter, inline code, math, URLs, link targets and HTML are not sent. With `bilingualMarkdown.translateCodeComments` on, the text of the comments in code blocks is sent.
+- The text to translate is sent only to the provider you choose: `https://api.anthropic.com`, `https://api.openai.com/v1`, `https://openrouter.ai/api/v1`, `https://generativelanguage.googleapis.com`, `https://api.deepseek.com`, `https://api.mistral.ai/v1`, `https://api.x.ai/v1`, the `markdownTranslation.openai.baseUrl` in your user settings, or the language model in VS Code that you allowed. Each key is sent only to its own provider. Environment variables such as `ANTHROPIC_BASE_URL`, `OPENAI_BASE_URL`, `OPENAI_ORG_ID` and `OPENAI_PROJECT_ID` are not used.
+- Code blocks, front matter, inline code, math, URLs, link targets and HTML are not sent. With `markdownTranslation.translateCodeComments` on, the text of the comments in code blocks is sent.
 - In Restricted Mode (an untrusted workspace), the target language, style instructions, glossary and code comment translation also come only from your user settings. The glossary file and `translate-to` in front matter are not used.
 - The extension collects no telemetry.
 - The preview runs under a strict Content Security Policy, and HTML in the Markdown is sanitized with DOMPurify. Scripts and command URIs in a document never run.

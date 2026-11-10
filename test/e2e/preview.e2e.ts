@@ -2,6 +2,8 @@ import * as assert from "node:assert/strict";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import * as vscode from "vscode";
+import { CONFIG_SECTION, migrateLegacySettings } from "../../src/config";
+import { LEGACY_PREFIX } from "../../src/migration";
 
 /**
  * End-to-end test in a real VS Code: opens the preview for a document, lets it translate through a
@@ -53,7 +55,7 @@ async function waitFor<T>(what: string, check: () => Promise<T | undefined>, tim
 describe("Markdown Translation Preview", () => {
   const requests: string[] = [];
   let server: Server;
-  const config = () => vscode.workspace.getConfiguration("bilingualMarkdown");
+  const config = () => vscode.workspace.getConfiguration("markdownTranslation");
 
   before(async () => {
     server = await startServer(requests);
@@ -76,11 +78,11 @@ describe("Markdown Translation Preview", () => {
     assert.ok(folder, "the test opens a workspace folder");
     const document = await vscode.workspace.openTextDocument(vscode.Uri.joinPath(folder, "guide.md"));
     await vscode.window.showTextDocument(document);
-    await vscode.commands.executeCommand("bilingualMarkdown.openPreviewToSide");
+    await vscode.commands.executeCommand("markdownTranslation.openPreviewToSide");
 
     const target = vscode.Uri.joinPath(folder, "out", "guide.ja.md");
     const exported = await waitFor("the translation", async () => {
-      await vscode.commands.executeCommand("bilingualMarkdown.exportTranslation", target);
+      await vscode.commands.executeCommand("markdownTranslation.exportTranslation", target);
       const text = new TextDecoder().decode(await vscode.workspace.fs.readFile(target));
       return text.includes("訳:Second item") ? text : undefined;
     });
@@ -103,5 +105,29 @@ describe("Markdown Translation Preview", () => {
         "",
       ].join("\n"),
     );
+  });
+
+  it("moves the settings of version 0.1 to their new names", async () => {
+    const folder = vscode.workspace.workspaceFolders?.[0]?.uri;
+    assert.ok(folder, "the test opens a workspace folder");
+    const settingsDir = vscode.Uri.joinPath(folder, ".vscode");
+    const settingsFile = vscode.Uri.joinPath(settingsDir, "settings.json");
+    const legacy = { [`${LEGACY_PREFIX}.styleInstructions`]: "Be brief.", [`${LEGACY_PREFIX}.syncScroll`]: false };
+    await vscode.workspace.fs.writeFile(settingsFile, new TextEncoder().encode(JSON.stringify(legacy, null, 2)));
+    try {
+      await waitFor("the workspace settings", async () =>
+        vscode.workspace.getConfiguration().inspect(`${LEGACY_PREFIX}.syncScroll`)?.workspaceValue === false ? true : undefined,
+      );
+      await migrateLegacySettings(["styleInstructions", "syncScroll", "provider"]);
+
+      const current = vscode.workspace.getConfiguration(CONFIG_SECTION);
+      assert.equal(current.inspect("styleInstructions")?.workspaceValue, "Be brief.");
+      assert.equal(current.inspect("syncScroll")?.workspaceValue, false);
+      assert.equal(current.inspect("provider")?.workspaceValue, undefined);
+      const written = JSON.parse(new TextDecoder().decode(await vscode.workspace.fs.readFile(settingsFile))) as Record<string, unknown>;
+      assert.deepEqual(written, { [`${CONFIG_SECTION}.styleInstructions`]: "Be brief.", [`${CONFIG_SECTION}.syncScroll`]: false });
+    } finally {
+      await vscode.workspace.fs.delete(settingsDir, { recursive: true });
+    }
   });
 });

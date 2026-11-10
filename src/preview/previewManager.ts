@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { isViewMode, type ViewMode, type WebviewState } from "../shared/protocol";
-import { BilingualPreview, VIEW_TYPE, titleOf, webviewOptions, type PreviewContext } from "./previewPanel";
+import { TranslationPreview, VIEW_TYPE, titleOf, webviewOptions, type PreviewContext } from "./previewPanel";
 
 export interface ManagerContext extends PreviewContext {
   defaultMode(): ViewMode;
@@ -8,16 +8,16 @@ export interface ManagerContext extends PreviewContext {
 
 /** One preview per document; also restores previews after VS Code restarts. */
 export class PreviewManager implements vscode.WebviewPanelSerializer, vscode.Disposable {
-  private readonly previews = new Map<string, BilingualPreview>();
-  private active: BilingualPreview | undefined;
+  private readonly previews = new Map<string, TranslationPreview>();
+  private active: TranslationPreview | undefined;
 
   constructor(private readonly context: ManagerContext) {}
 
-  get activePreview(): BilingualPreview | undefined {
+  get activePreview(): TranslationPreview | undefined {
     return this.active?.panel.active ? this.active : undefined;
   }
 
-  previewFor(uri: vscode.Uri): BilingualPreview | undefined {
+  previewFor(uri: vscode.Uri): TranslationPreview | undefined {
     return this.previews.get(uri.toString());
   }
 
@@ -65,7 +65,7 @@ export class PreviewManager implements vscode.WebviewPanelSerializer, vscode.Dis
   }
 
   private attach(panel: vscode.WebviewPanel, document: vscode.TextDocument, mode: ViewMode): void {
-    const preview = new BilingualPreview(panel, document, mode, this.context);
+    const preview = new TranslationPreview(panel, document, mode, this.context);
     const key = document.uri.toString();
     this.previews.set(key, preview);
     this.setActive(preview);
@@ -79,7 +79,7 @@ export class PreviewManager implements vscode.WebviewPanelSerializer, vscode.Dis
     });
   }
 
-  private setActive(preview: BilingualPreview): void {
+  private setActive(preview: TranslationPreview): void {
     this.active = preview;
     this.context.service.setActiveOwner(preview.owner);
   }

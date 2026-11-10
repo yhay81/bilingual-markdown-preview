@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
+import { CONFIG_SECTION } from "./config";
+import { moveSecrets } from "./migration";
 import { KEY_PROVIDER_IDS, type KeyProviderId } from "./providers/types";
-
-const SECRET_PREFIX = "bilingualMarkdown.apiKey.";
 
 /**
  * BYOK API keys in VS Code Secret Storage (the OS keychain). Keys never touch settings files.
@@ -22,6 +22,7 @@ export class ApiKeyStore implements vscode.Disposable {
   }
 
   async load(): Promise<void> {
+    await moveSecrets(this.secrets, KEY_PROVIDER_IDS.map(secretSuffix), CONFIG_SECTION);
     await Promise.all(KEY_PROVIDER_IDS.map((provider) => this.refresh(provider)));
   }
 
@@ -64,6 +65,10 @@ export class ApiKeyStore implements vscode.Disposable {
   }
 }
 
+function secretSuffix(provider: KeyProviderId): string {
+  return `apiKey.${provider}`;
+}
+
 function secretName(provider: KeyProviderId): string {
-  return `${SECRET_PREFIX}${provider}`;
+  return `${CONFIG_SECTION}.${secretSuffix(provider)}`;
 }

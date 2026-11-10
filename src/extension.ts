@@ -1,7 +1,8 @@
 import * as vscode from "vscode";
-import { CONFIG_SECTION, modelSettingOf, readConfig } from "./config";
+import { CONFIG_SECTION, migrateLegacySettings, modelSettingOf, readConfig } from "./config";
 import { createMarkdownEngine } from "./markdown/engine";
 import { RowRenderer } from "./markdown/render";
+import { moveState } from "./migration";
 import { PreviewManager } from "./preview/previewManager";
 import { VIEW_TYPE } from "./preview/previewPanel";
 import { PROVIDERS } from "./providers/catalog";
@@ -23,7 +24,8 @@ import { isViewMode, type HostAction } from "./shared/protocol";
 import { TranslationCache, type CacheStore } from "./translate/cache";
 import { TranslationService } from "./translate/service";
 
-const MODE_STATE_KEY = "bilingualMarkdown.viewMode";
+const MODE_STATE = "viewMode";
+const MODE_STATE_KEY = `${CONFIG_SECTION}.${MODE_STATE}`;
 
 /** A team's glossary, kept in the repository. Read only in a trusted workspace. */
 export const GLOSSARY_FILE = ".vscode/translation-glossary.json";
@@ -31,6 +33,7 @@ export const GLOSSARY_FILE = ".vscode/translation-glossary.json";
 let cachesToFlush: TranslationCache[] = [];
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+  await Promise.all([migrateLegacySettings(settingKeysOf(context)), moveState(context.globalState, MODE_STATE, CONFIG_SECTION)]);
   const cache = new TranslationCache(new FileCacheStore(vscode.Uri.joinPath(context.globalStorageUri, "translation-cache.json")));
   // The user's own edits are kept apart, so clearing the cache or retranslating never loses them.
   const edits = new TranslationCache(new FileCacheStore(vscode.Uri.joinPath(context.globalStorageUri, "translation-edits.json")), 5_000);
@@ -91,15 +94,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     manager,
     { dispose: () => service.dispose() },
     vscode.window.registerWebviewPanelSerializer(VIEW_TYPE, manager),
-    vscode.commands.registerCommand("bilingualMarkdown.openPreview", (uri?: unknown) => commands.openPreview(uri, false)),
-    vscode.commands.registerCommand("bilingualMarkdown.openPreviewToSide", (uri?: unknown) => commands.openPreview(uri, true)),
-    vscode.commands.registerCommand("bilingualMarkdown.retranslate", () => commands.retranslate()),
-    vscode.commands.registerCommand("bilingualMarkdown.setApiKey", (provider?: unknown) => commands.setApiKey(provider)),
-    vscode.commands.registerCommand("bilingualMarkdown.clearApiKey", () => commands.clearApiKey()),
-    vscode.commands.registerCommand("bilingualMarkdown.switchProvider", () => commands.switchProvider()),
-    vscode.commands.registerCommand("bilingualMarkdown.clearCache", () => commands.clearCache()),
-    vscode.commands.registerCommand("bilingualMarkdown.chooseModel", () => commands.chooseModel()),
-    vscode.commands.registerCommand("bilingualMarkdown.exportTranslation", (target?: unknown) => commands.exportTranslation(target)),
+    vscode.commands.registerCommand("markdownTranslation.openPreview", (uri?: unknown) => commands.openPreview(uri, false)),
+    vscode.commands.registerCommand("markdownTranslation.openPreviewToSide", (uri?: unknown) => commands.openPreview(uri, true)),
+    vscode.commands.registerCommand("markdownTranslation.retranslate", () => commands.retranslate()),
+    vscode.commands.registerCommand("markdownTranslation.setApiKey", (provider?: unknown) => commands.setApiKey(provider)),
+    vscode.commands.registerCommand("markdownTranslation.clearApiKey", () => commands.clearApiKey()),
+    vscode.commands.registerCommand("markdownTranslation.switchProvider", () => commands.switchProvider()),
+    vscode.commands.registerCommand("markdownTranslation.clearCache", () => commands.clearCache()),
+    vscode.commands.registerCommand("markdownTranslation.chooseModel", () => commands.chooseModel()),
+    vscode.commands.registerCommand("markdownTranslation.exportTranslation", (target?: unknown) => commands.exportTranslation(target)),
     vscode.workspace.onDidChangeConfiguration((event) => {
       if (event.affectsConfiguration(CONFIG_SECTION)) applyConfig();
     }),
@@ -127,6 +130,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 export async function deactivate(): Promise<void> {
   await Promise.all(cachesToFlush.map((cache) => cache.flush()));
+}
+
+/** The keys of the settings the extension declares, without the section. */
+function settingKeysOf(context: vscode.ExtensionContext): string[] {
+  const manifest = context.extension.packageJSON as { contributes?: { configuration?: { properties?: Record<string, unknown> } } };
+  const prefix = `${CONFIG_SECTION}.`;
+  return Object.keys(manifest.contributes?.configuration?.properties ?? {})
+    .filter((key) => key.startsWith(prefix))
+    .map((key) => key.slice(prefix.length));
 }
 
 /** The glossary files of all workspace folders, merged in folder order. */
@@ -165,14 +177,14 @@ class Commands {
   retranslate(): void {
     const preview = this.currentPreview();
     if (preview) preview.retranslate();
-    else void vscode.window.showInformationMessage(vscode.l10n.t("Open a bilingual preview first."));
+    else void vscode.window.showInformationMessage(vscode.l10n.t("Open a translation preview first."));
   }
 
   /** Saves the translation of the current preview. Tests pass the file to write to. */
   async exportTranslation(target?: unknown): Promise<vscode.Uri | undefined> {
     const preview = this.currentPreview();
     if (!preview) {
-      void vscode.window.showInformationMessage(vscode.l10n.t("Open a bilingual preview first."));
+      void vscode.window.showInformationMessage(vscode.l10n.t("Open a translation preview first."));
       return undefined;
     }
     return preview.exportTranslation(target instanceof vscode.Uri ? target : undefined);
@@ -360,13 +372,13 @@ async function setProvider(provider: ProviderId): Promise<void> {
 async function runHostAction(action: HostAction, extensionId: string): Promise<void> {
   switch (action) {
     case "setApiKey":
-      await vscode.commands.executeCommand("bilingualMarkdown.setApiKey");
+      await vscode.commands.executeCommand("markdownTranslation.setApiKey");
       break;
     case "switchProvider":
-      await vscode.commands.executeCommand("bilingualMarkdown.switchProvider");
+      await vscode.commands.executeCommand("markdownTranslation.switchProvider");
       break;
     case "chooseModel":
-      await vscode.commands.executeCommand("bilingualMarkdown.chooseModel");
+      await vscode.commands.executeCommand("markdownTranslation.chooseModel");
       break;
     case "openSettings":
       await vscode.commands.executeCommand("workbench.action.openSettings", `@ext:${extensionId}`);

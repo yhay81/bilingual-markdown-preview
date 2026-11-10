@@ -57,17 +57,17 @@
   "main": "./dist/extension.js",
   "l10n": "./l10n",
   "activationEvents": [
-    "onWebviewPanel:bilingualMarkdown.preview"
+    "onWebviewPanel:markdownTranslation.preview"
   ],
   "capabilities": {
     "untrustedWorkspaces": {
       "supported": "limited",
       "description": "%capabilities.untrustedWorkspaces%",
       "restrictedConfigurations": [
-        "bilingualMarkdown.targetLanguage",
-        "bilingualMarkdown.styleInstructions",
-        "bilingualMarkdown.glossary",
-        "bilingualMarkdown.translateCodeComments"
+        "markdownTranslation.targetLanguage",
+        "markdownTranslation.styleInstructions",
+        "markdownTranslation.glossary",
+        "markdownTranslation.translateCodeComments"
       ]
     },
     "virtualWorkspaces": false
@@ -75,52 +75,52 @@
   "contributes": {
     "commands": [
       {
-        "command": "bilingualMarkdown.openPreview",
+        "command": "markdownTranslation.openPreview",
         "title": "%command.openPreview%",
         "category": "%category%",
         "icon": "$(globe)"
       },
       {
-        "command": "bilingualMarkdown.openPreviewToSide",
+        "command": "markdownTranslation.openPreviewToSide",
         "title": "%command.openPreviewToSide%",
         "category": "%category%",
         "icon": "$(globe)"
       },
       {
-        "command": "bilingualMarkdown.retranslate",
+        "command": "markdownTranslation.retranslate",
         "title": "%command.retranslate%",
         "category": "%category%",
         "icon": "$(refresh)"
       },
       {
-        "command": "bilingualMarkdown.exportTranslation",
+        "command": "markdownTranslation.exportTranslation",
         "title": "%command.exportTranslation%",
         "category": "%category%",
         "icon": "$(save-as)"
       },
       {
-        "command": "bilingualMarkdown.setApiKey",
+        "command": "markdownTranslation.setApiKey",
         "title": "%command.setApiKey%",
         "category": "%category%",
         "icon": "$(key)"
       },
       {
-        "command": "bilingualMarkdown.clearApiKey",
+        "command": "markdownTranslation.clearApiKey",
         "title": "%command.clearApiKey%",
         "category": "%category%"
       },
       {
-        "command": "bilingualMarkdown.switchProvider",
+        "command": "markdownTranslation.switchProvider",
         "title": "%command.switchProvider%",
         "category": "%category%"
       },
       {
-        "command": "bilingualMarkdown.clearCache",
+        "command": "markdownTranslation.clearCache",
         "title": "%command.clearCache%",
         "category": "%category%"
       },
       {
-        "command": "bilingualMarkdown.chooseModel",
+        "command": "markdownTranslation.chooseModel",
         "title": "%command.chooseModel%",
         "category": "%category%"
       }
@@ -128,47 +128,47 @@
     "menus": {
       "editor/title": [
         {
-          "command": "bilingualMarkdown.openPreviewToSide",
+          "command": "markdownTranslation.openPreviewToSide",
           "when": "editorLangId == markdown && !notebookEditorFocused",
           "group": "navigation"
         },
         {
-          "command": "bilingualMarkdown.retranslate",
-          "when": "activeWebviewPanelId == 'bilingualMarkdown.preview'",
+          "command": "markdownTranslation.retranslate",
+          "when": "activeWebviewPanelId == 'markdownTranslation.preview'",
           "group": "navigation"
         },
         {
-          "command": "bilingualMarkdown.exportTranslation",
-          "when": "activeWebviewPanelId == 'bilingualMarkdown.preview'",
+          "command": "markdownTranslation.exportTranslation",
+          "when": "activeWebviewPanelId == 'markdownTranslation.preview'",
           "group": "navigation"
         }
       ],
       "explorer/context": [
         {
-          "command": "bilingualMarkdown.openPreview",
+          "command": "markdownTranslation.openPreview",
           "when": "resourceLangId == markdown",
           "group": "navigation"
         }
       ],
       "commandPalette": [
         {
-          "command": "bilingualMarkdown.openPreview",
+          "command": "markdownTranslation.openPreview",
           "when": "editorLangId == markdown"
         },
         {
-          "command": "bilingualMarkdown.openPreviewToSide",
+          "command": "markdownTranslation.openPreviewToSide",
           "when": "editorLangId == markdown"
         },
         {
-          "command": "bilingualMarkdown.exportTranslation",
-          "when": "editorLangId == markdown || activeWebviewPanelId == 'bilingualMarkdown.preview'"
+          "command": "markdownTranslation.exportTranslation",
+          "when": "editorLangId == markdown || activeWebviewPanelId == 'markdownTranslation.preview'"
         }
       ]
     },
     "configuration": {
       "title": "%config.title%",
       "properties": {
-        "bilingualMarkdown.provider": {
+        "markdownTranslation.provider": {
           "type": "string",
           "enum": [
             "anthropic",
@@ -195,76 +195,76 @@
           "scope": "machine",
           "order": 0
         },
-        "bilingualMarkdown.targetLanguage": {
+        "markdownTranslation.targetLanguage": {
           "type": "string",
           "default": "Japanese",
           "markdownDescription": "%config.targetLanguage%",
           "order": 1
         },
-        "bilingualMarkdown.anthropic.model": {
+        "markdownTranslation.anthropic.model": {
           "type": "string",
           "default": "claude-haiku-5-5",
           "markdownDescription": "%config.anthropic.model%",
           "scope": "machine",
           "order": 2
         },
-        "bilingualMarkdown.openai.model": {
+        "markdownTranslation.openai.model": {
           "type": "string",
           "default": "gpt-6-luna",
           "markdownDescription": "%config.openai.model%",
           "scope": "machine",
           "order": 3
         },
-        "bilingualMarkdown.openai.baseUrl": {
+        "markdownTranslation.openai.baseUrl": {
           "type": "string",
           "default": "",
           "markdownDescription": "%config.openai.baseUrl%",
           "scope": "machine",
           "order": 4
         },
-        "bilingualMarkdown.openrouter.model": {
+        "markdownTranslation.openrouter.model": {
           "type": "string",
           "default": "google/gemini-3.8-flash",
           "markdownDescription": "%config.openrouter.model%",
           "scope": "machine",
           "order": 5
         },
-        "bilingualMarkdown.gemini.model": {
+        "markdownTranslation.gemini.model": {
           "type": "string",
           "default": "gemini-3.8-flash",
           "markdownDescription": "%config.gemini.model%",
           "scope": "machine",
           "order": 6
         },
-        "bilingualMarkdown.deepseek.model": {
+        "markdownTranslation.deepseek.model": {
           "type": "string",
           "default": "deepseek-flash",
           "markdownDescription": "%config.deepseek.model%",
           "scope": "machine",
           "order": 7
         },
-        "bilingualMarkdown.mistral.model": {
+        "markdownTranslation.mistral.model": {
           "type": "string",
           "default": "mistral-small-2603",
           "markdownDescription": "%config.mistral.model%",
           "scope": "machine",
           "order": 8
         },
-        "bilingualMarkdown.xai.model": {
+        "markdownTranslation.xai.model": {
           "type": "string",
           "default": "grok-4.3",
           "markdownDescription": "%config.xai.model%",
           "scope": "machine",
           "order": 9
         },
-        "bilingualMarkdown.vscode.model": {
+        "markdownTranslation.vscode.model": {
           "type": "string",
           "default": "",
           "markdownDescription": "%config.vscode.model%",
           "scope": "machine",
           "order": 10
         },
-        "bilingualMarkdown.reasoningEffort": {
+        "markdownTranslation.reasoningEffort": {
           "type": "string",
           "enum": [
             "none",
@@ -285,14 +285,14 @@
           "scope": "machine",
           "order": 11
         },
-        "bilingualMarkdown.styleInstructions": {
+        "markdownTranslation.styleInstructions": {
           "type": "string",
           "default": "",
           "editPresentation": "multilineText",
           "markdownDescription": "%config.styleInstructions%",
           "order": 12
         },
-        "bilingualMarkdown.glossary": {
+        "markdownTranslation.glossary": {
           "type": "object",
           "default": {},
           "additionalProperties": {
@@ -301,13 +301,13 @@
           "markdownDescription": "%config.glossary%",
           "order": 13
         },
-        "bilingualMarkdown.translateCodeComments": {
+        "markdownTranslation.translateCodeComments": {
           "type": "boolean",
           "default": false,
           "markdownDescription": "%config.translateCodeComments%",
           "order": 14
         },
-        "bilingualMarkdown.maxConcurrentRequests": {
+        "markdownTranslation.maxConcurrentRequests": {
           "type": "integer",
           "default": 3,
           "minimum": 1,
@@ -316,7 +316,7 @@
           "scope": "machine",
           "order": 15
         },
-        "bilingualMarkdown.batchCharacterLimit": {
+        "markdownTranslation.batchCharacterLimit": {
           "type": "integer",
           "default": 4000,
           "minimum": 500,
@@ -325,7 +325,7 @@
           "scope": "machine",
           "order": 16
         },
-        "bilingualMarkdown.tokenLimit": {
+        "markdownTranslation.tokenLimit": {
           "type": "integer",
           "default": 0,
           "minimum": 0,
@@ -333,7 +333,7 @@
           "scope": "machine",
           "order": 17
         },
-        "bilingualMarkdown.syncScroll": {
+        "markdownTranslation.syncScroll": {
           "type": "boolean",
           "default": true,
           "markdownDescription": "%config.syncScroll%",

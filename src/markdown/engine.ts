@@ -11,7 +11,7 @@ export interface TaskMeta {
 /** The parser shared by segmentation and rendering. Both must use the same instance and options. */
 export function createMarkdownEngine(): MarkdownIt {
   const md = markdownIt({ html: true, linkify: true, typographer: false, breaks: false });
-  md.core.ruler.push("bilingual_task_lists", taskLists);
+  md.core.ruler.push("task_lists", taskLists);
   // `$…$` and `$$…$$`, as in VS Code's own Markdown preview.
   md.use(katex, { throwOnError: false });
   mermaidFences(md);

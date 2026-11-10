@@ -1,6 +1,6 @@
 {
   "Open a Markdown file first.": "먼저 Markdown 파일을 여세요.",
-  "Open a bilingual preview first.": "먼저 대역 미리 보기를 여세요.",
+  "Open a translation preview first.": "먼저 번역 미리 보기를 여세요.",
   "Which provider's API key do you want to set?": "어느 공급자의 API 키를 설정할까요?",
   "{0} API Key": "{0} API 키",
   "Stored in VS Code Secret Storage (your OS keychain), not in settings.": "설정 파일이 아니라 VS Code Secret Storage(OS 키체인)에 저장됩니다.",
@@ -26,7 +26,7 @@
   "This API key is not allowed to use {0}.": "이 API 키로는 {0}을(를) 사용할 수 없습니다.",
   "{0} segments could not be translated.": "{0}개 부분을 번역하지 못했습니다.",
   "Retry": "다시 시도",
-  "Bilingual: {0}": "대역: {0}",
+  "Translation: {0}": "번역: {0}",
   "Source": "원문",
   "Side by side": "나란히 보기",
   "Translation": "번역문",

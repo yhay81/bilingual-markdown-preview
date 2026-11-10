@@ -30,11 +30,11 @@ Markdown を原文と訳文で左右に並べてプレビューする VS Code �
 VS Code 1.101 以降と、次のいずれかが必要です: GitHub Copilot、Anthropic・OpenAI・OpenRouter・Google Gemini・DeepSeek・Mistral AI・xAI のいずれかの API キー、Ollama や LM Studio などのローカルのサーバー。
 
 1. Visual Studio Marketplace から **Markdown Translation Preview** をインストールします。
-2. Markdown ファイルを開き、エディター右上の地球のアイコン（**対訳プレビューを横に開く**）を押します。エクスプローラーの右クリックメニューや、コマンドパレットの **Bilingual Markdown: 対訳プレビューを開く** からも開けます。
+2. Markdown ファイルを開き、エディター右上の地球のアイコン（**翻訳プレビューを横に開く**）を押します。エクスプローラーの右クリックメニューや、コマンドパレットの **Markdown Translation: 翻訳プレビューを開く** からも開けます。
 3. 初めて開くと API キーを求める表示が出ます。**API キーを設定** を押してキーを入力するか、GitHub Copilot を使うなら **プロバイダーを切り替え** を押して **VS Code Language Model** を選びます。
 4. 翻訳が始まります。失敗した行は、その行の **再試行** で訳し直せます。
 
-翻訳先は日本語です。ほかの言語に訳すときは、`bilingualMarkdown.targetLanguage` を `English` や `Simplified Chinese` などに変えます。文書ごとに、フロントマターで別の言語を指定することもできます。
+翻訳先は日本語です。ほかの言語に訳すときは、`markdownTranslation.targetLanguage` を `English` や `Simplified Chinese` などに変えます。文書ごとに、フロントマターで別の言語を指定することもできます。
 
 ```markdown
 ---
@@ -46,29 +46,29 @@ translate-to: French
 
 | コマンド | 内容 |
 | --- | --- |
-| Bilingual Markdown: 対訳プレビューを開く | 対訳プレビューを開きます。 |
-| Bilingual Markdown: 対訳プレビューを横に開く | エディターの横に開きます。 |
-| Bilingual Markdown: 再翻訳（キャッシュを使わない） | 表示中の文書をキャッシュを使わずに訳し直します。 |
-| Bilingual Markdown: 訳文を Markdown として保存 | 訳文を Markdown ファイルとして保存します。プレビューのツールバーからも使えます。 |
-| Bilingual Markdown: API キーを設定 | API キーを登録します。 |
-| Bilingual Markdown: API キーを削除 | 登録した API キーを削除します。 |
-| Bilingual Markdown: 翻訳プロバイダーを切り替え | OpenRouter や VS Code の言語モデルなど、別のプロバイダーに切り替えます。 |
-| Bilingual Markdown: モデルを選ぶ | いまのプロバイダーが提供するモデルの一覧から選ぶか、モデル ID を入力して、翻訳に使うモデルを変えます。プレビューのツールバーのモデル名をクリックしても同じです。 |
-| Bilingual Markdown: 翻訳キャッシュを消去 | 保存した翻訳結果を削除します。 |
+| Markdown Translation: 翻訳プレビューを開く | 翻訳プレビューを開きます。 |
+| Markdown Translation: 翻訳プレビューを横に開く | エディターの横に開きます。 |
+| Markdown Translation: 再翻訳（キャッシュを使わない） | 表示中の文書をキャッシュを使わずに訳し直します。 |
+| Markdown Translation: 訳文を Markdown として保存 | 訳文を Markdown ファイルとして保存します。プレビューのツールバーからも使えます。 |
+| Markdown Translation: API キーを設定 | API キーを登録します。 |
+| Markdown Translation: API キーを削除 | 登録した API キーを削除します。 |
+| Markdown Translation: 翻訳プロバイダーを切り替え | OpenRouter や VS Code の言語モデルなど、別のプロバイダーに切り替えます。 |
+| Markdown Translation: モデルを選ぶ | いまのプロバイダーが提供するモデルの一覧から選ぶか、モデル ID を入力して、翻訳に使うモデルを変えます。プレビューのツールバーのモデル名をクリックしても同じです。 |
+| Markdown Translation: 翻訳キャッシュを消去 | 保存した翻訳結果を削除します。 |
 
 ## プロバイダーと料金
 
 ### GitHub Copilot など VS Code の言語モデル
 
-`bilingualMarkdown.provider` を `vscode` にするか、**Bilingual Markdown: 翻訳プロバイダーを切り替え** で **VS Code Language Model** を選びます。API キーは要りません。GitHub Copilot などの拡張機能が VS Code に提供している言語モデルを使います。
+`markdownTranslation.provider` を `vscode` にするか、**Markdown Translation: 翻訳プロバイダーを切り替え** で **VS Code Language Model** を選びます。API キーは要りません。GitHub Copilot などの拡張機能が VS Code に提供している言語モデルを使います。
 
 - 初回は、この拡張機能がモデルを使ってよいか VS Code が確認します。断った場合は、アカウントメニューの「言語モデルへのアクセスを管理」から許可し直せます。
-- 使えるモデルは **Bilingual Markdown: モデルを選ぶ** で一覧できます。`bilingualMarkdown.vscode.model` が空欄なら、GitHub Copilot の最初のモデルを使います。
+- 使えるモデルは **Markdown Translation: モデルを選ぶ** で一覧できます。`markdownTranslation.vscode.model` が空欄なら、GitHub Copilot の最初のモデルを使います。
 - リクエストは、チャットと同じく Copilot のプランの利用枠に数えられます。
 
 ### 自分の API キー
 
-| プロバイダー | `bilingualMarkdown.provider` | 既定のモデル |
+| プロバイダー | `markdownTranslation.provider` | 既定のモデル |
 | --- | --- | --- |
 | [Anthropic](https://www.anthropic.com) | `anthropic` | `claude-haiku-5-5` |
 | [OpenAI](https://openai.com) | `openai` | `gpt-6-luna` |
@@ -78,22 +78,22 @@ translate-to: French
 | [Mistral AI](https://mistral.ai) | `mistral` | `mistral-small-2603` |
 | [xAI](https://x.ai) | `xai` | `grok-4.3` |
 
-**Bilingual Markdown: 翻訳プロバイダーを切り替え** でプロバイダーを選び、そのキーを入力します。キーとモデルはプロバイダーごとに保存するので、行き来しても設定し直す必要はありません。
+**Markdown Translation: 翻訳プロバイダーを切り替え** でプロバイダーを選び、そのキーを入力します。キーとモデルはプロバイダーごとに保存するので、行き来しても設定し直す必要はありません。
 
-- 別のモデルを使うには、**Bilingual Markdown: モデルを選ぶ** を実行するか、プレビューのツールバーのモデル名をクリックします。キーで使えるモデルが一覧され、モデル ID を直接入力することもできます。選んだモデルは `bilingualMarkdown.<プロバイダー>.model` に保存されます。
+- 別のモデルを使うには、**Markdown Translation: モデルを選ぶ** を実行するか、プレビューのツールバーのモデル名をクリックします。キーで使えるモデルが一覧され、モデル ID を直接入力することもできます。選んだモデルは `markdownTranslation.<プロバイダー>.model` に保存されます。
 - OpenRouter では、1 つのキーと 1 つの請求で多数のプロバイダーのモデルを使えます。モデル ID は `anthropic/claude-haiku-5.5` や `openai/gpt-6-luna` のようにプロバイダー名から始まります。
 - 利用料金は、キーを発行したアカウントに請求されます。
 - キーはパスワード入力欄から登録し、VS Code の Secret Storage（OS のキーチェーン）に保存します。`settings.json` には書きません。
 - キーが拒否されたとき（認証エラーや権限不足）は翻訳を止め、プレビュー上でキーの再設定やプロバイダーの切り替えを案内します。
-- `bilingualMarkdown.reasoningEffort` が `none` のとき、Gemini や Grok のように推論を止められないモデルは、いちばん低いレベルで推論します。モデルが推論の設定を受け付けないときは一段低い設定を試し、最後は推論の指定なしで送ります。
+- `markdownTranslation.reasoningEffort` が `none` のとき、Gemini や Grok のように推論を止められないモデルは、いちばん低いレベルで推論します。モデルが推論の設定を受け付けないときは一段低い設定を試し、最後は推論の指定なしで送ります。
 - Gemini API の無料枠では、送った内容が Google の製品改善に使われ、人が読むことがあります。機密の文書は無料枠で送らないでください。
-- この VS Code のセッションで使ったトークン数をツールバーに表示します。`bilingualMarkdown.tokenLimit` を設定すると、その数に達したところで翻訳を止め、**続ける** を押すまで待ちます。
+- この VS Code のセッションで使ったトークン数をツールバーに表示します。`markdownTranslation.tokenLimit` を設定すると、その数に達したところで翻訳を止め、**続ける** を押すまで待ちます。
 
 ### ローカルのモデル
 
-OpenAI 互換の API を持つサーバーなら使えます。`bilingualMarkdown.provider` を `openai` にし、ユーザー設定で `bilingualMarkdown.openai.baseUrl` にサーバーの URL を、`bilingualMarkdown.openai.model` にそのサーバーのモデル名を指定します。手元のコンピューターのサーバーには API キーは要りません。
+OpenAI 互換の API を持つサーバーなら使えます。`markdownTranslation.provider` を `openai` にし、ユーザー設定で `markdownTranslation.openai.baseUrl` にサーバーの URL を、`markdownTranslation.openai.model` にそのサーバーのモデル名を指定します。手元のコンピューターのサーバーには API キーは要りません。
 
-| サーバー | `bilingualMarkdown.openai.baseUrl` |
+| サーバー | `markdownTranslation.openai.baseUrl` |
 | --- | --- |
 | [Ollama](https://ollama.com) | `http://localhost:11434/v1` |
 | [LM Studio](https://lmstudio.ai) | `http://localhost:1234/v1` |
@@ -105,25 +105,25 @@ OpenAI 互換の API を持つサーバーなら使えます。`bilingualMarkdow
 
 | 設定 | 既定値 | 内容 |
 | --- | --- | --- |
-| `bilingualMarkdown.provider` | `anthropic` | 翻訳に使うプロバイダー（`anthropic` / `openai` / `openrouter` / `gemini` / `deepseek` / `mistral` / `xai` / VS Code の言語モデルを使う `vscode`）。 |
-| `bilingualMarkdown.targetLanguage` | `Japanese` | 翻訳先の言語。翻訳者に伝えるように書きます（例: `English`、`Simplified Chinese`）。文書のフロントマターの `translate-to` がこれより優先されます。 |
-| `bilingualMarkdown.anthropic.model` | `claude-haiku-5-5` | Anthropic のモデル ID。 |
-| `bilingualMarkdown.openai.model` | `gpt-6-luna` | OpenAI のモデル ID。 |
-| `bilingualMarkdown.openai.baseUrl` | （空欄） | OpenAI 互換 API のベース URL（社内ゲートウェイや[ローカルのサーバー](#ローカルのモデル)）。空欄なら `https://api.openai.com/v1` を使います。`https://` か、`localhost`・`127.0.0.1`・`[::1]` への `http://` だけが使えます。 |
-| `bilingualMarkdown.openrouter.model` | `google/gemini-3.8-flash` | OpenRouter のモデル ID（`provider/model` の形）。 |
-| `bilingualMarkdown.gemini.model` | `gemini-3.8-flash` | Gemini のモデル ID。 |
-| `bilingualMarkdown.deepseek.model` | `deepseek-flash` | DeepSeek のモデル ID。 |
-| `bilingualMarkdown.mistral.model` | `mistral-small-2603` | Mistral のモデル ID。 |
-| `bilingualMarkdown.xai.model` | `grok-4.3` | xAI のモデル ID。 |
-| `bilingualMarkdown.vscode.model` | （空欄） | VS Code の言語モデルの ID またはファミリー。空欄なら GitHub Copilot の最初のモデルを使います。 |
-| `bilingualMarkdown.reasoningEffort` | `none` | 回答の前にモデルが推論する量（`none` / `low` / `medium` / `high` / `default`）。翻訳には通常 `none` で足ります。 |
-| `bilingualMarkdown.styleInstructions` | （空欄） | 翻訳者への追加の指示（例: `である調で書く`）。 |
-| `bilingualMarkdown.glossary` | `{}` | 訳語を固定する用語集。`{ "pull request": "プルリクエスト" }` のように書きます。「[用語集ファイル](#用語集ファイル)」も見てください。 |
-| `bilingualMarkdown.translateCodeComments` | `false` | コードブロックのコメントも翻訳します。詳しくは「[コードのコメントの翻訳](#コードのコメントの翻訳)」を見てください。 |
-| `bilingualMarkdown.maxConcurrentRequests` | `3` | 同時に送る翻訳リクエストの上限（1〜8）。 |
-| `bilingualMarkdown.batchCharacterLimit` | `4000` | 1 回のリクエストで送る原文のおおよその文字数（500〜20000）。 |
-| `bilingualMarkdown.tokenLimit` | `0` | 1 回の VS Code のセッションでこの数のトークンを使ったら翻訳を止めます。`0` は無制限です。プロバイダーがトークン数を返すときに数えます。VS Code の言語モデルや一部のローカルのサーバーは返しません。 |
-| `bilingualMarkdown.syncScroll` | `true` | エディターとプレビューのスクロールを連動させます。 |
+| `markdownTranslation.provider` | `anthropic` | 翻訳に使うプロバイダー（`anthropic` / `openai` / `openrouter` / `gemini` / `deepseek` / `mistral` / `xai` / VS Code の言語モデルを使う `vscode`）。 |
+| `markdownTranslation.targetLanguage` | `Japanese` | 翻訳先の言語。翻訳者に伝えるように書きます（例: `English`、`Simplified Chinese`）。文書のフロントマターの `translate-to` がこれより優先されます。 |
+| `markdownTranslation.anthropic.model` | `claude-haiku-5-5` | Anthropic のモデル ID。 |
+| `markdownTranslation.openai.model` | `gpt-6-luna` | OpenAI のモデル ID。 |
+| `markdownTranslation.openai.baseUrl` | （空欄） | OpenAI 互換 API のベース URL（社内ゲートウェイや[ローカルのサーバー](#ローカルのモデル)）。空欄なら `https://api.openai.com/v1` を使います。`https://` か、`localhost`・`127.0.0.1`・`[::1]` への `http://` だけが使えます。 |
+| `markdownTranslation.openrouter.model` | `google/gemini-3.8-flash` | OpenRouter のモデル ID（`provider/model` の形）。 |
+| `markdownTranslation.gemini.model` | `gemini-3.8-flash` | Gemini のモデル ID。 |
+| `markdownTranslation.deepseek.model` | `deepseek-flash` | DeepSeek のモデル ID。 |
+| `markdownTranslation.mistral.model` | `mistral-small-2603` | Mistral のモデル ID。 |
+| `markdownTranslation.xai.model` | `grok-4.3` | xAI のモデル ID。 |
+| `markdownTranslation.vscode.model` | （空欄） | VS Code の言語モデルの ID またはファミリー。空欄なら GitHub Copilot の最初のモデルを使います。 |
+| `markdownTranslation.reasoningEffort` | `none` | 回答の前にモデルが推論する量（`none` / `low` / `medium` / `high` / `default`）。翻訳には通常 `none` で足ります。 |
+| `markdownTranslation.styleInstructions` | （空欄） | 翻訳者への追加の指示（例: `である調で書く`）。 |
+| `markdownTranslation.glossary` | `{}` | 訳語を固定する用語集。`{ "pull request": "プルリクエスト" }` のように書きます。「[用語集ファイル](#用語集ファイル)」も見てください。 |
+| `markdownTranslation.translateCodeComments` | `false` | コードブロックのコメントも翻訳します。詳しくは「[コードのコメントの翻訳](#コードのコメントの翻訳)」を見てください。 |
+| `markdownTranslation.maxConcurrentRequests` | `3` | 同時に送る翻訳リクエストの上限（1〜8）。 |
+| `markdownTranslation.batchCharacterLimit` | `4000` | 1 回のリクエストで送る原文のおおよその文字数（500〜20000）。 |
+| `markdownTranslation.tokenLimit` | `0` | 1 回の VS Code のセッションでこの数のトークンを使ったら翻訳を止めます。`0` は無制限です。プロバイダーがトークン数を返すときに数えます。VS Code の言語モデルや一部のローカルのサーバーは返しません。 |
+| `markdownTranslation.syncScroll` | `true` | エディターとプレビューのスクロールを連動させます。 |
 
 プロバイダー、モデル、ベース URL、推論の量、同時リクエスト数、1 回の文字数、トークンの上限はユーザー設定でだけ変えられます。ワークスペースの設定ファイルでは変わりません。
 
@@ -138,12 +138,12 @@ OpenAI 互換の API を持つサーバーなら使えます。`bilingualMarkdow
 }
 ```
 
-ファイルを変えるとプレビューが読み直します。ファイルと `bilingualMarkdown.glossary` の両方にある用語は、設定のほうが優先されます。
+ファイルを変えるとプレビューが読み直します。ファイルと `markdownTranslation.glossary` の両方にある用語は、設定のほうが優先されます。
 
 ## 訳文の編集と保存
 
 - 訳文にマウスを重ねて ✎ を押すと、訳文を直せます。**保存**（または Ctrl+Enter / Cmd+Enter）で確定し、Escape で取り消します。直した行には **編集済み** と表示され、**元に戻す** で機械翻訳に戻せます。直した訳文は手元に保存され、再翻訳しても、**翻訳キャッシュを消去** しても消えません。
-- ツールバーの ⤓ か **Bilingual Markdown: 訳文を Markdown として保存** で、訳文を `README.ja.md` のような Markdown ファイルとして文書の隣に保存できます。コード・リンク・フロントマター・空行は原文のまま写し、手で直した訳文も反映します。まだ訳されていない部分は原文のまま保存し、その数をお知らせします。
+- ツールバーの ⤓ か **Markdown Translation: 訳文を Markdown として保存** で、訳文を `README.ja.md` のような Markdown ファイルとして文書の隣に保存できます。コード・リンク・フロントマター・空行は原文のまま写し、手で直した訳文も反映します。まだ訳されていない部分は原文のまま保存し、その数をお知らせします。
 
 ## 数式・図・折りたたみ
 
@@ -153,7 +153,7 @@ OpenAI 互換の API を持つサーバーなら使えます。`bilingualMarkdow
 
 ## コードのコメントの翻訳
 
-`bilingualMarkdown.translateCodeComments` をオンにすると、コードブロックのコメントも翻訳します。コメントがあるコードブロックは、左に原文のコード、右にコメントを訳したコードを並べて表示します。
+`markdownTranslation.translateCodeComments` をオンにすると、コードブロックのコメントも翻訳します。コメントがあるコードブロックは、左に原文のコード、右にコメントを訳したコードを並べて表示します。
 
 ![英語のコメントが付いた JavaScript の関数と、コメントを日本語に訳した同じ関数を並べた表示](images/code-comments.png)
 
@@ -167,8 +167,8 @@ OpenAI 互換の API を持つサーバーなら使えます。`bilingualMarkdow
 
 ## セキュリティとプライバシー
 
-- 翻訳する文章は、選んだプロバイダーに送ります。送信先は `https://api.anthropic.com`、`https://api.openai.com/v1`、`https://openrouter.ai/api/v1`、`https://generativelanguage.googleapis.com`、`https://api.deepseek.com`、`https://api.mistral.ai/v1`、`https://api.x.ai/v1`、ユーザー設定の `bilingualMarkdown.openai.baseUrl`、または利用を許可した VS Code の言語モデルだけです。各キーは、そのキーのプロバイダーにだけ送ります。`ANTHROPIC_BASE_URL`、`OPENAI_BASE_URL`、`OPENAI_ORG_ID`、`OPENAI_PROJECT_ID` などの環境変数は使いません。
-- コードブロック、front matter、インラインコード、数式、URL、リンク先、HTML は送りません。ただし `bilingualMarkdown.translateCodeComments` をオンにしたときは、コードブロックのコメントの文章を送ります。
+- 翻訳する文章は、選んだプロバイダーに送ります。送信先は `https://api.anthropic.com`、`https://api.openai.com/v1`、`https://openrouter.ai/api/v1`、`https://generativelanguage.googleapis.com`、`https://api.deepseek.com`、`https://api.mistral.ai/v1`、`https://api.x.ai/v1`、ユーザー設定の `markdownTranslation.openai.baseUrl`、または利用を許可した VS Code の言語モデルだけです。各キーは、そのキーのプロバイダーにだけ送ります。`ANTHROPIC_BASE_URL`、`OPENAI_BASE_URL`、`OPENAI_ORG_ID`、`OPENAI_PROJECT_ID` などの環境変数は使いません。
+- コードブロック、front matter、インラインコード、数式、URL、リンク先、HTML は送りません。ただし `markdownTranslation.translateCodeComments` をオンにしたときは、コードブロックのコメントの文章を送ります。
 - 制限モード（信頼していないワークスペース）では、翻訳先の言語・追加の指示・用語集・コメントの翻訳もユーザー設定の値だけを使います。用語集ファイルとフロントマターの `translate-to` も使いません。
 - 利用状況のデータ（テレメトリー）は集めません。
 - プレビューは厳格な Content Security Policy の下で表示し、Markdown 中の HTML は DOMPurify で無害化します。文書中のスクリプトやコマンド URI は実行しません。

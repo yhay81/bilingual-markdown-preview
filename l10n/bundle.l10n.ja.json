@@ -1,6 +1,6 @@
 {
   "Open a Markdown file first.": "先に Markdown ファイルを開いてください。",
-  "Open a bilingual preview first.": "先に対訳プレビューを開いてください。",
+  "Open a translation preview first.": "先に翻訳プレビューを開いてください。",
   "Which provider's API key do you want to set?": "どのプロバイダーの API キーを設定しますか？",
   "{0} API Key": "{0} の API キー",
   "Stored in VS Code Secret Storage (your OS keychain), not in settings.": "設定ファイルではなく、VS Code の Secret Storage（OS のキーチェーン）に保存されます。",
@@ -26,7 +26,7 @@
   "This API key is not allowed to use {0}.": "この API キーでは {0} を使えません。",
   "{0} segments could not be translated.": "{0} 件の箇所を翻訳できませんでした。",
   "Retry": "再試行",
-  "Bilingual: {0}": "対訳: {0}",
+  "Translation: {0}": "翻訳: {0}",
   "Source": "原文",
   "Side by side": "並べて表示",
   "Translation": "訳文",

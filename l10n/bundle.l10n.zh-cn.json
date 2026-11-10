@@ -1,6 +1,6 @@
 {
   "Open a Markdown file first.": "请先打开一个 Markdown 文件。",
-  "Open a bilingual preview first.": "请先打开双语预览。",
+  "Open a translation preview first.": "请先打开翻译预览。",
   "Which provider's API key do you want to set?": "要设置哪个提供方的 API 密钥？",
   "{0} API Key": "{0} API 密钥",
   "Stored in VS Code Secret Storage (your OS keychain), not in settings.": "保存在 VS Code 的 Secret Storage（操作系统的钥匙串）中，不会写入设置。",
@@ -26,7 +26,7 @@
   "This API key is not allowed to use {0}.": "此 API 密钥无权使用 {0}。",
   "{0} segments could not be translated.": "有 {0} 处无法翻译。",
   "Retry": "重试",
-  "Bilingual: {0}": "双语：{0}",
+  "Translation: {0}": "翻译：{0}",
   "Source": "原文",
   "Side by side": "并排显示",
   "Translation": "译文",

@@ -2,16 +2,17 @@
 
 ## Unreleased
 
+- Settings, commands and the command category are named after the extension: `markdownTranslation.*` and **Markdown Translation: …**, no longer `bilingualMarkdown.*` and **Bilingual Markdown: …**. Your settings, stored API keys and view mode are moved to the new names when the extension starts. Keybindings to the old command IDs need updating.
 - Translate with your own key for OpenRouter, Google Gemini, DeepSeek, Mistral AI or xAI, as well as Anthropic and OpenAI. Each provider keeps its own key and model.
-- **Bilingual Markdown: Choose Model** lists the models the current provider offers, or takes a model ID. Clicking the model name in the toolbar opens it too.
+- **Markdown Translation: Choose Model** lists the models the current provider offers, or takes a model ID. Clicking the model name in the toolbar opens it too.
 - When a model rejects a reasoning setting, the next lower one is tried, and finally none at all.
-- Translate with GitHub Copilot or another language model in VS Code, with no API key (`bilingualMarkdown.provider`: `vscode`).
+- Translate with GitHub Copilot or another language model in VS Code, with no API key (`markdownTranslation.provider`: `vscode`).
 - Translate with a local model: a server on this machine, such as Ollama or LM Studio, needs no API key.
-- Save the translation as a Markdown file, such as `README.ja.md`, from the toolbar or with **Bilingual Markdown: Save Translation as Markdown**.
+- Save the translation as a Markdown file, such as `README.ja.md`, from the toolbar or with **Markdown Translation: Save Translation as Markdown**.
 - Correct a translation by hand in the preview. Edits are kept and can be reverted.
 - A glossary file shared by the workspace: `.vscode/translation-glossary.json`.
 - A document can choose its target language with `translate-to` in its front matter.
-- The toolbar shows the tokens used, and `bilingualMarkdown.tokenLimit` pauses translation after that many.
+- The toolbar shows the tokens used, and `markdownTranslation.tokenLimit` pauses translation after that many.
 - Each request carries the text just before it, for consistent terms and tone.
 - Math is rendered with KaTeX and Mermaid diagrams are drawn. `<details>` blocks fold on both sides, and their summaries are translated.
 - Text already in the target language is now recognized for Chinese, Korean, Russian, Ukrainian, Greek, Arabic, Hebrew, Thai, Hindi, English, Spanish, French, German, Portuguese and Italian too, not only Japanese.
