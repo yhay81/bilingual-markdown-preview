@@ -5,7 +5,7 @@
   "version": "0.1.0",
   "private": true,
   "publisher": "yhay81",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/yhay81/bilingual-markdown-preview.git"
@@ -239,7 +239,7 @@
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.webview.json",
     "test": "vitest run",
     "check": "npm run typecheck && npm test",
-    "package": "vsce package --no-dependencies --skip-license",
+    "package": "vsce package --no-dependencies",
     "vscode:prepublish": "node esbuild.mjs --production"
   },
   "dependencies": {
