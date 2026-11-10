@@ -104,8 +104,8 @@ describe("spliceComments", () => {
 
   it("rewraps long lines to the comment's width and keeps blank lines", () => {
     const code = "# First line of the comment.\n# Second line.\nx = 1";
-    expect(splice(code, "python", [`${"あ".repeat(25)}。\n\n次の段落。`])).toBe(
-      `# ${"あ".repeat(20)}\n# ${"あ".repeat(5)}。\n#\n# 次の段落。\nx = 1`,
+    expect(splice(code, "python", ["2 つの数を足して、その合計を返します。どちらの引数も有限の数です。\n\n次の段落。"])).toBe(
+      ["# 2 つの数を足して、その合計を返します。", "# どちらの引数も有限の数です。", "#", "# 次の段落。", "x = 1"].join("\n"),
     );
   });
 
@@ -134,16 +134,34 @@ describe("wrap", () => {
     expect(displayWidth("A（全角）")).toBe(9);
   });
 
-  it("breaks at spaces and between wide characters, never inside a word", () => {
+  it("breaks at spaces, never inside a word", () => {
     expect(wrapLine("short", 40)).toEqual(["short"]);
     expect(wrapLine("alpha beta gamma delta", 11)).toEqual(["alpha beta", "gamma delta"]);
     expect(wrapLine("supercalifragilistic word", 5)).toEqual(["supercalifragilistic", "word"]);
     expect(wrapLine("  alpha beta", 8)).toEqual(["  alpha", "  beta"]);
   });
 
-  it("keeps punctuation with the character it belongs to", () => {
-    expect(wrapLine("ああああ。", 8)).toEqual(["あああ", "あ。"]);
-    expect(wrapLine("あああ「いい」", 8)).toEqual(["あああ", "「いい」"]);
+  it("breaks Japanese between phrases, with their particles, endings and punctuation", () => {
+    expect(wrapLine("2 つの数を足して、その合計を返します。どちらの引数も有限の数でなければなりません。", 40)).toEqual([
+      "2 つの数を足して、その合計を返します。",
+      "どちらの引数も有限の",
+      "数でなければなりません。",
+    ]);
+    expect(wrapLine("「設定」を開いて、保存します。", 12)).toEqual(["「設定」を", "開いて、", "保存します。"]);
+  });
+
+  it("keeps katakana words whole", () => {
+    expect(wrapLine("翻訳ではプレースホルダーを残します", 20)).toEqual(["翻訳では", "プレースホルダーを", "残します"]);
+  });
+
+  it("breaks a phrase too wide for a line between its words", () => {
+    const lines = wrapLine("数でなければなりません", 10);
+    expect(lines.length).toBeGreaterThan(1);
+    expect(lines.join("")).toBe("数でなければなりません");
+  });
+
+  it("breaks Chinese between words", () => {
+    expect(wrapLine("这是一个用于翻译的扩展程序", 12).join("|")).not.toMatch(/翻\|译|扩\|展|程\|序/);
   });
 
   it("continues list items under their text", () => {

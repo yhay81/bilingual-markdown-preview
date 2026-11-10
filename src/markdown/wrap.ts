@@ -7,6 +7,12 @@
 const NO_LINE_START = new Set([..."、。，．・：；？！ー～…‥」』）］｝〕〉》】〙〗’”ゝゞヽヾ々ぁぃぅぇぉっゃゅょゎゕゖァィゥェォッャュョヮヵヶ,.:;?!)]}"]);
 const NO_LINE_END = new Set([..."「『（［｛〔〈《【〘〖‘“([{"]);
 
+/** Punctuation that ends a clause or a sentence, after which a line may break before anything. */
+const CLAUSE_END = new Set([..."、。，．：；？！,.:;?!"]);
+
+/** Finds the words in CJK text, which has no spaces between them. Without it, every character counts as a word. */
+const wordSegmenter = typeof Intl.Segmenter === "function" ? new Intl.Segmenter("ja", { granularity: "word" }) : undefined;
+
 /** Columns that `text` takes up in a monospace font. */
 export function displayWidth(text: string): number {
   let width = 0;
@@ -14,7 +20,10 @@ export function displayWidth(text: string): number {
   return width;
 }
 
-/** Breaks `line` into lines no wider than `width` where it can: at spaces and between CJK characters, never inside a word. */
+/**
+ * Breaks `line` into lines no wider than `width` where it can: at spaces and between the phrases of CJK text, never
+ * inside a word. A phrase too wide for a line of its own breaks between its words.
+ */
 export function wrapLine(line: string, width: number): string[] {
   if (displayWidth(line) <= width) return [line];
   const indent = /^\s*/.exec(line)![0];
@@ -22,28 +31,35 @@ export function wrapLine(line: string, width: number): string[] {
   // Continue a list item under its text, not under its bullet.
   const bullet = /^(?:[-*+•]|\d+[.)])\s+/.exec(body)?.[0] ?? "";
   const continuation = indent + " ".repeat(displayWidth(bullet));
+  const room = width - displayWidth(continuation);
 
   const lines: string[] = [];
   let current = indent;
   let currentWidth = displayWidth(indent);
   let filled = false;
-  for (const chunk of chunksOf(body)) {
-    const chunkWidth = displayWidth(chunk);
-    if (/^\s/.test(chunk)) {
-      if (filled) {
-        current += chunk;
-        currentWidth += chunkWidth;
-      }
-      continue;
-    }
-    if (filled && currentWidth + chunkWidth > width) {
+  const add = (text: string): void => {
+    const textWidth = displayWidth(text);
+    if (filled && currentWidth + textWidth > width) {
       lines.push(current.trimEnd());
       current = continuation;
       currentWidth = displayWidth(continuation);
     }
-    current += chunk;
-    currentWidth += chunkWidth;
+    current += text;
+    currentWidth += textWidth;
     filled = true;
+  };
+  for (const words of phrasesOf(body)) {
+    const phrase = words.join("");
+    if (/^\s/.test(phrase)) {
+      if (filled) {
+        current += phrase;
+        currentWidth += displayWidth(phrase);
+      }
+    } else if (displayWidth(phrase) > room) {
+      for (const word of words) add(word);
+    } else {
+      add(phrase);
+    }
   }
   lines.push(current.trimEnd());
   return lines;
@@ -61,40 +77,74 @@ export function joinLines(lines: readonly string[]): string {
   return joined;
 }
 
-/** Units that a line may break between: runs of spaces, words, and single wide characters with the punctuation that sticks to them. */
-function chunksOf(text: string): string[] {
-  const chunks: string[] = [];
+/**
+ * Units that a line may break between, each as the words it may break into: runs of spaces, words, and phrases of
+ * Japanese text, which keep particles and endings with the word before them and katakana words whole.
+ */
+function phrasesOf(text: string): string[][] {
+  const phrases: string[][] = [];
+  for (const word of wordsOf(text)) {
+    const phrase = phrases.at(-1);
+    if (phrase !== undefined && joinsPhrase(lastChar(phrase.at(-1)!), firstChar(word))) phrase.push(word);
+    else phrases.push([word]);
+  }
+  return phrases;
+}
+
+/** Whether a word that starts with `first` belongs to the phrase that ends with `last`. */
+function joinsPhrase(last: string, first: string): boolean {
+  if (isKatakana(first)) return isKatakana(last);
+  return isHiragana(first) && !/\s/.test(last) && !CLAUSE_END.has(last);
+}
+
+/** Runs of spaces, words, and the words of CJK text, with the punctuation that sticks to them. */
+function wordsOf(text: string): string[] {
+  const words: string[] = [];
   let word = "";
+  let wide = "";
   const flush = (): void => {
-    if (word !== "") chunks.push(word);
+    if (word !== "") words.push(word);
+    if (wide !== "") words.push(...(wordSegmenter ? Array.from(wordSegmenter.segment(wide), ({ segment }) => segment) : [...wide]));
     word = "";
+    wide = "";
   };
   for (const char of text) {
     if (/\s/.test(char)) {
       flush();
-      if (/\s$/.test(chunks.at(-1) ?? "")) chunks[chunks.length - 1] += char;
-      else chunks.push(char);
+      if (/\s$/.test(words.at(-1) ?? "")) words[words.length - 1] += char;
+      else words.push(char);
     } else if (isWide(char)) {
-      flush();
-      chunks.push(char);
+      if (word !== "") flush();
+      wide += char;
     } else {
+      if (wide !== "") flush();
       word += char;
     }
   }
   flush();
 
   const merged: string[] = [];
-  for (const chunk of chunks) {
+  for (const word of words) {
     const previous = merged.at(-1);
     const sticks =
       previous !== undefined &&
-      !/\s/.test(chunk[0]!) &&
+      !/\s/.test(word[0]!) &&
       !/\s$/.test(previous) &&
-      (NO_LINE_START.has(firstChar(chunk)) || NO_LINE_END.has(lastChar(previous)));
-    if (sticks) merged[merged.length - 1] = previous + chunk;
-    else merged.push(chunk);
+      (NO_LINE_START.has(firstChar(word)) || NO_LINE_END.has(lastChar(previous)));
+    if (sticks) merged[merged.length - 1] = previous + word;
+    else merged.push(word);
   }
   return merged;
+}
+
+function isHiragana(char: string): boolean {
+  const cp = char.codePointAt(0) ?? 0;
+  return cp >= 0x3041 && cp <= 0x309f;
+}
+
+function isKatakana(char: string): boolean {
+  const cp = char.codePointAt(0) ?? 0;
+  return (cp >= 0x30a0 && cp <= 0x30ff) || (cp >= 0x31f0 && cp <= 0x31ff);
 }
 
 /** Whether the first character of `text` is East Asian wide or fullwidth. */
