@@ -2,7 +2,7 @@ name: Release
 
 # Publishes the extension when a version tag such as v0.1.0 is pushed. The Visual Studio
 # Marketplace trusts this workflow through a Trusted Publishing policy on the publisher, so
-# no token is stored. See CONTRIBUTING.md.
+# no token is stored for it. Open VSX is optional. See CONTRIBUTING.md.
 
 on:
   push:
@@ -46,6 +46,13 @@ jobs:
           if-no-files-found: error
       - name: Publish to the Visual Studio Marketplace
         run: npx vsce publish --oidc --skip-duplicate --packagePath ./*.vsix
+      # Open VSX, for VS Code forks such as VSCodium and Cursor. Runs once the repository variable
+      # OPEN_VSX is "true"; the token is the OVSX_PAT secret. See CONTRIBUTING.md.
+      - name: Publish to Open VSX
+        if: vars.OPEN_VSX == 'true'
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        run: npx ovsx publish --skip-duplicate --packagePath ./*.vsix
 
   release:
     needs: publish

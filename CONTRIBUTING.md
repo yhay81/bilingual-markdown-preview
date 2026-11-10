@@ -49,7 +49,7 @@ code --install-extension markdown-translation-preview-0.1.0.vsix
 
 ## Release
 
-Pushing a version tag runs the [Release workflow](.github/workflows/release.yml), which publishes the extension to the Visual Studio Marketplace and creates a GitHub release.
+Pushing a version tag runs the [Release workflow](.github/workflows/release.yml), which publishes the extension to the Visual Studio Marketplace, and to Open VSX once that is set up, and creates a GitHub release.
 
 1. Change `version` in `package.json`, and add a section for that version to `CHANGELOG.md`, such as `## 0.2.0`.
 2. Run `npm run check` and `npm run package`, and try the VSIX in VS Code.
@@ -57,7 +57,7 @@ Pushing a version tag runs the [Release workflow](.github/workflows/release.yml)
 4. Tag the commit with `v` and the version, and push the tag:
 
    ```bash
-   git tag v0.2.0
+   git tag -m v0.2.0 v0.2.0
    ```
 
    ```bash
@@ -79,3 +79,18 @@ The workflow signs in to the Marketplace with [Trusted Publishing](https://code.
 | Environment | Leave it empty |
 
 If the workflow file is renamed, the policy must be changed to match.
+
+### Open VSX
+
+[Open VSX](https://open-vsx.org) is the registry that VS Code forks such as VSCodium, Cursor and Windsurf install extensions from. The Release workflow publishes there too once these are set up:
+
+1. Sign in to open-vsx.org with GitHub, sign the publisher agreement, and create an access token in the account settings.
+2. Create the `yhay81` namespace, which must match `publisher` in `package.json`:
+
+   ```bash
+   npx ovsx create-namespace yhay81 -p <token>
+   ```
+
+3. In the repository settings on GitHub, under **Secrets and variables** → **Actions**, add the token as the secret `OVSX_PAT`, and add the variable `OPEN_VSX` with the value `true`.
+
+Until `OPEN_VSX` is `true`, the workflow skips Open VSX.
