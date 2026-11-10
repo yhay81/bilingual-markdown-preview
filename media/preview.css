@@ -308,11 +308,21 @@ body.paused .skeleton span {
   color: var(--vscode-editorWarning-foreground, #cca700);
 }
 
-/* Math */
+/* Math and diagrams */
 
 .katex-block {
   overflow-x: auto;
   overflow-y: hidden;
+}
+
+pre.mermaid {
+  background: none;
+  text-align: center;
+}
+
+pre.mermaid:not([data-processed]) {
+  color: var(--bm-muted);
+  text-align: left;
 }
 
 .link-button {

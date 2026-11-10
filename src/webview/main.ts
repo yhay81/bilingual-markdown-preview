@@ -33,6 +33,12 @@ interface RowView {
   translationState: string;
 }
 
+/** Mermaid's browser bundle, which sets `window.mermaid`. */
+interface MermaidApi {
+  initialize(config: Record<string, unknown>): void;
+  run(options: { nodes: HTMLElement[]; suppressErrors?: boolean }): Promise<void>;
+}
+
 const PURIFY_CONFIG = {
   FORBID_TAGS: ["style", "form", "base", "meta", "link", "iframe", "frame", "frameset", "object", "embed", "script"],
   ALLOW_DATA_ATTR: false,
@@ -44,6 +50,8 @@ const strings = init.strings;
 const toolbar = document.getElementById("toolbar")!;
 const noticeEl = document.getElementById("notice")!;
 const rowsEl = document.getElementById("rows")!;
+/** Scripts added later need the page's nonce to pass the content security policy. */
+const scriptNonce = (document.currentScript as HTMLScriptElement | null)?.nonce ?? "";
 
 let mode: ViewMode = restoredMode() ?? init.mode;
 let version = 0;
@@ -51,6 +59,8 @@ let views: RowView[] = [];
 let suppressScrollUntil = 0;
 let scrollFrame = 0;
 let lastSentLine = -1;
+let mermaidLoad: Promise<MermaidApi | undefined> | undefined;
+let diagrams: Promise<void> = Promise.resolve();
 
 const modeButtons = new Map<ViewMode, HTMLButtonElement>();
 const progressEl = document.createElement("span");
@@ -69,6 +79,7 @@ function onMessage(message: HostToWebview): void {
       renderRows(message.rows);
       showProgress(message.progress);
       showNotice(message.notice);
+      drawDiagrams();
       break;
     case "updateRows":
       if (message.version !== version) return;
@@ -77,6 +88,7 @@ function onMessage(message: HostToWebview): void {
         if (view) showTranslation(view, update);
       }
       showProgress(message.progress);
+      drawDiagrams();
       break;
     case "notice":
       showNotice(message.notice);
@@ -295,6 +307,39 @@ function onScroll(): void {
     lastSentLine = line;
     api.postMessage({ type: "visibleLine", line });
   });
+}
+
+/** Draws the Mermaid diagrams that are not drawn yet, loading Mermaid the first time one appears. */
+function drawDiagrams(): void {
+  if (!document.querySelector("pre.mermaid:not([data-processed])")) return;
+  diagrams = diagrams.then(async () => {
+    const mermaid = await loadMermaid();
+    const nodes = [...document.querySelectorAll<HTMLElement>("pre.mermaid:not([data-processed])")];
+    if (!mermaid || nodes.length === 0) return;
+    try {
+      await mermaid.run({ nodes, suppressErrors: true });
+    } catch {
+      // A diagram that fails to parse stays as its source.
+    }
+  });
+}
+
+function loadMermaid(): Promise<MermaidApi | undefined> {
+  mermaidLoad ??= new Promise((resolve) => {
+    const script = document.createElement("script");
+    script.nonce = scriptNonce;
+    script.src = init.mermaidScriptUri;
+    script.addEventListener("load", () => {
+      const mermaid = (window as unknown as { mermaid?: MermaidApi }).mermaid;
+      const body = document.body.classList;
+      const dark = body.contains("vscode-dark") || (body.contains("vscode-high-contrast") && !body.contains("vscode-high-contrast-light"));
+      mermaid?.initialize({ startOnLoad: false, securityLevel: "strict", theme: dark ? "dark" : "default" });
+      resolve(mermaid);
+    });
+    script.addEventListener("error", () => resolve(undefined));
+    document.head.append(script);
+  });
+  return mermaidLoad;
 }
 
 /** Document line at the top of the viewport, interpolated within the row there. */

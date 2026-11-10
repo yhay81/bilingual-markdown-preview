@@ -1,6 +1,6 @@
 import katex from "@vscode/markdown-it-katex";
 import markdownIt from "markdown-it";
-import type { MarkdownIt, StateCore } from "markdown-it";
+import type { MarkdownIt, StateCore, Token } from "markdown-it";
 
 const TASK_MARKER_RE = /^\[([ xX])\](?=\s|$)\s*/;
 
@@ -14,7 +14,21 @@ export function createMarkdownEngine(): MarkdownIt {
   md.core.ruler.push("bilingual_task_lists", taskLists);
   // `$…$` and `$$…$$`, as in VS Code's own Markdown preview.
   md.use(katex, { throwOnError: false });
+  mermaidFences(md);
   return md;
+}
+
+/** Info string of the fenced code blocks drawn as diagrams. */
+export const MERMAID_INFO = "mermaid";
+
+/** Mermaid diagrams are written out as their source; the webview draws them. */
+function mermaidFences(md: MarkdownIt): void {
+  const fence = md.renderer.rules.fence!;
+  md.renderer.rules.fence = (tokens: Token[], idx, options, env, self) => {
+    const token = tokens[idx]!;
+    if (token.info.trim().split(/\s+/)[0]?.toLowerCase() !== MERMAID_INFO) return fence(tokens, idx, options, env, self);
+    return `<pre class="mermaid">${md.utils.escapeHtml(token.content)}</pre>\n`;
+  };
 }
 
 /**

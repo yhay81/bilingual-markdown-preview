@@ -237,13 +237,18 @@ describe("code comment translation", () => {
   });
 });
 
-describe("math", () => {
+describe("math and diagrams", () => {
   it("renders math with KaTeX", () => {
     const doc = segment("$$\nx^2\n$$");
     expect(renderer.renderSource(doc.rows[0]!, doc.env, new Slugger())).toContain('class="katex-block"');
     const inline = segment("The area is $\\pi r^2$.").rows[0]!;
     expect(inline.units[0]!.masked).toBe("The area is ⟦1⟧.");
     expect(renderer.renderTranslation(inline, doc.env, ["面積は $\\pi r^2$ です。"])).toContain('<span class="katex">');
+  });
+
+  it("leaves diagrams to the webview", () => {
+    const doc = segment("```mermaid\ngraph TD; A-->B\n```");
+    expect(renderer.renderSource(doc.rows[0]!, doc.env, new Slugger())).toBe('<pre class="mermaid">graph TD; A--&gt;B\n</pre>\n');
   });
 });
 

@@ -44,7 +44,8 @@
     "copilot",
     "ollama",
     "byok",
-    "katex"
+    "katex",
+    "mermaid"
   ],
   "main": "./dist/extension.js",
   "l10n": "./l10n",
@@ -288,6 +289,7 @@
     "@vscode/markdown-it-katex": "^1.1.2",
     "dompurify": "^3.4.17",
     "markdown-it": "^15.0.3",
+    "mermaid": "^12.2.0",
     "openai": "^7.53.0"
   },
   "devDependencies": {

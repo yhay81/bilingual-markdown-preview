@@ -55,8 +55,12 @@ function writeThirdPartyNotices(metafiles, outfile, extraPackageDirs) {
 const require = createRequire(import.meta.url);
 /** The KaTeX that the Markdown plugin renders with, whose stylesheet and fonts must match its output. */
 const katexDir = dirname(dirname(require.resolve("katex", { paths: [dirname(require.resolve("@vscode/markdown-it-katex"))] })));
+const mermaidDir = dirname(dirname(require.resolve("mermaid")));
 
-/** Files the webview loads as they are: KaTeX's stylesheet with only its WOFF2 fonts. */
+/**
+ * Files the webview loads as they are: KaTeX's stylesheet with only its WOFF2 fonts, and Mermaid's
+ * own browser bundle, which the webview loads only for documents with a diagram.
+ */
 function copyWebviewAssets() {
   mkdirSync("dist/katex/fonts", { recursive: true });
   const css = readFileSync(join(katexDir, "dist", "katex.min.css"), "utf8").replace(
@@ -67,6 +71,8 @@ function copyWebviewAssets() {
   for (const name of readdirSync(join(katexDir, "dist", "fonts")).filter((file) => file.endsWith(".woff2"))) {
     copyFileSync(join(katexDir, "dist", "fonts", name), join("dist/katex/fonts", name));
   }
+  mkdirSync("dist/webview", { recursive: true });
+  copyFileSync(join(mermaidDir, "dist", "mermaid.min.js"), "dist/webview/mermaid.js");
 }
 
 const contexts = await Promise.all([
@@ -96,7 +102,7 @@ if (watch) {
   try {
     const results = await Promise.all(contexts.map((context) => context.rebuild()));
     if (production) {
-      writeThirdPartyNotices(results.map((result) => result.metafile), "dist/ThirdPartyNotices.txt", [katexDir]);
+      writeThirdPartyNotices(results.map((result) => result.metafile), "dist/ThirdPartyNotices.txt", [katexDir, mermaidDir]);
     }
   } finally {
     await Promise.all(contexts.map((context) => context.dispose()));

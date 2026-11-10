@@ -91,6 +91,8 @@ export interface InitData {
   lang: string;
   mode: ViewMode;
   strings: UiStrings;
+  /** Script that draws Mermaid diagrams, loaded only when a document has one. */
+  mermaidScriptUri: string;
 }
 
 /** What the webview stores with `setState`, so a restored panel can find its document again. */

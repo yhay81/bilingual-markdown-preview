@@ -154,7 +154,8 @@ export class BilingualPreview implements vscode.Disposable {
   }
 
   private initData(): InitData {
-    return { documentUri: this.uri, lang: vscode.env.language, mode: this.mode, strings: uiStrings() };
+    const mermaid = this.panel.webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, "dist", "webview", "mermaid.js"));
+    return { documentUri: this.uri, lang: vscode.env.language, mode: this.mode, strings: uiStrings(), mermaidScriptUri: mermaid.toString() };
   }
 
   private onMessage(raw: unknown): void {
