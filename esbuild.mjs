@@ -6,6 +6,7 @@ import * as esbuild from "esbuild";
 
 const production = process.argv.includes("--production");
 const watch = process.argv.includes("--watch");
+const e2e = process.argv.includes("--e2e");
 
 /** @type {import("esbuild").BuildOptions} */
 const common = {
@@ -93,6 +94,20 @@ const contexts = await Promise.all([
     format: "iife",
     target: "es2022",
   }),
+  // The end-to-end tests run inside VS Code, which loads them as CommonJS.
+  ...(e2e
+    ? [
+        esbuild.context({
+          ...common,
+          entryPoints: ["test/e2e/preview.e2e.ts"],
+          outdir: "out/e2e",
+          platform: "node",
+          format: "cjs",
+          target: "node22",
+          external: ["vscode"],
+        }),
+      ]
+    : []),
 ]);
 
 copyWebviewAssets();

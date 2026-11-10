@@ -1,5 +1,8 @@
 node_modules/
 dist/
+out/
+.vscode-test/
+test/e2e/workspace/out/
 coverage/
 *.vsix
 .DS_Store

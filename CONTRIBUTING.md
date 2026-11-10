@@ -17,6 +17,7 @@ npm install
 - `npm run build` bundles the extension and the webview into `dist/`.
 - `npm run watch` bundles them again on every change.
 - `npm run check` runs the type checks and the tests. Run it before you open a pull request. CI runs it too.
+- `npm run test:e2e` runs the end-to-end test in a real VS Code, which it downloads into `.vscode-test/` the first time. The test opens the preview for `test/e2e/workspace/guide.md`, translates it through a fake OpenAI-compatible server on 127.0.0.1, and saves the translation. CI runs it too, under `xvfb-run` on Linux.
 - Press F5 in VS Code to build the extension and open it in an Extension Development Host.
 
 The tests never call a translation API. To see real translations in the Extension Development Host, set your own key with **Bilingual Markdown: Set API Key**. Translation is billed to the account that issued the key.
