@@ -19,7 +19,7 @@ Preview Markdown with an LLM translation beside it, block by block. Translate wi
 - Saves the translation as a Markdown file, such as `README.ja.md`, with code, links and markup exactly as in the source.
 - Renders math (`$…$` and `$$…$$`) with KaTeX and Mermaid diagrams, and folds `<details>` blocks on both sides at once.
 - Japanese translations use the polite です・ます style unless your style instructions say otherwise. A glossary fixes the translation of terms, in your settings or in a file the whole team shares.
-- A document can name its own target language in its front matter.
+- Translates into any language you can name. Click the language in the preview's toolbar to choose another, and a document can name its own target language in its front matter.
 - Lets you pick a model from the ones your provider offers: click the model name in the preview's toolbar.
 - Can pause after a number of tokens, and shows how many tokens were used.
 - In a narrow panel, the translation goes under the source.
@@ -34,7 +34,7 @@ You need VS Code 1.101 or later, and one of these: GitHub Copilot, an API key fr
 3. The first time, the preview asks for an API key. Click **Set API Key** and enter the key, or click **Switch Provider** and choose **VS Code Language Model** to use GitHub Copilot.
 4. Translation starts. If a row fails, click **Retry** on that row.
 
-The preview translates into Japanese. To translate into another language, set `markdownTranslation.targetLanguage`, for example to `English` or `Simplified Chinese`. A single document can ask for another language in its front matter:
+The preview translates into Japanese. To translate into another language, click the language (**→ Japanese**) in the preview's toolbar, or run **Markdown Translation: Choose Target Language**. Pick a common language from the list, or choose **Another language...** and type any language as you would tell a translator, such as `Swahili` or `Brazilian Portuguese`. The choice is stored in `markdownTranslation.targetLanguage`. A single document can ask for another language in its front matter:
 
 ```markdown
 ---
@@ -54,6 +54,7 @@ translate-to: French
 | Markdown Translation: Clear API Key | Deletes a stored API key. |
 | Markdown Translation: Switch Translation Provider | Switches to another provider, such as OpenRouter or a language model in VS Code. |
 | Markdown Translation: Choose Model | Chooses the model of the current provider from the models it offers, or takes a model ID you type. Clicking the model name in the preview's toolbar does the same. |
+| Markdown Translation: Choose Target Language | Chooses the language to translate into, from common languages or any language you type. Clicking the language in the preview's toolbar does the same. |
 | Markdown Translation: Clear Translation Cache | Deletes the cached translations. |
 
 ## Providers and cost
@@ -106,7 +107,7 @@ Small models translate less accurately and more often drop the placeholders that
 | Setting | Default | Description |
 | --- | --- | --- |
 | `markdownTranslation.provider` | `anthropic` | Translation provider: `anthropic`, `openai`, `openrouter`, `gemini`, `deepseek`, `mistral`, `xai`, or `vscode` for a language model in VS Code. |
-| `markdownTranslation.targetLanguage` | `Japanese` | Language to translate into, written as you would tell a translator, such as `English` or `Simplified Chinese`. `translate-to` in a document's front matter overrides it. |
+| `markdownTranslation.targetLanguage` | `Japanese` | Language to translate into: any language, written as you would tell a translator, such as `English`, `Simplified Chinese` or `Swahili`. `translate-to` in a document's front matter overrides it. |
 | `markdownTranslation.anthropic.model` | `claude-haiku-5-5` | Anthropic model ID. |
 | `markdownTranslation.openai.model` | `gpt-6-luna` | OpenAI model ID. |
 | `markdownTranslation.openai.baseUrl` | (empty) | Base URL of an OpenAI-compatible API, such as a company gateway or a [local server](#local-models). Empty means `https://api.openai.com/v1`. Only `https://` URLs, and `http://` URLs to `localhost`, `127.0.0.1` or `[::1]`, are accepted. |

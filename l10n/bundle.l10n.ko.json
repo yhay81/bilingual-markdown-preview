@@ -64,5 +64,12 @@
   "Set the {0} API key to list its models.": "{0} API 키를 설정하면 모델 목록을 볼 수 있습니다.",
   "The model ID, as the provider's API names it. Default: {0}": "제공자 API에서 쓰는 모델 ID입니다. 기본값: {0}",
   "Translate with which {0} model? Now: {1}": "어떤 {0} 모델로 번역할까요? 현재: {1}",
-  "{0} Model": "{0} 모델"
+  "{0} Model": "{0} 모델",
+  "Another language...": "다른 언어...",
+  "Any language, written as you would tell a translator, such as Swahili or Brazilian Portuguese.": "어떤 언어든 번역가에게 말하듯이 쓰세요(예: Swahili, Brazilian Portuguese).",
+  "Choose Target Language": "번역할 언어 선택",
+  "Enter a language.": "언어를 입력하세요.",
+  "Target Language": "번역할 언어",
+  "This document still translates into {0}, which its front matter chooses with translate-to.": "이 문서는 프런트 매터의 translate-to에서 지정한 {0}(으)로 계속 번역됩니다.",
+  "Translate into which language? Now: {0}": "어떤 언어로 번역할까요? 현재: {0}"
 }

@@ -73,6 +73,7 @@ let diagrams: Promise<void> = Promise.resolve();
 const modeButtons = new Map<ViewMode, HTMLButtonElement>();
 const progressEl = document.createElement("span");
 const modelButton = document.createElement("button");
+const languageButton = document.createElement("button");
 
 buildToolbar();
 applyMode(mode, false);
@@ -131,12 +132,16 @@ function buildToolbar(): void {
   modelButton.type = "button";
   modelButton.className = "model";
   modelButton.addEventListener("click", () => api.postMessage({ type: "action", action: "chooseModel" }));
+  languageButton.type = "button";
+  languageButton.className = "model language";
+  languageButton.addEventListener("click", () => api.postMessage({ type: "action", action: "chooseTargetLanguage" }));
   const spacer = document.createElement("span");
   spacer.className = "spacer";
   toolbar.append(
     group,
     progressEl,
     modelButton,
+    languageButton,
     spacer,
     toolButton("⤓", strings.exportTranslation, "exportTranslation"),
     toolButton("↻", strings.retranslate, "retranslate"),
@@ -359,8 +364,10 @@ function showProgress(progress: ProgressInfo): void {
   if (progress.tokens) parts.push(strings.tokens.replace("{0}", progress.tokens.toLocaleString(init.lang)));
   progressEl.textContent = parts.join(" · ");
   progressEl.title = progressEl.textContent;
-  modelButton.textContent = progress.label;
-  modelButton.title = `${strings.chooseModel}: ${progress.label}`;
+  modelButton.textContent = progress.model;
+  modelButton.title = `${strings.chooseModel}: ${progress.model}`;
+  languageButton.textContent = `→ ${progress.targetLanguage}`;
+  languageButton.title = `${strings.chooseTargetLanguage}: ${progress.targetLanguage}`;
 }
 
 function showNotice(notice: Notice | null): void {

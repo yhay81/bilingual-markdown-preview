@@ -42,8 +42,10 @@ export interface ProgressInfo {
   total: number;
   done: number;
   failed: number;
-  /** For example "claude-haiku-5-5 → Japanese". */
-  label: string;
+  /** The model as shown to the user, such as `claude-haiku-5-5`. */
+  model: string;
+  /** The language the document is translated into. */
+  targetLanguage: string;
   /** Tokens used in this session, over all previews, when the API reports them. */
   tokens?: number;
 }
@@ -52,6 +54,7 @@ export type HostAction =
   | "setApiKey"
   | "switchProvider"
   | "chooseModel"
+  | "chooseTargetLanguage"
   | "openSettings"
   | "retryFailed"
   | "retranslate"
@@ -62,6 +65,7 @@ export const HOST_ACTIONS: readonly HostAction[] = [
   "setApiKey",
   "switchProvider",
   "chooseModel",
+  "chooseTargetLanguage",
   "openSettings",
   "retryFailed",
   "retranslate",
@@ -90,6 +94,7 @@ export interface UiStrings {
   settings: string;
   /** Tooltip of the model and language in the toolbar, which opens the model picker. */
   chooseModel: string;
+  chooseTargetLanguage: string;
   retry: string;
   exportTranslation: string;
   edit: string;

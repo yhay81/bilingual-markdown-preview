@@ -123,6 +123,11 @@
         "command": "markdownTranslation.chooseModel",
         "title": "%command.chooseModel%",
         "category": "%category%"
+      },
+      {
+        "command": "markdownTranslation.chooseTargetLanguage",
+        "title": "%command.chooseTargetLanguage%",
+        "category": "%category%"
       }
     ],
     "menus": {

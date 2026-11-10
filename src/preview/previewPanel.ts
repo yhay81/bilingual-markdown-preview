@@ -66,7 +66,7 @@ interface Prepared {
   /** Set when the document's front matter chooses the language; otherwise the configured one is used. */
   documentLanguage: string | undefined;
   targetLanguage: string;
-  label: string;
+  modelLabel: string;
 }
 
 /** Characters of preceding text sent with a request, so terms and tone carry over between requests. */
@@ -125,6 +125,11 @@ export class TranslationPreview implements vscode.Disposable {
 
   get uri(): string {
     return this.document.uri.toString();
+  }
+
+  /** The language the document's front matter chooses with `translate-to`, if any. */
+  get documentLanguage(): string | undefined {
+    return this.current?.documentLanguage;
   }
 
   get textDocument(): vscode.TextDocument {
@@ -369,7 +374,7 @@ export class TranslationPreview implements vscode.Disposable {
       rowsByKey,
       documentLanguage,
       targetLanguage,
-      label: `${modelLabelOf(config)} → ${targetLanguage}`,
+      modelLabel: modelLabelOf(config),
     };
   }
 
@@ -445,7 +450,7 @@ export class TranslationPreview implements vscode.Disposable {
     }
     const usage = this.context.service.getUsage();
     const tokens = usage.inputTokens + usage.outputTokens;
-    return { total: prepared.rowsByKey.size, done, failed, label: prepared.label, ...(tokens > 0 ? { tokens } : {}) };
+    return { total: prepared.rowsByKey.size, done, failed, model: prepared.modelLabel, targetLanguage: prepared.targetLanguage, ...(tokens > 0 ? { tokens } : {}) };
   }
 
   private notice(prepared: Prepared): Notice | null {
@@ -662,6 +667,7 @@ function uiStrings(): UiStrings {
     retranslate: vscode.l10n.t("Retranslate"),
     settings: vscode.l10n.t("Settings"),
     chooseModel: vscode.l10n.t("Choose Model"),
+    chooseTargetLanguage: vscode.l10n.t("Choose Target Language"),
     retry: vscode.l10n.t("Retry"),
     exportTranslation: vscode.l10n.t("Save Translation as Markdown"),
     edit: vscode.l10n.t("Edit"),

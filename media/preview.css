@@ -95,6 +95,12 @@ body {
   text-overflow: ellipsis;
 }
 
+/* The target language stays whole; the model name gives way first. */
+.language {
+  flex: none;
+  max-width: 40%;
+}
+
 .model:hover {
   background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.15));
   color: inherit;

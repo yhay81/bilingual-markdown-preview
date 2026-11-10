@@ -27,6 +27,30 @@ import { TranslationService } from "./translate/service";
 const MODE_STATE = "viewMode";
 const MODE_STATE_KEY = `${CONFIG_SECTION}.${MODE_STATE}`;
 
+/** Languages offered by Choose Target Language: the setting's value and the language's own name. */
+const TARGET_LANGUAGES: ReadonlyArray<readonly [string, string]> = [
+  ["English", "English"],
+  ["Japanese", "日本語"],
+  ["Simplified Chinese", "简体中文"],
+  ["Traditional Chinese", "繁體中文"],
+  ["Korean", "한국어"],
+  ["Spanish", "Español"],
+  ["French", "Français"],
+  ["German", "Deutsch"],
+  ["Brazilian Portuguese", "Português (Brasil)"],
+  ["Russian", "Русский"],
+  ["Italian", "Italiano"],
+  ["Dutch", "Nederlands"],
+  ["Polish", "Polski"],
+  ["Turkish", "Türkçe"],
+  ["Ukrainian", "Українська"],
+  ["Vietnamese", "Tiếng Việt"],
+  ["Indonesian", "Bahasa Indonesia"],
+  ["Thai", "ไทย"],
+  ["Hindi", "हिन्दी"],
+  ["Arabic", "العربية"],
+];
+
 /** A team's glossary, kept in the repository. Read only in a trusted workspace. */
 export const GLOSSARY_FILE = ".vscode/translation-glossary.json";
 
@@ -102,6 +126,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.commands.registerCommand("markdownTranslation.switchProvider", () => commands.switchProvider()),
     vscode.commands.registerCommand("markdownTranslation.clearCache", () => commands.clearCache()),
     vscode.commands.registerCommand("markdownTranslation.chooseModel", () => commands.chooseModel()),
+    vscode.commands.registerCommand("markdownTranslation.chooseTargetLanguage", () => commands.chooseTargetLanguage()),
     vscode.commands.registerCommand("markdownTranslation.exportTranslation", (target?: unknown) => commands.exportTranslation(target)),
     vscode.workspace.onDidChangeConfiguration((event) => {
       if (event.affectsConfiguration(CONFIG_SECTION)) applyConfig();
@@ -238,6 +263,43 @@ class Commands {
       }))?.trim();
     if (!model) return;
     await vscode.workspace.getConfiguration(CONFIG_SECTION).update(modelSettingOf(provider), model, vscode.ConfigurationTarget.Global);
+  }
+
+  /** Picks the language to translate into from common languages, or takes any language typed. */
+  async chooseTargetLanguage(): Promise<void> {
+    const current = readConfig().targetLanguage;
+    const other = { value: undefined, label: `$(edit) ${vscode.l10n.t("Another language...")}`, description: "", alwaysShow: true };
+    const items = [
+      other,
+      ...TARGET_LANGUAGES.map(([value, native]) => ({
+        value: value as string | undefined,
+        label: native,
+        description: [native === value ? "" : value, value === current ? vscode.l10n.t("Current") : ""].filter(Boolean).join(" · "),
+        alwaysShow: false,
+      })),
+    ];
+    const picked = await vscode.window.showQuickPick(items, {
+      placeHolder: vscode.l10n.t("Translate into which language? Now: {0}", current),
+      matchOnDescription: true,
+    });
+    if (!picked) return;
+    const language =
+      picked.value ??
+      (await vscode.window.showInputBox({
+        title: vscode.l10n.t("Target Language"),
+        prompt: vscode.l10n.t("Any language, written as you would tell a translator, such as Swahili or Brazilian Portuguese."),
+        value: TARGET_LANGUAGES.some(([value]) => value === current) ? "" : current,
+        ignoreFocusOut: true,
+        validateInput: (input) => (input.trim() ? undefined : vscode.l10n.t("Enter a language.")),
+      }))?.trim();
+    if (!language) return;
+    await vscode.workspace.getConfiguration(CONFIG_SECTION).update("targetLanguage", language, vscode.ConfigurationTarget.Global);
+    const preview = this.currentPreview();
+    if (preview?.documentLanguage) {
+      void vscode.window.showInformationMessage(
+        vscode.l10n.t("This document still translates into {0}, which its front matter chooses with translate-to.", preview.documentLanguage),
+      );
+    }
   }
 
   /** Picks the model for the VS Code Language Model API from the models VS Code offers. */
@@ -379,6 +441,9 @@ async function runHostAction(action: HostAction, extensionId: string): Promise<v
       break;
     case "chooseModel":
       await vscode.commands.executeCommand("markdownTranslation.chooseModel");
+      break;
+    case "chooseTargetLanguage":
+      await vscode.commands.executeCommand("markdownTranslation.chooseTargetLanguage");
       break;
     case "openSettings":
       await vscode.commands.executeCommand("workbench.action.openSettings", `@ext:${extensionId}`);

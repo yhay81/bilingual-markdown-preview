@@ -64,5 +64,12 @@
   "Set the {0} API key to list its models.": "设置 {0} API 密钥后即可列出其模型。",
   "The model ID, as the provider's API names it. Default: {0}": "提供方 API 中的模型 ID。默认：{0}",
   "Translate with which {0} model? Now: {1}": "使用哪个 {0} 模型翻译？当前：{1}",
-  "{0} Model": "{0} 模型"
+  "{0} Model": "{0} 模型",
+  "Another language...": "其他语言...",
+  "Any language, written as you would tell a translator, such as Swahili or Brazilian Portuguese.": "任何语言均可，像告诉译者一样书写，例如 Swahili 或 Brazilian Portuguese。",
+  "Choose Target Language": "选择目标语言",
+  "Enter a language.": "请输入语言。",
+  "Target Language": "目标语言",
+  "This document still translates into {0}, which its front matter chooses with translate-to.": "此文档仍会译为 {0}，这是其前置元数据中 translate-to 指定的语言。",
+  "Translate into which language? Now: {0}": "要译为哪种语言？当前：{0}"
 }

@@ -64,5 +64,12 @@
   "Set the {0} API key to list its models.": "{0} の API キーを設定すると、モデルを一覧できます。",
   "The model ID, as the provider's API names it. Default: {0}": "プロバイダーの API でのモデル ID。既定値: {0}",
   "Translate with which {0} model? Now: {1}": "どの {0} のモデルで翻訳しますか？（現在: {1}）",
-  "{0} Model": "{0} のモデル"
+  "{0} Model": "{0} のモデル",
+  "Another language...": "別の言語...",
+  "Any language, written as you would tell a translator, such as Swahili or Brazilian Portuguese.": "どの言語でも構いません。翻訳者に伝えるように書いてください（例: Swahili、Brazilian Portuguese）。",
+  "Choose Target Language": "翻訳先の言語を選ぶ",
+  "Enter a language.": "言語を入力してください。",
+  "Target Language": "翻訳先の言語",
+  "This document still translates into {0}, which its front matter chooses with translate-to.": "この文書はフロントマターの translate-to で指定された {0} に引き続き翻訳されます。",
+  "Translate into which language? Now: {0}": "どの言語に翻訳しますか？ 現在: {0}"
 }

@@ -19,7 +19,7 @@ Markdown を原文と訳文で左右に並べてプレビューする VS Code �
 - 訳文を `README.ja.md` のような Markdown ファイルとして保存できます。コード・リンク・記法は原文のまま残ります。
 - 数式（`$…$`、`$$…$$`）を KaTeX で、Mermaid の図を描画します。`<details>` は原文と訳文をまとめて開閉できます。
 - 日本語に訳すときは、です・ます調にそろえます（翻訳者への追加の指示で変えられます）。用語集で訳語を固定できます。用語集は設定のほか、チームで共有するファイルにも書けます。
-- 文書ごとに、フロントマターで翻訳先の言語を指定できます。
+- 名前で言える言語ならどれにでも翻訳します。プレビューのツールバーの言語をクリックして切り替えられ、文書ごとにフロントマターで指定することもできます。
 - プロバイダーが提供するモデルの一覧から、翻訳に使うモデルを選べます。プレビューのツールバーのモデル名をクリックします。
 - 使ったトークン数を表示し、決まった数に達したら翻訳を止めることもできます。
 - 狭いパネルでは、訳文を原文の下に並べます。
@@ -34,7 +34,7 @@ VS Code 1.101 以降と、次のいずれかが必要です: GitHub Copilot、An
 3. 初めて開くと API キーを求める表示が出ます。**API キーを設定** を押してキーを入力するか、GitHub Copilot を使うなら **プロバイダーを切り替え** を押して **VS Code Language Model** を選びます。
 4. 翻訳が始まります。失敗した行は、その行の **再試行** で訳し直せます。
 
-翻訳先は日本語です。ほかの言語に訳すときは、`markdownTranslation.targetLanguage` を `English` や `Simplified Chinese` などに変えます。文書ごとに、フロントマターで別の言語を指定することもできます。
+翻訳先は日本語です。ほかの言語に訳すときは、プレビューのツールバーの言語（**→ Japanese**）をクリックするか、**Markdown Translation: 翻訳先の言語を選ぶ** を実行します。主な言語の一覧から選ぶか、**別の言語...** を選んで `Swahili` や `Brazilian Portuguese` のように翻訳者に伝える言い方で入力します。選んだ言語は `markdownTranslation.targetLanguage` に保存されます。文書ごとに、フロントマターで別の言語を指定することもできます。
 
 ```markdown
 ---
@@ -54,6 +54,7 @@ translate-to: French
 | Markdown Translation: API キーを削除 | 登録した API キーを削除します。 |
 | Markdown Translation: 翻訳プロバイダーを切り替え | OpenRouter や VS Code の言語モデルなど、別のプロバイダーに切り替えます。 |
 | Markdown Translation: モデルを選ぶ | いまのプロバイダーが提供するモデルの一覧から選ぶか、モデル ID を入力して、翻訳に使うモデルを変えます。プレビューのツールバーのモデル名をクリックしても同じです。 |
+| Markdown Translation: 翻訳先の言語を選ぶ | 主な言語の一覧から選ぶか、言語名を入力して、翻訳先の言語を変えます。プレビューのツールバーの言語をクリックしても同じです。 |
 | Markdown Translation: 翻訳キャッシュを消去 | 保存した翻訳結果を削除します。 |
 
 ## プロバイダーと料金
@@ -106,7 +107,7 @@ OpenAI 互換の API を持つサーバーなら使えます。`markdownTranslat
 | 設定 | 既定値 | 内容 |
 | --- | --- | --- |
 | `markdownTranslation.provider` | `anthropic` | 翻訳に使うプロバイダー（`anthropic` / `openai` / `openrouter` / `gemini` / `deepseek` / `mistral` / `xai` / VS Code の言語モデルを使う `vscode`）。 |
-| `markdownTranslation.targetLanguage` | `Japanese` | 翻訳先の言語。翻訳者に伝えるように書きます（例: `English`、`Simplified Chinese`）。文書のフロントマターの `translate-to` がこれより優先されます。 |
+| `markdownTranslation.targetLanguage` | `Japanese` | 翻訳先の言語。どの言語でも、翻訳者に伝えるように書きます（例: `English`、`Simplified Chinese`、`Swahili`）。文書のフロントマターの `translate-to` がこれより優先されます。 |
 | `markdownTranslation.anthropic.model` | `claude-haiku-5-5` | Anthropic のモデル ID。 |
 | `markdownTranslation.openai.model` | `gpt-6-luna` | OpenAI のモデル ID。 |
 | `markdownTranslation.openai.baseUrl` | （空欄） | OpenAI 互換 API のベース URL（社内ゲートウェイや[ローカルのサーバー](#ローカルのモデル)）。空欄なら `https://api.openai.com/v1` を使います。`https://` か、`localhost`・`127.0.0.1`・`[::1]` への `http://` だけが使えます。 |
