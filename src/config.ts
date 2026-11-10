@@ -1,11 +1,12 @@
 import * as vscode from "vscode";
-import { sanitizeConfig, type ExtensionConfig } from "./settings";
+import { mergeGlossaries, sanitizeConfig, type ExtensionConfig } from "./settings";
 
 export const CONFIG_SECTION = "bilingualMarkdown";
 
-export function readConfig(): ExtensionConfig {
+/** `workspaceGlossary` comes from the workspace's glossary files; the settings win for a term in both. */
+export function readConfig(workspaceGlossary: Readonly<Record<string, string>> = {}): ExtensionConfig {
   const config = vscode.workspace.getConfiguration(CONFIG_SECTION);
-  return sanitizeConfig({
+  const settings = sanitizeConfig({
     provider: config.get("provider"),
     targetLanguage: config.get("targetLanguage"),
     anthropicModel: config.get("anthropic.model"),
@@ -21,4 +22,5 @@ export function readConfig(): ExtensionConfig {
     tokenLimit: config.get("tokenLimit"),
     syncScroll: config.get("syncScroll"),
   });
+  return { ...settings, glossary: mergeGlossaries(workspaceGlossary, settings.glossary) };
 }

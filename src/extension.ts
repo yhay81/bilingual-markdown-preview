@@ -8,12 +8,23 @@ import { ProviderFactory, createProvider } from "./providers/factory";
 import { KEY_PROVIDER_IDS, PROVIDER_IDS, isKeyProviderId, type KeyProviderId, type ProviderId } from "./providers/types";
 import { COPILOT_VENDOR, VsCodeLmProvider } from "./providers/vscodeLm";
 import { ApiKeyStore } from "./secrets";
-import { modelLabelOf, providerLabel, providerSettingsOf, serviceConfigOf, translationSettingsChanged } from "./settings";
+import {
+  mergeGlossaries,
+  modelLabelOf,
+  parseGlossaryFile,
+  providerLabel,
+  providerSettingsOf,
+  serviceConfigOf,
+  translationSettingsChanged,
+} from "./settings";
 import { isViewMode, type HostAction } from "./shared/protocol";
 import { TranslationCache, type CacheStore } from "./translate/cache";
 import { TranslationService } from "./translate/service";
 
 const MODE_STATE_KEY = "bilingualMarkdown.viewMode";
+
+/** A team's glossary, kept in the repository. Read only in a trusted workspace. */
+export const GLOSSARY_FILE = ".vscode/translation-glossary.json";
 
 let cacheToFlush: TranslationCache | undefined;
 
@@ -21,9 +32,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const cache = new TranslationCache(new FileCacheStore(vscode.Uri.joinPath(context.globalStorageUri, "translation-cache.json")));
   cacheToFlush = cache;
   const keys = new ApiKeyStore(context.secrets);
+  let workspaceGlossary = await readWorkspaceGlossary();
   await Promise.all([cache.load(), keys.load()]);
 
-  let config = readConfig();
+  let config = readConfig(workspaceGlossary);
   const justification = vscode.l10n.t("Markdown Translation Preview translates the Markdown you preview.");
   const factory = new ProviderFactory(
     (provider) => keys.get(provider),
@@ -51,6 +63,24 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   });
 
   const commands = new Commands(manager, keys, cache, service);
+  const applyConfig = (): void => {
+    const before = config;
+    config = readConfig(workspaceGlossary);
+    if (translationSettingsChanged(before, config)) {
+      factory.invalidate();
+      service.reset();
+      manager.refreshAll();
+    } else {
+      // Comment translation changes what is split out for translation, not how it is translated.
+      if (before.translateCodeComments !== config.translateCodeComments) manager.refreshAll();
+      service.kick();
+    }
+  };
+  const reloadGlossary = async (): Promise<void> => {
+    workspaceGlossary = await readWorkspaceGlossary();
+    applyConfig();
+  };
+  const glossaryWatcher = vscode.workspace.createFileSystemWatcher(`**/${GLOSSARY_FILE}`);
   context.subscriptions.push(
     keys,
     manager,
@@ -65,19 +95,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.commands.registerCommand("bilingualMarkdown.clearCache", () => commands.clearCache()),
     vscode.commands.registerCommand("bilingualMarkdown.chooseModel", () => commands.chooseModel()),
     vscode.workspace.onDidChangeConfiguration((event) => {
-      if (!event.affectsConfiguration(CONFIG_SECTION)) return;
-      const before = config;
-      config = readConfig();
-      if (translationSettingsChanged(before, config)) {
-        factory.invalidate();
-        service.reset();
-        manager.refreshAll();
-      } else {
-        // Comment translation changes what is split out for translation, not how it is translated.
-        if (before.translateCodeComments !== config.translateCodeComments) manager.refreshAll();
-        service.kick();
-      }
+      if (event.affectsConfiguration(CONFIG_SECTION)) applyConfig();
     }),
+    glossaryWatcher,
+    glossaryWatcher.onDidCreate(() => void reloadGlossary()),
+    glossaryWatcher.onDidChange(() => void reloadGlossary()),
+    glossaryWatcher.onDidDelete(() => void reloadGlossary()),
+    vscode.workspace.onDidChangeWorkspaceFolders(() => void reloadGlossary()),
+    vscode.workspace.onDidGrantWorkspaceTrust(() => void reloadGlossary()),
     keys.onDidChange(() => {
       factory.invalidate();
       service.unblock();
@@ -92,6 +117,22 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 export async function deactivate(): Promise<void> {
   await cacheToFlush?.flush();
+}
+
+/** The glossary files of all workspace folders, merged in folder order. */
+async function readWorkspaceGlossary(): Promise<Record<string, string>> {
+  if (!vscode.workspace.isTrusted) return {};
+  const glossaries = await Promise.all(
+    (vscode.workspace.workspaceFolders ?? []).map(async (folder) => {
+      try {
+        const bytes = await vscode.workspace.fs.readFile(vscode.Uri.joinPath(folder.uri, GLOSSARY_FILE));
+        return parseGlossaryFile(new TextDecoder().decode(bytes));
+      } catch {
+        return {};
+      }
+    }),
+  );
+  return mergeGlossaries(...glossaries);
 }
 
 class Commands {

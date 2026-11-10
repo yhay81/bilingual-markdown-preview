@@ -133,6 +133,25 @@ export function providerLabel(provider: ProviderId): string {
   }
 }
 
+/**
+ * The glossary used for translation: the workspace's glossary files first, then the settings, which win
+ * for a term in both. Files are read only in a trusted workspace.
+ */
+export function mergeGlossaries(...glossaries: ReadonlyArray<Readonly<Record<string, string>>>): Record<string, string> {
+  const merged: Record<string, string> = {};
+  for (const glossary of glossaries) Object.assign(merged, sanitizeGlossary(glossary));
+  return merged;
+}
+
+/** Parses a glossary file: a JSON object of term → translation. Anything else is an empty glossary. */
+export function parseGlossaryFile(text: string): Record<string, string> {
+  try {
+    return sanitizeGlossary(JSON.parse(text));
+  } catch {
+    return {};
+  }
+}
+
 function nonEmpty(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() !== "" ? value.trim() : undefined;
 }

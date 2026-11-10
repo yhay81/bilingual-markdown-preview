@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   DEFAULT_CONFIG,
   fingerprintOf,
+  mergeGlossaries,
+  parseGlossaryFile,
   providerSettingsOf,
   sanitizeConfig,
   serviceConfigOf,
@@ -107,5 +109,17 @@ describe("derived settings", () => {
     expect(translationSettingsChanged(DEFAULT_CONFIG, { ...DEFAULT_CONFIG, targetLanguage: "German" })).toBe(true);
     expect(translationSettingsChanged(DEFAULT_CONFIG, { ...DEFAULT_CONFIG, maxConcurrentRequests: 1, syncScroll: false })).toBe(false);
     expect(translationSettingsChanged(DEFAULT_CONFIG, { ...DEFAULT_CONFIG, translateCodeComments: true })).toBe(false);
+  });
+});
+
+describe("glossary files", () => {
+  it("parses a JSON object of terms and drops anything else", () => {
+    expect(parseGlossaryFile('{ "pull request": "プルリクエスト", " ": "x", "n": 1 }')).toEqual({ "pull request": "プルリクエスト" });
+    expect(parseGlossaryFile("[1, 2]")).toEqual({});
+    expect(parseGlossaryFile("not json")).toEqual({});
+  });
+
+  it("lets later glossaries win", () => {
+    expect(mergeGlossaries({ a: "file", b: "file" }, { b: "settings" })).toEqual({ a: "file", b: "settings" });
   });
 });
