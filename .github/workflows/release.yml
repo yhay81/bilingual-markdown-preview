@@ -68,6 +68,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # A re-run of the publish job, such as to publish to Open VSX later, re-runs this job too.
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            echo "The release $GITHUB_REF_NAME already exists."
+            exit 0
+          fi
           version="${GITHUB_REF_NAME#v}"
           awk -v heading="## $version" '$0 == heading { found = 1; next } found && /^## / { exit } found' CHANGELOG.md > notes.md
           gh release create "$GITHUB_REF_NAME" ./*.vsix --verify-tag --title "$GITHUB_REF_NAME" --notes-file notes.md
