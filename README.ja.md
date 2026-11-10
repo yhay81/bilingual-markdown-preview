@@ -1,4 +1,4 @@
-# Bilingual Markdown Preview
+# Markdown Translation Preview
 
 [English](README.md)
 
@@ -23,7 +23,7 @@ Markdown を原文と訳文で左右に並べてプレビューする VS Code �
 
 VS Code 1.101 以降と、Anthropic か OpenAI の API キーが必要です。
 
-1. Visual Studio Marketplace から **Bilingual Markdown Preview** をインストールします。
+1. Visual Studio Marketplace から **Markdown Translation Preview** をインストールします。
 2. Markdown ファイルを開き、エディター右上の地球のアイコン（**対訳プレビューを横に開く**）を押します。エクスプローラーの右クリックメニューや、コマンドパレットの **Bilingual Markdown: 対訳プレビューを開く** からも開けます。
 3. 初めて開くと API キーを求める表示が出ます。**API キーを設定** を押して、キーを入力します。
 4. 翻訳が始まります。失敗した行は、その行の **再試行** で訳し直せます。

@@ -1,5 +1,5 @@
 {
-  "displayName": "Bilingual Markdown Preview",
+  "displayName": "Markdown Translation Preview",
   "description": "Preview Markdown with an LLM translation side by side. Bring your own key for Claude Haiku 5.5 or GPT-6 Luna.",
   "category": "Bilingual Markdown",
   "command.openPreview": "Open Bilingual Preview",
@@ -9,7 +9,7 @@
   "command.clearApiKey": "Clear API Key",
   "command.switchProvider": "Switch Translation Provider",
   "command.clearCache": "Clear Translation Cache",
-  "config.title": "Bilingual Markdown Preview",
+  "config.title": "Markdown Translation Preview",
   "config.provider": "Translation provider. Store its API key with **Bilingual Markdown: Set API Key**; keys are kept in VS Code Secret Storage, never in settings.",
   "config.provider.anthropic": "Anthropic (Claude)",
   "config.provider.openai": "OpenAI, or an OpenAI-compatible endpoint",

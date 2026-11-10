@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for helping with Bilingual Markdown Preview. Report bugs and suggest features in [GitHub Issues](https://github.com/yhay81/bilingual-markdown-preview/issues). Before you start on a large change, open an issue so that we can agree on the approach.
+Thank you for helping with Markdown Translation Preview. Report bugs and suggest features in [GitHub Issues](https://github.com/yhay81/bilingual-markdown-preview/issues). Before you start on a large change, open an issue so that we can agree on the approach.
 
 ## Set up
 
@@ -43,7 +43,7 @@ npm run package
 ```
 
 ```bash
-code --install-extension bilingual-markdown-preview-0.1.0.vsix
+code --install-extension markdown-translation-preview-0.1.0.vsix
 ```
 
 ## Release

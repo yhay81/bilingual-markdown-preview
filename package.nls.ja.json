@@ -1,5 +1,5 @@
 {
-  "displayName": "Bilingual Markdown Preview",
+  "displayName": "Markdown Translation Preview",
   "description": "Markdown をプレビューし、LLM による翻訳を横に並べて表示します。Claude Haiku 5.5 または GPT-6 Luna の API キーを自分で設定して使います。",
   "category": "Bilingual Markdown",
   "command.openPreview": "対訳プレビューを開く",
@@ -9,7 +9,7 @@
   "command.clearApiKey": "API キーを削除",
   "command.switchProvider": "翻訳プロバイダーを切り替え",
   "command.clearCache": "翻訳キャッシュを消去",
-  "config.title": "Bilingual Markdown Preview",
+  "config.title": "Markdown Translation Preview",
   "config.provider": "翻訳に使うプロバイダー。API キーは **Bilingual Markdown: API キーを設定** で登録します。キーは VS Code の Secret Storage に保存され、設定ファイルには書かれません。",
   "config.provider.anthropic": "Anthropic（Claude）",
   "config.provider.openai": "OpenAI、または OpenAI 互換のエンドポイント",

@@ -1,4 +1,4 @@
-# Bilingual Markdown Preview
+# Markdown Translation Preview
 
 [日本語](README.ja.md)
 
@@ -23,7 +23,7 @@ Preview Markdown with an LLM translation beside it, block by block. Translation 
 
 You need VS Code 1.101 or later and an API key from Anthropic or OpenAI.
 
-1. Install **Bilingual Markdown Preview** from the Visual Studio Marketplace.
+1. Install **Markdown Translation Preview** from the Visual Studio Marketplace.
 2. Open a Markdown file and click the globe icon (**Open Bilingual Preview to the Side**) at the top right of the editor. You can also right-click the file in the Explorer, or run **Bilingual Markdown: Open Bilingual Preview** from the Command Palette.
 3. The first time, the preview asks for an API key. Click **Set API Key** and enter the key.
 4. Translation starts. If a row fails, click **Retry** on that row.
