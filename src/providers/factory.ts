@@ -1,14 +1,14 @@
 import { createHash } from "node:crypto";
 import type { ProviderResolution } from "../translate/service";
-import { AnthropicProvider } from "./anthropic";
-import { OpenAIProvider } from "./openai";
-import type { KeyProviderId, ProviderId, ReasoningEffortSetting, TranslationProvider } from "./types";
+import { AnthropicProvider, listAnthropicModels } from "./anthropic";
+import { OpenAIProvider, listCompatibleModels } from "./openai";
+import type { KeyProviderId, ModelInfo, ProviderId, ReasoningEffortSetting, TranslationProvider } from "./types";
 
 export interface ProviderSettings {
   provider: ProviderId;
   /** For `vscode`, a language model ID, or "" for the first Copilot model. */
   model: string;
-  /** OpenAI only; "" for api.openai.com. */
+  /** OpenAI only; "" for api.openai.com. The other services have fixed endpoints. */
   baseUrl: string;
   reasoningEffort: ReasoningEffortSetting;
 }
@@ -37,7 +37,7 @@ export class ProviderFactory {
     if (settings.provider === "openai" && settings.baseUrl && !isAllowedBaseUrl(settings.baseUrl)) {
       return { ok: false, reason: "invalidBaseUrl" };
     }
-    const apiKey = settings.provider === "vscode" ? "" : (this.getKey(settings.provider) ?? defaultKey(settings));
+    const apiKey = apiKeyFor(settings, this.getKey);
     if (apiKey === undefined) return { ok: false, reason: "missingKey" };
     const keyHash = createHash("sha256").update(apiKey).digest("hex");
     const signature = JSON.stringify([settings.provider, settings.model, settings.baseUrl, settings.reasoningEffort, keyHash]);
@@ -55,16 +55,34 @@ export function createProvider(settings: ProviderSettings, apiKey: string): Tran
   switch (settings.provider) {
     case "anthropic":
       return new AnthropicProvider(apiKey, settings.model, settings.reasoningEffort);
-    case "openai":
-      return new OpenAIProvider(apiKey, settings.model, settings.reasoningEffort, settings.baseUrl || undefined);
     case "vscode":
       throw new Error("The VS Code Language Model API is not available here.");
+    default:
+      return new OpenAIProvider(apiKey, settings.model, settings.reasoningEffort, settings.baseUrl || undefined, settings.provider);
   }
 }
 
-/** Without a stored key, only an OpenAI-compatible server on this machine can be used. */
-function defaultKey(settings: ProviderSettings): string | undefined {
+/**
+ * The key to use: "" for VS Code, which needs none, and undefined when no key is stored.
+ * Without a stored key, only an OpenAI-compatible server on this machine can be used.
+ */
+export function apiKeyFor(settings: ProviderSettings, getKey: (provider: KeyProviderId) => string | undefined): string | undefined {
+  if (settings.provider === "vscode") return "";
+  const stored = getKey(settings.provider);
+  if (stored !== undefined) return stored;
   return settings.provider === "openai" && isLoopbackUrl(settings.baseUrl) ? LOCAL_SERVER_KEY : undefined;
+}
+
+/** The models a provider that uses an API key offers. The extension lists VS Code's own models. */
+export async function listModels(settings: ProviderSettings, apiKey: string): Promise<ModelInfo[]> {
+  switch (settings.provider) {
+    case "anthropic":
+      return listAnthropicModels(apiKey);
+    case "vscode":
+      throw new Error("The VS Code Language Model API is not available here.");
+    default:
+      return listCompatibleModels(settings.provider, apiKey, settings.baseUrl);
+  }
 }
 
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);

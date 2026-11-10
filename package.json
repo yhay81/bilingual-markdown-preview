@@ -43,6 +43,11 @@
     "anthropic",
     "openai",
     "gpt",
+    "openrouter",
+    "gemini",
+    "deepseek",
+    "mistral",
+    "grok",
     "copilot",
     "ollama",
     "byok",
@@ -168,11 +173,21 @@
           "enum": [
             "anthropic",
             "openai",
+            "openrouter",
+            "gemini",
+            "deepseek",
+            "mistral",
+            "xai",
             "vscode"
           ],
           "enumDescriptions": [
             "%config.provider.anthropic%",
             "%config.provider.openai%",
+            "%config.provider.openrouter%",
+            "%config.provider.gemini%",
+            "%config.provider.deepseek%",
+            "%config.provider.mistral%",
+            "%config.provider.xai%",
             "%config.provider.vscode%"
           ],
           "default": "anthropic",
@@ -207,12 +222,47 @@
           "scope": "machine",
           "order": 4
         },
+        "bilingualMarkdown.openrouter.model": {
+          "type": "string",
+          "default": "google/gemini-3.8-flash",
+          "markdownDescription": "%config.openrouter.model%",
+          "scope": "machine",
+          "order": 5
+        },
+        "bilingualMarkdown.gemini.model": {
+          "type": "string",
+          "default": "gemini-3.8-flash",
+          "markdownDescription": "%config.gemini.model%",
+          "scope": "machine",
+          "order": 6
+        },
+        "bilingualMarkdown.deepseek.model": {
+          "type": "string",
+          "default": "deepseek-flash",
+          "markdownDescription": "%config.deepseek.model%",
+          "scope": "machine",
+          "order": 7
+        },
+        "bilingualMarkdown.mistral.model": {
+          "type": "string",
+          "default": "mistral-small-2603",
+          "markdownDescription": "%config.mistral.model%",
+          "scope": "machine",
+          "order": 8
+        },
+        "bilingualMarkdown.xai.model": {
+          "type": "string",
+          "default": "grok-4.3",
+          "markdownDescription": "%config.xai.model%",
+          "scope": "machine",
+          "order": 9
+        },
         "bilingualMarkdown.vscode.model": {
           "type": "string",
           "default": "",
           "markdownDescription": "%config.vscode.model%",
           "scope": "machine",
-          "order": 5
+          "order": 10
         },
         "bilingualMarkdown.reasoningEffort": {
           "type": "string",
@@ -233,14 +283,14 @@
           "default": "none",
           "markdownDescription": "%config.reasoningEffort%",
           "scope": "machine",
-          "order": 6
+          "order": 11
         },
         "bilingualMarkdown.styleInstructions": {
           "type": "string",
           "default": "",
           "editPresentation": "multilineText",
           "markdownDescription": "%config.styleInstructions%",
-          "order": 7
+          "order": 12
         },
         "bilingualMarkdown.glossary": {
           "type": "object",
@@ -249,13 +299,13 @@
             "type": "string"
           },
           "markdownDescription": "%config.glossary%",
-          "order": 8
+          "order": 13
         },
         "bilingualMarkdown.translateCodeComments": {
           "type": "boolean",
           "default": false,
           "markdownDescription": "%config.translateCodeComments%",
-          "order": 9
+          "order": 14
         },
         "bilingualMarkdown.maxConcurrentRequests": {
           "type": "integer",
@@ -264,7 +314,7 @@
           "maximum": 8,
           "markdownDescription": "%config.maxConcurrentRequests%",
           "scope": "machine",
-          "order": 10
+          "order": 15
         },
         "bilingualMarkdown.batchCharacterLimit": {
           "type": "integer",
@@ -273,7 +323,7 @@
           "maximum": 20000,
           "markdownDescription": "%config.batchCharacterLimit%",
           "scope": "machine",
-          "order": 11
+          "order": 16
         },
         "bilingualMarkdown.tokenLimit": {
           "type": "integer",
@@ -281,13 +331,13 @@
           "minimum": 0,
           "markdownDescription": "%config.tokenLimit%",
           "scope": "machine",
-          "order": 12
+          "order": 17
         },
         "bilingualMarkdown.syncScroll": {
           "type": "boolean",
           "default": true,
           "markdownDescription": "%config.syncScroll%",
-          "order": 13
+          "order": 18
         }
       }
     }

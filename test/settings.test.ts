@@ -17,10 +17,9 @@ describe("sanitizeConfig", () => {
 
   it("repairs invalid values", () => {
     const config = sanitizeConfig({
-      provider: "gemini",
+      provider: "bard",
       targetLanguage: "   ",
-      anthropicModel: " claude-sonnet-5-5 ",
-      openaiModel: 42,
+      models: { anthropic: " claude-sonnet-5-5 ", openai: 42, gemini: "  ", vscode: " copilot-fast " },
       openaiBaseUrl: " https://gateway.example.com/v1/// ",
       reasoningEffort: "max",
       styleInstructions: `  ${"x".repeat(5000)}`,
@@ -32,7 +31,7 @@ describe("sanitizeConfig", () => {
     });
     expect(config).toEqual({
       ...DEFAULT_CONFIG,
-      anthropicModel: "claude-sonnet-5-5",
+      models: { ...DEFAULT_CONFIG.models, anthropic: "claude-sonnet-5-5", vscode: "copilot-fast" },
       openaiBaseUrl: "https://gateway.example.com/v1",
       styleInstructions: "x".repeat(4000),
       glossary: { API: "エーピーアイ" },
@@ -48,6 +47,19 @@ describe("sanitizeConfig", () => {
       glossary: {},
     });
     expect(sanitizeConfig({ maxConcurrentRequests: 0, glossary: null }).maxConcurrentRequests).toBe(1);
+  });
+
+  it("has a default model for every provider that uses a key", () => {
+    expect(DEFAULT_CONFIG.models).toMatchObject({
+      anthropic: "claude-haiku-5-5",
+      openai: "gpt-6-luna",
+      openrouter: "google/gemini-3.8-flash",
+      gemini: "gemini-3.8-flash",
+      deepseek: "deepseek-flash",
+      mistral: "mistral-small-2603",
+      xai: "grok-4.3",
+      vscode: "",
+    });
   });
 
   it("translates code comments only when turned on", () => {
@@ -72,11 +84,15 @@ describe("derived settings", () => {
       baseUrl: "",
       reasoningEffort: "none",
     });
+    expect(providerSettingsOf({ ...openai, provider: "openrouter" })).toMatchObject({ model: "google/gemini-3.8-flash", baseUrl: "" });
   });
 
   it("reserves output for reasoning only when the model may reason", () => {
     expect(serviceConfigOf(DEFAULT_CONFIG).usesReasoning).toBe(false);
-    expect(serviceConfigOf({ ...DEFAULT_CONFIG, anthropicModel: "claude-opus-5-5" }).usesReasoning).toBe(true);
+    expect(serviceConfigOf({ ...DEFAULT_CONFIG, models: { ...DEFAULT_CONFIG.models, anthropic: "claude-opus-5-5" } }).usesReasoning).toBe(true);
+    expect(serviceConfigOf({ ...DEFAULT_CONFIG, provider: "deepseek" }).usesReasoning).toBe(false);
+    // Gemini and Grok models cannot stop reasoning.
+    expect(serviceConfigOf({ ...DEFAULT_CONFIG, provider: "gemini" }).usesReasoning).toBe(true);
     expect(serviceConfigOf({ ...DEFAULT_CONFIG, reasoningEffort: "low" }).usesReasoning).toBe(true);
   });
 
@@ -94,8 +110,9 @@ describe("derived settings", () => {
     ).toBe(base);
     const changes = [
       { targetLanguage: "French" },
-      { anthropicModel: "claude-sonnet-5-5" },
+      { models: { ...DEFAULT_CONFIG.models, anthropic: "claude-sonnet-5-5" } },
       { provider: "openai" as const },
+      { provider: "openrouter" as const },
       { styleInstructions: "Be terse." },
       { glossary: { a: "b" } },
     ];

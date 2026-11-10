@@ -2,7 +2,7 @@
 
 [日本語](README.ja.md)
 
-Preview Markdown with an LLM translation beside it, block by block. Translate with **GitHub Copilot** or another language model in VS Code, with your own API key (BYOK) for **Claude Haiku 5.5** (`claude-haiku-5-5`) or **GPT-6 Luna** (`gpt-6-luna`), or with a model running on your computer.
+Preview Markdown with an LLM translation beside it, block by block. Translate with **GitHub Copilot** or another language model in VS Code, with your own API key (BYOK) for **Anthropic**, **OpenAI**, **OpenRouter**, **Google Gemini**, **DeepSeek**, **Mistral AI** or **xAI**, or with a model running on your computer.
 
 ![An English document on the left and its Japanese translation on the right, lined up block by block](images/screenshot.png)
 
@@ -20,13 +20,14 @@ Preview Markdown with an LLM translation beside it, block by block. Translate wi
 - Renders math (`$…$` and `$$…$$`) with KaTeX and Mermaid diagrams, and folds `<details>` blocks on both sides at once.
 - Japanese translations use the polite です・ます style unless your style instructions say otherwise. A glossary fixes the translation of terms, in your settings or in a file the whole team shares.
 - A document can name its own target language in its front matter.
+- Lets you pick a model from the ones your provider offers: click the model name in the preview's toolbar.
 - Can pause after a number of tokens, and shows how many tokens were used.
 - In a narrow panel, the translation goes under the source.
 - The interface is in English, Japanese, Simplified Chinese and Korean.
 
 ## Getting started
 
-You need VS Code 1.101 or later, and one of these: GitHub Copilot, an API key from Anthropic or OpenAI, or a local server such as Ollama or LM Studio.
+You need VS Code 1.101 or later, and one of these: GitHub Copilot, an API key from Anthropic, OpenAI, OpenRouter, Google Gemini, DeepSeek, Mistral AI or xAI, or a local server such as Ollama or LM Studio.
 
 1. Install **Markdown Translation Preview** from the Visual Studio Marketplace.
 2. Open a Markdown file and click the globe icon (**Open Bilingual Preview to the Side**) at the top right of the editor. You can also right-click the file in the Explorer, or run **Bilingual Markdown: Open Bilingual Preview** from the Command Palette.
@@ -51,8 +52,8 @@ translate-to: French
 | Bilingual Markdown: Save Translation as Markdown | Saves the translation as a Markdown file. Also on the preview's toolbar. |
 | Bilingual Markdown: Set API Key | Stores an API key. |
 | Bilingual Markdown: Clear API Key | Deletes a stored API key. |
-| Bilingual Markdown: Switch Translation Provider | Switches between Anthropic, OpenAI and a language model in VS Code. |
-| Bilingual Markdown: Choose VS Code Language Model | Chooses which language model in VS Code to translate with. |
+| Bilingual Markdown: Switch Translation Provider | Switches to another provider, such as OpenRouter or a language model in VS Code. |
+| Bilingual Markdown: Choose Model | Chooses the model of the current provider from the models it offers, or takes a model ID you type. Clicking the model name in the preview's toolbar does the same. |
 | Bilingual Markdown: Clear Translation Cache | Deletes the cached translations. |
 
 ## Providers and cost
@@ -62,14 +63,30 @@ translate-to: French
 Set `bilingualMarkdown.provider` to `vscode`, or run **Bilingual Markdown: Switch Translation Provider** and choose **VS Code Language Model**. No API key is needed: the extension uses a language model that another extension, such as GitHub Copilot, makes available in VS Code.
 
 - The first time, VS Code asks whether this extension may use the model. If you declined, allow it again from the Accounts menu under **Manage Language Model Access**.
-- **Bilingual Markdown: Choose VS Code Language Model** lists the models you can use. With `bilingualMarkdown.vscode.model` empty, the first GitHub Copilot model is used.
+- **Bilingual Markdown: Choose Model** lists the models you can use. With `bilingualMarkdown.vscode.model` empty, the first GitHub Copilot model is used.
 - Requests count against your Copilot plan, as chat does.
 
-### Anthropic and OpenAI
+### Your own API key
 
+| Provider | `bilingualMarkdown.provider` | Default model |
+| --- | --- | --- |
+| [Anthropic](https://www.anthropic.com) | `anthropic` | `claude-haiku-5-5` |
+| [OpenAI](https://openai.com) | `openai` | `gpt-6-luna` |
+| [OpenRouter](https://openrouter.ai) | `openrouter` | `google/gemini-3.8-flash` |
+| [Google Gemini](https://aistudio.google.com) | `gemini` | `gemini-3.8-flash` |
+| [DeepSeek](https://www.deepseek.com) | `deepseek` | `deepseek-flash` |
+| [Mistral AI](https://mistral.ai) | `mistral` | `mistral-small-2603` |
+| [xAI](https://x.ai) | `xai` | `grok-4.3` |
+
+Run **Bilingual Markdown: Switch Translation Provider**, choose a provider and enter its key. Each provider keeps its own key and its own model, so you can switch back and forth.
+
+- To use another model, run **Bilingual Markdown: Choose Model**, or click the model name in the preview's toolbar. It lists the models your key can use; you can also type a model ID. The model is stored in `bilingualMarkdown.<provider>.model`.
+- OpenRouter reaches many providers' models with one key and one bill. Its model IDs name the provider, as in `anthropic/claude-haiku-5.5` or `openai/gpt-6-luna`.
 - Translation is billed to the account that issued the key.
 - You enter the key in a password box. It is kept in VS Code Secret Storage (your OS keychain), never in `settings.json`.
 - If the provider rejects the key (an authentication or permission error), translation stops, and the preview offers to set the key again or to switch providers.
+- With `bilingualMarkdown.reasoningEffort` at `none`, models that cannot stop reasoning, such as Gemini and Grok models, reason at their lowest level. When a model rejects a reasoning setting, the next lower one is tried, and finally none at all.
+- The Gemini API's free tier may use what you send to improve Google's products, and people may read it. Do not send confidential documents on the free tier.
 - The toolbar shows the tokens used in this VS Code session. `bilingualMarkdown.tokenLimit` pauses translation after that many tokens, until you click **Continue**.
 
 ### Local models
@@ -88,11 +105,16 @@ Small models translate less accurately and more often drop the placeholders that
 
 | Setting | Default | Description |
 | --- | --- | --- |
-| `bilingualMarkdown.provider` | `anthropic` | Translation provider: `anthropic`, `openai`, or `vscode` for a language model in VS Code. |
+| `bilingualMarkdown.provider` | `anthropic` | Translation provider: `anthropic`, `openai`, `openrouter`, `gemini`, `deepseek`, `mistral`, `xai`, or `vscode` for a language model in VS Code. |
 | `bilingualMarkdown.targetLanguage` | `Japanese` | Language to translate into, written as you would tell a translator, such as `English` or `Simplified Chinese`. `translate-to` in a document's front matter overrides it. |
 | `bilingualMarkdown.anthropic.model` | `claude-haiku-5-5` | Anthropic model ID. |
 | `bilingualMarkdown.openai.model` | `gpt-6-luna` | OpenAI model ID. |
 | `bilingualMarkdown.openai.baseUrl` | (empty) | Base URL of an OpenAI-compatible API, such as a company gateway or a [local server](#local-models). Empty means `https://api.openai.com/v1`. Only `https://` URLs, and `http://` URLs to `localhost`, `127.0.0.1` or `[::1]`, are accepted. |
+| `bilingualMarkdown.openrouter.model` | `google/gemini-3.8-flash` | OpenRouter model ID, as `provider/model`. |
+| `bilingualMarkdown.gemini.model` | `gemini-3.8-flash` | Gemini model ID. |
+| `bilingualMarkdown.deepseek.model` | `deepseek-flash` | DeepSeek model ID. |
+| `bilingualMarkdown.mistral.model` | `mistral-small-2603` | Mistral model ID. |
+| `bilingualMarkdown.xai.model` | `grok-4.3` | xAI model ID. |
 | `bilingualMarkdown.vscode.model` | (empty) | Language model in VS Code, as a model ID or family. Empty means the first GitHub Copilot model. |
 | `bilingualMarkdown.reasoningEffort` | `none` | How much the model reasons before it answers: `none`, `low`, `medium`, `high` or `default`. `none` is usually enough for translation. |
 | `bilingualMarkdown.styleInstructions` | (empty) | Extra instructions for the translator, such as `Use the plain である style.` |
@@ -100,7 +122,7 @@ Small models translate less accurately and more often drop the placeholders that
 | `bilingualMarkdown.translateCodeComments` | `false` | Also translate the comments in code blocks. See [Translating code comments](#translating-code-comments). |
 | `bilingualMarkdown.maxConcurrentRequests` | `3` | Maximum number of translation requests in flight at once (1–8). |
 | `bilingualMarkdown.batchCharacterLimit` | `4000` | Approximate number of source characters in one request (500–20000). |
-| `bilingualMarkdown.tokenLimit` | `0` | Pause translation after this many tokens in one VS Code session. `0` means no limit. Counted for Anthropic, and for OpenAI at api.openai.com. |
+| `bilingualMarkdown.tokenLimit` | `0` | Pause translation after this many tokens in one VS Code session. `0` means no limit. Counted when the provider reports token usage; language models in VS Code and some local servers do not. |
 | `bilingualMarkdown.syncScroll` | `true` | Keeps the editor and the preview scrolled to the same place. |
 
 The provider, the models, the base URL, the reasoning effort, the number of requests, the request size and the token limit can be changed only in your user settings. A workspace's settings do not change them.
@@ -145,7 +167,7 @@ Turn on `bilingualMarkdown.translateCodeComments` to translate the comments in c
 
 ## Security and privacy
 
-- The text to translate is sent only to the provider you choose: `https://api.anthropic.com`, `https://api.openai.com/v1`, the `bilingualMarkdown.openai.baseUrl` in your user settings, or the language model in VS Code that you allowed. Environment variables such as `ANTHROPIC_BASE_URL`, `OPENAI_BASE_URL`, `OPENAI_ORG_ID` and `OPENAI_PROJECT_ID` are not used.
+- The text to translate is sent only to the provider you choose: `https://api.anthropic.com`, `https://api.openai.com/v1`, `https://openrouter.ai/api/v1`, `https://generativelanguage.googleapis.com`, `https://api.deepseek.com`, `https://api.mistral.ai/v1`, `https://api.x.ai/v1`, the `bilingualMarkdown.openai.baseUrl` in your user settings, or the language model in VS Code that you allowed. Each key is sent only to its own provider. Environment variables such as `ANTHROPIC_BASE_URL`, `OPENAI_BASE_URL`, `OPENAI_ORG_ID` and `OPENAI_PROJECT_ID` are not used.
 - Code blocks, front matter, inline code, math, URLs, link targets and HTML are not sent. With `bilingualMarkdown.translateCodeComments` on, the text of the comments in code blocks is sent.
 - In Restricted Mode (an untrusted workspace), the target language, style instructions, glossary and code comment translation also come only from your user settings. The glossary file and `translate-to` in front matter are not used.
 - The extension collects no telemetry.

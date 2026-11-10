@@ -24,7 +24,6 @@
   "The OpenAI base URL must start with https:// (or http://localhost).": "OpenAI のベース URL は https://（または http://localhost）で始まる必要があります。",
   "{0} rejected the API key.": "{0} に API キーが拒否されました。",
   "This API key is not allowed to use {0}.": "この API キーでは {0} を使えません。",
-  "Model {0} was not found. Check the model ID in the settings.": "モデル {0} が見つかりません。設定のモデル ID を確認してください。",
   "{0} segments could not be translated.": "{0} 件の箇所を翻訳できませんでした。",
   "Retry": "再試行",
   "Bilingual: {0}": "対訳: {0}",
@@ -56,5 +55,14 @@
   "Try Again": "もう一度試す",
   "VS Code did not allow this extension to use the language model. Allow it in the Accounts menu under Manage Language Model Access, then try again.": "この拡張機能による言語モデルの利用が VS Code で許可されていません。アカウントメニューの「言語モデルへのアクセスを管理」で許可してから、もう一度試してください。",
   "{0} segments are not translated yet, so they were saved as written.": "{0} 件の箇所はまだ翻訳されていないため、原文のまま保存しました。",
-  "{0} tokens": "{0} トークン"
+  "{0} tokens": "{0} トークン",
+  "Could not list the models: {0}": "モデルを一覧できませんでした: {0}",
+  "Current": "現在のモデル",
+  "Enter a model ID.": "モデル ID を入力してください。",
+  "Enter a model ID...": "モデル ID を入力...",
+  "Model {0} was not found. Choose another model.": "モデル {0} が見つかりません。別のモデルを選んでください。",
+  "Set the {0} API key to list its models.": "{0} の API キーを設定すると、モデルを一覧できます。",
+  "The model ID, as the provider's API names it. Default: {0}": "プロバイダーの API でのモデル ID。既定値: {0}",
+  "Translate with which {0} model? Now: {1}": "どの {0} のモデルで翻訳しますか？（現在: {1}）",
+  "{0} Model": "{0} のモデル"
 }

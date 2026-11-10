@@ -72,6 +72,7 @@ let diagrams: Promise<void> = Promise.resolve();
 
 const modeButtons = new Map<ViewMode, HTMLButtonElement>();
 const progressEl = document.createElement("span");
+const modelButton = document.createElement("button");
 
 buildToolbar();
 applyMode(mode, false);
@@ -127,11 +128,15 @@ function buildToolbar(): void {
     group.append(button);
   }
   progressEl.className = "progress";
+  modelButton.type = "button";
+  modelButton.className = "model";
+  modelButton.addEventListener("click", () => api.postMessage({ type: "action", action: "chooseModel" }));
   const spacer = document.createElement("span");
   spacer.className = "spacer";
   toolbar.append(
     group,
     progressEl,
+    modelButton,
     spacer,
     toolButton("⤓", strings.exportTranslation, "exportTranslation"),
     toolButton("↻", strings.retranslate, "retranslate"),
@@ -352,9 +357,10 @@ function showProgress(progress: ProgressInfo): void {
   }
   if (progress.failed > 0) parts.push(strings.failed.replace("{0}", String(progress.failed)));
   if (progress.tokens) parts.push(strings.tokens.replace("{0}", progress.tokens.toLocaleString(init.lang)));
-  parts.push(progress.label);
   progressEl.textContent = parts.join(" · ");
   progressEl.title = progressEl.textContent;
+  modelButton.textContent = progress.label;
+  modelButton.title = `${strings.chooseModel}: ${progress.label}`;
 }
 
 function showNotice(notice: Notice | null): void {

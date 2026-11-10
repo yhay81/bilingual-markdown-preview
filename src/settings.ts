@@ -1,6 +1,7 @@
+import { PROVIDERS } from "./providers/catalog";
 import type { ProviderSettings } from "./providers/factory";
 import { usesReasoning } from "./providers/params";
-import { REASONING_EFFORTS, isProviderId, type ProviderId, type ReasoningEffortSetting } from "./providers/types";
+import { PROVIDER_IDS, REASONING_EFFORTS, isProviderId, type ProviderId, type ReasoningEffortSetting } from "./providers/types";
 import { settingsFingerprint } from "./translate/keys";
 import type { ServiceConfig } from "./translate/service";
 
@@ -8,11 +9,9 @@ import type { ServiceConfig } from "./translate/service";
 export interface ExtensionConfig {
   provider: ProviderId;
   targetLanguage: string;
-  anthropicModel: string;
-  openaiModel: string;
+  /** The model of each provider. For VS Code, a model ID, or "" for the first Copilot model. */
+  models: Record<ProviderId, string>;
   openaiBaseUrl: string;
-  /** VS Code Language Model API: a model ID, or "" for the first Copilot model. */
-  vscodeModel: string;
   reasoningEffort: ReasoningEffortSetting;
   styleInstructions: string;
   glossary: Record<string, string>;
@@ -27,10 +26,8 @@ export interface ExtensionConfig {
 export const DEFAULT_CONFIG: ExtensionConfig = {
   provider: "anthropic",
   targetLanguage: "Japanese",
-  anthropicModel: "claude-haiku-5-5",
-  openaiModel: "gpt-6-luna",
+  models: Object.fromEntries(PROVIDER_IDS.map((id) => [id, PROVIDERS[id].defaultModel])) as Record<ProviderId, string>,
   openaiBaseUrl: "",
-  vscodeModel: "",
   reasoningEffort: "none",
   styleInstructions: "",
   glossary: {},
@@ -41,16 +38,16 @@ export const DEFAULT_CONFIG: ExtensionConfig = {
   syncScroll: true,
 };
 
-export type RawConfig = Partial<Record<keyof ExtensionConfig, unknown>>;
+export type RawConfig = Partial<Record<Exclude<keyof ExtensionConfig, "models">, unknown>> & {
+  models?: Partial<Record<ProviderId, unknown>>;
+};
 
 export function sanitizeConfig(raw: RawConfig): ExtensionConfig {
   return {
     provider: isProviderId(raw.provider) ? raw.provider : DEFAULT_CONFIG.provider,
     targetLanguage: nonEmpty(raw.targetLanguage) ?? DEFAULT_CONFIG.targetLanguage,
-    anthropicModel: nonEmpty(raw.anthropicModel) ?? DEFAULT_CONFIG.anthropicModel,
-    openaiModel: nonEmpty(raw.openaiModel) ?? DEFAULT_CONFIG.openaiModel,
+    models: sanitizeModels(raw.models ?? {}),
     openaiBaseUrl: typeof raw.openaiBaseUrl === "string" ? raw.openaiBaseUrl.trim().replace(/\/+$/, "") : "",
-    vscodeModel: typeof raw.vscodeModel === "string" ? raw.vscodeModel.trim() : "",
     reasoningEffort: (REASONING_EFFORTS as readonly unknown[]).includes(raw.reasoningEffort)
       ? (raw.reasoningEffort as ReasoningEffortSetting)
       : DEFAULT_CONFIG.reasoningEffort,
@@ -66,14 +63,7 @@ export function sanitizeConfig(raw: RawConfig): ExtensionConfig {
 
 /** The configured model. For the VS Code Language Model API, "" means the first Copilot model. */
 export function modelOf(config: ExtensionConfig): string {
-  switch (config.provider) {
-    case "anthropic":
-      return config.anthropicModel;
-    case "openai":
-      return config.openaiModel;
-    case "vscode":
-      return config.vscodeModel;
-  }
+  return config.models[config.provider];
 }
 
 /** The model as shown to the user. */
@@ -123,14 +113,7 @@ export function translationSettingsChanged(before: ExtensionConfig, after: Exten
 }
 
 export function providerLabel(provider: ProviderId): string {
-  switch (provider) {
-    case "anthropic":
-      return "Anthropic";
-    case "openai":
-      return "OpenAI";
-    case "vscode":
-      return "VS Code Language Model";
-  }
+  return PROVIDERS[provider].label;
 }
 
 /**
@@ -150,6 +133,17 @@ export function parseGlossaryFile(text: string): Record<string, string> {
   } catch {
     return {};
   }
+}
+
+/** An empty model falls back to the default, except for VS Code, where "" means the first Copilot model. */
+function sanitizeModels(raw: Partial<Record<ProviderId, unknown>>): Record<ProviderId, string> {
+  const models = { ...DEFAULT_CONFIG.models };
+  for (const id of PROVIDER_IDS) {
+    const value = raw[id];
+    if (id === "vscode") models[id] = typeof value === "string" ? value.trim() : "";
+    else models[id] = nonEmpty(value) ?? models[id];
+  }
+  return models;
 }
 
 function nonEmpty(value: unknown): string | undefined {

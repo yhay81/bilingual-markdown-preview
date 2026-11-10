@@ -24,7 +24,6 @@
   "The OpenAI base URL must start with https:// (or http://localhost).": "OpenAI 기본 URL은 https://(또는 http://localhost)로 시작해야 합니다.",
   "{0} rejected the API key.": "{0}에서 API 키를 거부했습니다.",
   "This API key is not allowed to use {0}.": "이 API 키로는 {0}을(를) 사용할 수 없습니다.",
-  "Model {0} was not found. Check the model ID in the settings.": "모델 {0}을(를) 찾을 수 없습니다. 설정의 모델 ID를 확인하세요.",
   "{0} segments could not be translated.": "{0}개 부분을 번역하지 못했습니다.",
   "Retry": "다시 시도",
   "Bilingual: {0}": "대역: {0}",
@@ -56,5 +55,14 @@
   "Try Again": "다시 해 보기",
   "VS Code did not allow this extension to use the language model. Allow it in the Accounts menu under Manage Language Model Access, then try again.": "VS Code에서 이 확장의 언어 모델 사용을 허용하지 않았습니다. 계정 메뉴의 '언어 모델 액세스 관리'에서 허용한 뒤 다시 시도하세요.",
   "{0} segments are not translated yet, so they were saved as written.": "{0}개 부분은 아직 번역되지 않아 원문 그대로 저장했습니다.",
-  "{0} tokens": "{0} 토큰"
+  "{0} tokens": "{0} 토큰",
+  "Could not list the models: {0}": "모델 목록을 가져오지 못했습니다: {0}",
+  "Current": "현재",
+  "Enter a model ID.": "모델 ID를 입력하세요.",
+  "Enter a model ID...": "모델 ID 입력...",
+  "Model {0} was not found. Choose another model.": "모델 {0}을(를) 찾을 수 없습니다. 다른 모델을 선택하세요.",
+  "Set the {0} API key to list its models.": "{0} API 키를 설정하면 모델 목록을 볼 수 있습니다.",
+  "The model ID, as the provider's API names it. Default: {0}": "제공자 API에서 쓰는 모델 ID입니다. 기본값: {0}",
+  "Translate with which {0} model? Now: {1}": "어떤 {0} 모델로 번역할까요? 현재: {1}",
+  "{0} Model": "{0} 모델"
 }

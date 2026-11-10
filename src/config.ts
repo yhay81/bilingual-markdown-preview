@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { PROVIDER_IDS, type ProviderId } from "./providers/types";
 import { mergeGlossaries, sanitizeConfig, type ExtensionConfig } from "./settings";
 
 export const CONFIG_SECTION = "bilingualMarkdown";
@@ -9,10 +10,8 @@ export function readConfig(workspaceGlossary: Readonly<Record<string, string>> =
   const settings = sanitizeConfig({
     provider: config.get("provider"),
     targetLanguage: config.get("targetLanguage"),
-    anthropicModel: config.get("anthropic.model"),
-    openaiModel: config.get("openai.model"),
+    models: Object.fromEntries(PROVIDER_IDS.map((id) => [id, config.get(modelSettingOf(id))])),
     openaiBaseUrl: config.get("openai.baseUrl"),
-    vscodeModel: config.get("vscode.model"),
     reasoningEffort: config.get("reasoningEffort"),
     styleInstructions: config.get("styleInstructions"),
     glossary: config.get("glossary"),
@@ -23,4 +22,9 @@ export function readConfig(workspaceGlossary: Readonly<Record<string, string>> =
     syncScroll: config.get("syncScroll"),
   });
   return { ...settings, glossary: mergeGlossaries(workspaceGlossary, settings.glossary) };
+}
+
+/** The setting, under the extension's section, that holds a provider's model. */
+export function modelSettingOf(provider: ProviderId): string {
+  return `${provider}.model`;
 }

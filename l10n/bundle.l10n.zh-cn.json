@@ -24,7 +24,6 @@
   "The OpenAI base URL must start with https:// (or http://localhost).": "OpenAI 基础 URL 必须以 https://（或 http://localhost）开头。",
   "{0} rejected the API key.": "{0} 拒绝了该 API 密钥。",
   "This API key is not allowed to use {0}.": "此 API 密钥无权使用 {0}。",
-  "Model {0} was not found. Check the model ID in the settings.": "找不到模型 {0}。请检查设置中的模型 ID。",
   "{0} segments could not be translated.": "有 {0} 处无法翻译。",
   "Retry": "重试",
   "Bilingual: {0}": "双语：{0}",
@@ -56,5 +55,14 @@
   "Try Again": "再试一次",
   "VS Code did not allow this extension to use the language model. Allow it in the Accounts menu under Manage Language Model Access, then try again.": "VS Code 未允许此扩展使用该语言模型。请在“帐户”菜单的“管理语言模型访问”中允许后重试。",
   "{0} segments are not translated yet, so they were saved as written.": "有 {0} 处尚未翻译，已按原文保存。",
-  "{0} tokens": "{0} 个 token"
+  "{0} tokens": "{0} 个 token",
+  "Could not list the models: {0}": "无法列出模型：{0}",
+  "Current": "当前",
+  "Enter a model ID.": "请输入模型 ID。",
+  "Enter a model ID...": "输入模型 ID...",
+  "Model {0} was not found. Choose another model.": "找不到模型 {0}。请选择其他模型。",
+  "Set the {0} API key to list its models.": "设置 {0} API 密钥后即可列出其模型。",
+  "The model ID, as the provider's API names it. Default: {0}": "提供方 API 中的模型 ID。默认：{0}",
+  "Translate with which {0} model? Now: {1}": "使用哪个 {0} 模型翻译？当前：{1}",
+  "{0} Model": "{0} 模型"
 }

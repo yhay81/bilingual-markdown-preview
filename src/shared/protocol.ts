@@ -88,6 +88,8 @@ export interface UiStrings {
   modeTranslation: string;
   retranslate: string;
   settings: string;
+  /** Tooltip of the model and language in the toolbar, which opens the model picker. */
+  chooseModel: string;
   retry: string;
   exportTranslation: string;
   edit: string;

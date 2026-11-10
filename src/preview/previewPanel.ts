@@ -519,14 +519,14 @@ export class BilingualPreview implements vscode.Disposable {
           severity: "error",
           blocking: true,
           message: vscode.l10n.t("This API key is not allowed to use {0}.", model) + detail,
-          actions: [openSettings, setKey],
+          actions: [chooseModel, setKey],
         };
       case "notFound":
         return {
           severity: "error",
           blocking: true,
-          message: vscode.l10n.t("Model {0} was not found. Check the model ID in the settings.", model) + detail,
-          actions: [openSettings, switchProvider],
+          message: vscode.l10n.t("Model {0} was not found. Choose another model.", model) + detail,
+          actions: [chooseModel, switchProvider],
         };
       case undefined:
         break;
@@ -661,6 +661,7 @@ function uiStrings(): UiStrings {
     modeTranslation: vscode.l10n.t("Translation"),
     retranslate: vscode.l10n.t("Retranslate"),
     settings: vscode.l10n.t("Settings"),
+    chooseModel: vscode.l10n.t("Choose Model"),
     retry: vscode.l10n.t("Retry"),
     exportTranslation: vscode.l10n.t("Save Translation as Markdown"),
     edit: vscode.l10n.t("Edit"),

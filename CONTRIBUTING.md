@@ -20,7 +20,7 @@ npm install
 - `npm run test:e2e` runs the end-to-end test in a real VS Code, which it downloads into `.vscode-test/` the first time. The test opens the preview for `test/e2e/workspace/guide.md`, translates it through a fake OpenAI-compatible server on 127.0.0.1, and saves the translation. CI runs it too, under `xvfb-run` on Linux.
 - Press F5 in VS Code to build the extension and open it in an Extension Development Host.
 
-The tests never call a translation API. To see real translations in the Extension Development Host, use GitHub Copilot (**Bilingual Markdown: Switch Translation Provider** → **VS Code Language Model**), a local server such as Ollama, or your own key with **Bilingual Markdown: Set API Key**. Translation with a key is billed to the account that issued it.
+The tests never call a translation API. To see real translations in the Extension Development Host, use GitHub Copilot (**Bilingual Markdown: Switch Translation Provider** → **VS Code Language Model**), a local server such as Ollama, or your own key for any provider with **Bilingual Markdown: Set API Key**. Translation with a key is billed to the account that issued it.
 
 ## Where things are
 
@@ -28,7 +28,7 @@ The tests never call a translation API. To see real translations in the Extensio
 - `src/config.ts`, `src/settings.ts` and `src/secrets.ts`: the settings and the API keys.
 - `src/markdown/`: splitting Markdown into rows, rendering them, finding the comments in code blocks, and writing the translation out as Markdown.
 - `src/translate/`: prompts, placeholders, validation, the cache and the translation queue.
-- `src/providers/`: the Anthropic and OpenAI clients, and the VS Code Language Model API.
+- `src/providers/`: the Anthropic client, one client for OpenAI and the OpenAI-compatible services (`catalog.ts` lists their endpoints and reasoning parameters), and the VS Code Language Model API.
 - `src/preview/`: the preview panels and their HTML.
 - `src/webview/`: the script that runs inside the preview.
 - `src/shared/`: the messages between the extension and the preview.

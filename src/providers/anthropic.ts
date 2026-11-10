@@ -3,6 +3,7 @@ import { anthropicReasoningParams } from "./params";
 import {
   ProviderError,
   errorKindForStatus,
+  type ModelInfo,
   type ReasoningEffortSetting,
   type StopReason,
   type TranslateRequest,
@@ -46,6 +47,18 @@ export class AnthropicProvider implements TranslationProvider {
       throw toProviderError(error);
     }
   }
+}
+
+/** The Claude models this key can use, newest first. */
+export async function listAnthropicModels(apiKey: string): Promise<ModelInfo[]> {
+  const client = new Anthropic({ apiKey, baseURL: ANTHROPIC_API_URL, maxRetries: 2 });
+  const models: ModelInfo[] = [];
+  try {
+    for await (const model of client.models.list({ limit: 100 })) models.push({ id: model.id, name: model.display_name });
+  } catch (error) {
+    throw toProviderError(error);
+  }
+  return models;
 }
 
 function stopReasonOf(reason: string | null): StopReason {

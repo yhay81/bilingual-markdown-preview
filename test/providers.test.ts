@@ -1,8 +1,18 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AnthropicProvider } from "../src/providers/anthropic";
-import { LOCAL_SERVER_KEY, ProviderFactory, createProvider, isAllowedBaseUrl, isLoopbackUrl, type ProviderSettings } from "../src/providers/factory";
+import {
+  LOCAL_SERVER_KEY,
+  ProviderFactory,
+  apiKeyFor,
+  createProvider,
+  isAllowedBaseUrl,
+  isLoopbackUrl,
+  listModels,
+  type ProviderSettings,
+} from "../src/providers/factory";
 import { OpenAIProvider } from "../src/providers/openai";
-import { anthropicReasoningParams, canDisableThinking, openaiReasoningParams, usesReasoning } from "../src/providers/params";
+import { reasoningAttempts } from "../src/providers/catalog";
+import { anthropicReasoningParams, canDisableThinking, usesReasoning } from "../src/providers/params";
 import { ProviderError, errorKindForStatus, type KeyProviderId, type TranslateRequest } from "../src/providers/types";
 
 // Dummy keys: requests go to a stubbed fetch, never to the network.
@@ -23,10 +33,20 @@ describe("reasoning parameters", () => {
     expect(anthropicReasoningParams("claude-haiku-5-5", "default")).toEqual({});
   });
 
-  it("pass the effort through to OpenAI", () => {
-    expect(openaiReasoningParams("none")).toEqual({ reasoning_effort: "none" });
-    expect(openaiReasoningParams("high")).toEqual({ reasoning_effort: "high" });
-    expect(openaiReasoningParams("default")).toEqual({});
+  it("pass the effort through to OpenAI, then nothing if the model rejects it", () => {
+    expect(reasoningAttempts("openai", "none")).toEqual([{ reasoning_effort: "none" }, {}]);
+    expect(reasoningAttempts("openai", "high")).toEqual([{ reasoning_effort: "high" }, {}]);
+    expect(reasoningAttempts("openai", "default")).toEqual([{}]);
+  });
+
+  it("speak each service's own reasoning controls", () => {
+    expect(reasoningAttempts("openrouter", "none")).toEqual([{ reasoning: { effort: "none" } }, {}]);
+    expect(reasoningAttempts("gemini", "none")).toEqual([{ reasoning_effort: "none" }, { reasoning_effort: "minimal" }, { reasoning_effort: "low" }, {}]);
+    expect(reasoningAttempts("gemini", "medium")).toEqual([{ reasoning_effort: "medium" }, {}]);
+    expect(reasoningAttempts("deepseek", "none")).toEqual([{ thinking: { type: "disabled" } }, {}]);
+    expect(reasoningAttempts("deepseek", "low")).toEqual([{ reasoning_effort: "low" }, {}]);
+    expect(reasoningAttempts("mistral", "none")).toEqual([{ reasoning_effort: "none" }, { reasoning_effort: "low" }, {}]);
+    expect(reasoningAttempts("xai", "none")).toEqual([{ reasoning_effort: "low" }, {}]);
   });
 
   it("tell when output tokens go to reasoning", () => {
@@ -35,6 +55,8 @@ describe("reasoning parameters", () => {
     expect(usesReasoning("anthropic", "claude-opus-5-5", "none")).toBe(true);
     expect(usesReasoning("vscode", "", "high")).toBe(false);
     expect(usesReasoning("openai", "gpt-6-luna", "default")).toBe(true);
+    expect(usesReasoning("openrouter", "google/gemini-3.8-flash", "none")).toBe(false);
+    expect(usesReasoning("xai", "grok-4.3", "none")).toBe(true);
   });
 });
 
@@ -155,6 +177,18 @@ describe("ProviderFactory", () => {
     expect(gpt).toBeInstanceOf(OpenAIProvider);
     expect([claude.model, gpt.model]).toEqual(["claude-haiku-5-5", "gpt-6-luna"]);
     expect(() => createProvider({ provider: "vscode", model: "", baseUrl: "", reasoningEffort: "none" }, "")).toThrow();
+    const router = createProvider({ provider: "openrouter", model: "google/gemini-3.8-flash", baseUrl: "", reasoningEffort: "none" }, OPENAI_TEST_KEY);
+    expect(router).toBeInstanceOf(OpenAIProvider);
+    expect([router.id, router.model]).toEqual(["openrouter", "google/gemini-3.8-flash"]);
+  });
+
+  it("keeps each provider's key apart", () => {
+    const keys: Partial<Record<KeyProviderId, string>> = { openrouter: OPENAI_TEST_KEY };
+    const get = (provider: KeyProviderId) => keys[provider];
+    expect(apiKeyFor({ provider: "openrouter", model: "", baseUrl: "", reasoningEffort: "none" }, get)).toBe(OPENAI_TEST_KEY);
+    expect(apiKeyFor({ provider: "gemini", model: "", baseUrl: "", reasoningEffort: "none" }, get)).toBeUndefined();
+    // The base URL setting belongs to OpenAI; it never makes another service keyless.
+    expect(apiKeyFor({ provider: "mistral", model: "", baseUrl: "http://localhost:11434/v1", reasoningEffort: "none" }, get)).toBeUndefined();
   });
 });
 
@@ -172,7 +206,7 @@ function stubFetch(respond: (init: RequestInit) => Response | Promise<Response>)
     captured.push({
       url: input instanceof Request ? input.url : String(input),
       headers: new Headers(init.headers),
-      body: JSON.parse(String(init.body)) as Record<string, unknown>,
+      body: (init.body ? JSON.parse(String(init.body)) : {}) as Record<string, unknown>,
     });
     return respond(init);
   });
@@ -403,5 +437,124 @@ describe("OpenAIProvider", () => {
     await new Promise((resolve) => setTimeout(resolve, 10));
     controller.abort();
     expect(await pending).toMatchObject({ kind: "aborted" });
+  });
+});
+
+describe("OpenAI-compatible services", () => {
+  const chunk = (delta: Record<string, unknown>, finishReason: string | null = null) => ({
+    id: "chatcmpl-test",
+    object: "chat.completion.chunk",
+    created: 1,
+    model: "test",
+    choices: [{ index: 0, delta, finish_reason: finishReason }],
+  });
+  const done = () => sse([{ data: chunk({ content: "x" }, "stop") }, { data: "[DONE]" }]);
+
+  it("call each service at its own endpoint, never at a configured base URL", async () => {
+    const cases: Array<[ConstructorParameters<typeof OpenAIProvider>[4], string]> = [
+      ["openrouter", "https://openrouter.ai/api/v1/chat/completions"],
+      ["gemini", "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"],
+      ["deepseek", "https://api.deepseek.com/chat/completions"],
+      ["mistral", "https://api.mistral.ai/v1/chat/completions"],
+      ["xai", "https://api.x.ai/v1/chat/completions"],
+    ];
+    for (const [provider, url] of cases) {
+      const captured = stubFetch(done);
+      await new OpenAIProvider(OPENAI_TEST_KEY, "model", "low", "https://elsewhere.example.com/v1", provider).translate(translateRequest());
+      expect(captured[0]!.url).toBe(url);
+      expect(captured[0]!.headers.get("authorization")).toBe(`Bearer ${OPENAI_TEST_KEY}`);
+      expect(captured[0]!.body).toMatchObject({ max_tokens: 1024 });
+      expect(captured[0]!.body).not.toHaveProperty("max_completion_tokens");
+    }
+  });
+
+  it("name the app to OpenRouter and use its reasoning object", async () => {
+    const captured = stubFetch(done);
+    await new OpenAIProvider(OPENAI_TEST_KEY, "google/gemini-3.8-flash", "none", undefined, "openrouter").translate(translateRequest());
+    expect(captured[0]!.headers.get("x-title")).toBe("Markdown Translation Preview");
+    expect(captured[0]!.body).toMatchObject({ reasoning: { effort: "none" }, stream_options: { include_usage: true } });
+    expect(captured[0]!.body).not.toHaveProperty("reasoning_effort");
+  });
+
+  it("do not ask Mistral for stream options", async () => {
+    const captured = stubFetch(done);
+    await new OpenAIProvider(OPENAI_TEST_KEY, "mistral-small-2603", "none", undefined, "mistral").translate(translateRequest());
+    expect(captured[0]!.body).not.toHaveProperty("stream_options");
+    expect(captured[0]!.body).toMatchObject({ reasoning_effort: "none" });
+  });
+
+  it("step down to reasoning parameters the model accepts, and remember them", async () => {
+    const rejected = () => apiError(400, { error: { message: "reasoning_effort 'none' is not supported by this model", type: "invalid_request_error" } });
+    let calls = 0;
+    const captured = stubFetch(() => (++calls <= 2 ? rejected() : done()));
+    const provider = new OpenAIProvider(OPENAI_TEST_KEY, "gemini-3.8-flash", "none", undefined, "gemini");
+    await expect(provider.translate(translateRequest())).resolves.toMatchObject({ stopReason: "end" });
+    await provider.translate(translateRequest());
+    expect(captured.map((call) => call.body.reasoning_effort)).toEqual(["none", "minimal", "low", "low"]);
+  });
+
+  it("send no reasoning parameter once every form is rejected", async () => {
+    const rejected = () => apiError(400, { error: { message: "This model does not support reasoning_effort", type: "invalid_request_error" } });
+    let calls = 0;
+    const captured = stubFetch(() => (++calls <= 1 ? rejected() : done()));
+    await new OpenAIProvider(OPENAI_TEST_KEY, "grok-4.20", "none", undefined, "xai").translate(translateRequest());
+    expect(captured.map((call) => call.body.reasoning_effort)).toEqual(["low", undefined]);
+  });
+
+  it("do not retry other bad requests", async () => {
+    const captured = stubFetch(() => apiError(400, { error: { message: "messages must not be empty", type: "invalid_request_error" } }));
+    const error = await new OpenAIProvider(OPENAI_TEST_KEY, "deepseek-flash", "none", undefined, "deepseek")
+      .translate(translateRequest())
+      .catch((caught: unknown) => caught);
+    expect(error).toMatchObject({ kind: "badRequest", status: 400 });
+    expect(captured).toHaveLength(1);
+  });
+});
+
+describe("listModels", () => {
+  const list = (data: unknown[]) => new Response(JSON.stringify({ object: "list", data }), { status: 200, headers: { "content-type": "application/json" } });
+
+  it("lists the chat models of an OpenAI-compatible service", async () => {
+    const captured = stubFetch(() =>
+      list([
+        { id: "models/gemini-3.8-flash", object: "model", owned_by: "google" },
+        { id: "models/gemini-embedding-2", object: "model", owned_by: "google" },
+        { id: "models/gemini-2.5-flash-image", object: "model", owned_by: "google" },
+      ]),
+    );
+    const models = await listModels({ provider: "gemini", model: "", baseUrl: "", reasoningEffort: "none" }, OPENAI_TEST_KEY);
+    expect(models).toEqual([{ id: "gemini-3.8-flash" }]);
+    expect(captured[0]!.url).toBe("https://generativelanguage.googleapis.com/v1beta/openai/models");
+  });
+
+  it("keeps OpenRouter's display names", async () => {
+    stubFetch(() => list([{ id: "google/gemini-3.8-flash", name: "Google: Gemini 3.8 Flash", object: "model" }]));
+    const models = await listModels({ provider: "openrouter", model: "", baseUrl: "", reasoningEffort: "none" }, OPENAI_TEST_KEY);
+    expect(models).toEqual([{ id: "google/gemini-3.8-flash", name: "Google: Gemini 3.8 Flash" }]);
+  });
+
+  it("lists Claude models", async () => {
+    const captured = stubFetch(
+      () =>
+        new Response(
+          JSON.stringify({
+            data: [{ type: "model", id: "claude-haiku-5-5", display_name: "Claude Haiku 5.5", created_at: "2026-10-07T00:00:00Z" }],
+            has_more: false,
+            first_id: "claude-haiku-5-5",
+            last_id: "claude-haiku-5-5",
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+    );
+    const models = await listModels({ provider: "anthropic", model: "", baseUrl: "", reasoningEffort: "none" }, ANTHROPIC_TEST_KEY);
+    expect(models).toEqual([{ id: "claude-haiku-5-5", name: "Claude Haiku 5.5" }]);
+    expect(new URL(captured[0]!.url).origin).toBe("https://api.anthropic.com");
+  });
+
+  it("reports a rejected key", async () => {
+    stubFetch(() => apiError(401, { error: { message: "Invalid API key", type: "invalid_request_error" } }));
+    await expect(listModels({ provider: "deepseek", model: "", baseUrl: "", reasoningEffort: "none" }, OPENAI_TEST_KEY)).rejects.toMatchObject({
+      kind: "auth",
+    });
   });
 });

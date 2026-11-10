@@ -1,12 +1,17 @@
-/** `vscode` is the VS Code Language Model API (for example GitHub Copilot), which needs no API key. */
-export type ProviderId = "anthropic" | "openai" | "vscode";
+/** Providers reached through an OpenAI-compatible Chat Completions API with the user's own key. */
+export const COMPATIBLE_PROVIDER_IDS = ["openai", "openrouter", "gemini", "deepseek", "mistral", "xai"] as const;
+
+export type CompatibleProviderId = (typeof COMPATIBLE_PROVIDER_IDS)[number];
 
 /** Providers that are used with the user's own API key. */
-export type KeyProviderId = "anthropic" | "openai";
+export const KEY_PROVIDER_IDS = ["anthropic", ...COMPATIBLE_PROVIDER_IDS] as const;
 
-export const PROVIDER_IDS: readonly ProviderId[] = ["anthropic", "openai", "vscode"];
+export type KeyProviderId = (typeof KEY_PROVIDER_IDS)[number];
 
-export const KEY_PROVIDER_IDS: readonly KeyProviderId[] = ["anthropic", "openai"];
+/** `vscode` is the VS Code Language Model API (for example GitHub Copilot), which needs no API key. */
+export const PROVIDER_IDS = [...KEY_PROVIDER_IDS, "vscode"] as const;
+
+export type ProviderId = (typeof PROVIDER_IDS)[number];
 
 export function isProviderId(value: unknown): value is ProviderId {
   return typeof value === "string" && (PROVIDER_IDS as readonly string[]).includes(value);
@@ -14,6 +19,10 @@ export function isProviderId(value: unknown): value is ProviderId {
 
 export function isKeyProviderId(value: unknown): value is KeyProviderId {
   return typeof value === "string" && (KEY_PROVIDER_IDS as readonly string[]).includes(value);
+}
+
+export function isCompatibleProviderId(value: unknown): value is CompatibleProviderId {
+  return typeof value === "string" && (COMPATIBLE_PROVIDER_IDS as readonly string[]).includes(value);
 }
 
 /** `default` sends no reasoning parameter at all, for models or gateways that reject one. */
@@ -47,6 +56,13 @@ export interface TranslationProvider {
   readonly id: ProviderId;
   readonly model: string;
   translate(request: TranslateRequest): Promise<TranslateResult>;
+}
+
+/** A model a provider offers, for choosing one in the settings. */
+export interface ModelInfo {
+  id: string;
+  /** A display name, when the API gives one. */
+  name?: string;
 }
 
 export type ProviderErrorKind =

@@ -1,16 +1,18 @@
 import * as vscode from "vscode";
-import { CONFIG_SECTION, readConfig } from "./config";
+import { CONFIG_SECTION, modelSettingOf, readConfig } from "./config";
 import { createMarkdownEngine } from "./markdown/engine";
 import { RowRenderer } from "./markdown/render";
 import { PreviewManager } from "./preview/previewManager";
 import { VIEW_TYPE } from "./preview/previewPanel";
-import { ProviderFactory, createProvider } from "./providers/factory";
+import { PROVIDERS } from "./providers/catalog";
+import { ProviderFactory, apiKeyFor, createProvider, listModels } from "./providers/factory";
 import { KEY_PROVIDER_IDS, PROVIDER_IDS, isKeyProviderId, type KeyProviderId, type ProviderId } from "./providers/types";
 import { COPILOT_VENDOR, VsCodeLmProvider } from "./providers/vscodeLm";
 import { ApiKeyStore } from "./secrets";
 import {
   mergeGlossaries,
   modelLabelOf,
+  modelOf,
   parseGlossaryFile,
   providerLabel,
   providerSettingsOf,
@@ -176,14 +178,64 @@ class Commands {
     return preview.exportTranslation(target instanceof vscode.Uri ? target : undefined);
   }
 
-  /** Picks the model for the VS Code Language Model API from the models VS Code offers. */
+  /** Picks the model of the current provider, from the models it offers or by typing an ID. */
   async chooseModel(): Promise<void> {
+    const config = readConfig();
+    const provider = config.provider;
+    if (provider === "vscode") {
+      await this.chooseVsCodeModel();
+      return;
+    }
+    const label = providerLabel(provider);
+    const settings = providerSettingsOf(config);
+    const current = modelOf(config);
+    const apiKey = apiKeyFor(settings, (id) => this.keys.get(id));
+    const enter = {
+      id: undefined,
+      label: `$(edit) ${vscode.l10n.t("Enter a model ID...")}`,
+      description: "",
+      detail: apiKey === undefined ? vscode.l10n.t("Set the {0} API key to list its models.", label) : undefined,
+      alwaysShow: true,
+    };
+    const items = (apiKey === undefined ? Promise.resolve([]) : listModels(settings, apiKey)).then(
+      (models) => [
+        enter,
+        ...models.map((model) => ({
+          id: model.id as string | undefined,
+          label: model.name ?? model.id,
+          description: [model.name ? model.id : "", model.id === current ? vscode.l10n.t("Current") : ""].filter(Boolean).join(" · "),
+          detail: undefined,
+          alwaysShow: false,
+        })),
+      ],
+      (error: unknown) => [{ ...enter, detail: vscode.l10n.t("Could not list the models: {0}", error instanceof Error ? error.message : String(error)) }],
+    );
+    const picked = await vscode.window.showQuickPick(items, {
+      placeHolder: vscode.l10n.t("Translate with which {0} model? Now: {1}", label, current),
+      matchOnDescription: true,
+    });
+    if (!picked) return;
+    const model =
+      picked.id ??
+      (await vscode.window.showInputBox({
+        title: vscode.l10n.t("{0} Model", label),
+        prompt: vscode.l10n.t("The model ID, as the provider's API names it. Default: {0}", PROVIDERS[provider].defaultModel),
+        value: current,
+        ignoreFocusOut: true,
+        validateInput: (input) => (input.trim() ? undefined : vscode.l10n.t("Enter a model ID.")),
+      }))?.trim();
+    if (!model) return;
+    await vscode.workspace.getConfiguration(CONFIG_SECTION).update(modelSettingOf(provider), model, vscode.ConfigurationTarget.Global);
+  }
+
+  /** Picks the model for the VS Code Language Model API from the models VS Code offers. */
+  private async chooseVsCodeModel(): Promise<void> {
     const models = await vscode.lm.selectChatModels();
     if (models.length === 0) {
       void vscode.window.showWarningMessage(vscode.l10n.t("No language models are available in VS Code. Install GitHub Copilot and sign in."));
       return;
     }
-    const current = readConfig().vscodeModel;
+    const current = readConfig().models.vscode;
     const automatic = { id: "", label: vscode.l10n.t("Automatic"), description: vscode.l10n.t("The first GitHub Copilot model") };
     const items = [
       automatic,
@@ -193,9 +245,7 @@ class Commands {
     ].map((item) => ({ ...item, picked: item.id === current }));
     const picked = await vscode.window.showQuickPick(items, { placeHolder: vscode.l10n.t("Translate with which language model?") });
     if (!picked) return;
-    const settings = vscode.workspace.getConfiguration(CONFIG_SECTION);
-    await settings.update("vscode.model", picked.id, vscode.ConfigurationTarget.Global);
-    if (readConfig().provider !== "vscode") await setProvider("vscode");
+    await vscode.workspace.getConfiguration(CONFIG_SECTION).update(modelSettingOf("vscode"), picked.id, vscode.ConfigurationTarget.Global);
   }
 
   async setApiKey(requested?: unknown): Promise<void> {
@@ -209,7 +259,7 @@ class Commands {
     const value = await vscode.window.showInputBox({
       title: vscode.l10n.t("{0} API Key", label),
       prompt: vscode.l10n.t("Stored in VS Code Secret Storage (your OS keychain), not in settings."),
-      placeHolder: provider === "anthropic" ? "sk-ant-..." : "sk-...",
+      placeHolder: PROVIDERS[provider].keyPlaceholder,
       password: true,
       ignoreFocusOut: true,
       validateInput: (input) => {
@@ -255,7 +305,9 @@ class Commands {
     const provider = await this.pickProvider(vscode.l10n.t("Translate with"), current, PROVIDER_IDS);
     if (!provider || provider === current) return;
     await setProvider(provider);
-    if (isKeyProviderId(provider) && !this.keys.has(provider) && !readConfig().openaiBaseUrl) await this.setApiKey(provider);
+    // An OpenAI-compatible server on this machine or a company gateway may need no key here.
+    const ownEndpoint = provider === "openai" && readConfig().openaiBaseUrl !== "";
+    if (isKeyProviderId(provider) && !this.keys.has(provider) && !ownEndpoint) await this.setApiKey(provider);
   }
 
   async clearCache(): Promise<void> {

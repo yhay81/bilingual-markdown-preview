@@ -2,7 +2,10 @@
 
 ## Unreleased
 
-- Translate with GitHub Copilot or another language model in VS Code, with no API key (`bilingualMarkdown.provider`: `vscode`). **Bilingual Markdown: Choose VS Code Language Model** picks the model.
+- Translate with your own key for OpenRouter, Google Gemini, DeepSeek, Mistral AI or xAI, as well as Anthropic and OpenAI. Each provider keeps its own key and model.
+- **Bilingual Markdown: Choose Model** lists the models the current provider offers, or takes a model ID. Clicking the model name in the toolbar opens it too.
+- When a model rejects a reasoning setting, the next lower one is tried, and finally none at all.
+- Translate with GitHub Copilot or another language model in VS Code, with no API key (`bilingualMarkdown.provider`: `vscode`).
 - Translate with a local model: a server on this machine, such as Ollama or LM Studio, needs no API key.
 - Save the translation as a Markdown file, such as `README.ja.md`, from the toolbar or with **Bilingual Markdown: Save Translation as Markdown**.
 - Correct a translation by hand in the preview. Edits are kept and can be reverted.
