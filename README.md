@@ -160,7 +160,7 @@ Turn on `bilingualMarkdown.translateCodeComments` to translate the comments in c
 
 ## Contributing
 
-Bug reports and pull requests are welcome on [GitHub](https://github.com/yhay81/bilingual-markdown-preview/issues). [CONTRIBUTING.md](CONTRIBUTING.md) explains how to build and test the extension.
+Bug reports and pull requests are welcome on [GitHub](https://github.com/yhay81/markdown-translation-preview/issues). [CONTRIBUTING.md](CONTRIBUTING.md) explains how to build and test the extension.
 
 ## License
 

@@ -1,14 +1,14 @@
 # Contributing
 
-Thank you for helping with Markdown Translation Preview. Report bugs and suggest features in [GitHub Issues](https://github.com/yhay81/bilingual-markdown-preview/issues). Before you start on a large change, open an issue so that we can agree on the approach.
+Thank you for helping with Markdown Translation Preview. Report bugs and suggest features in [GitHub Issues](https://github.com/yhay81/markdown-translation-preview/issues). Before you start on a large change, open an issue so that we can agree on the approach.
 
 ## Set up
 
 You need Node.js 22.12 or later and VS Code 1.101 or later.
 
 ```bash
-git clone https://github.com/yhay81/bilingual-markdown-preview.git
-cd bilingual-markdown-preview
+git clone https://github.com/yhay81/markdown-translation-preview.git
+cd markdown-translation-preview
 npm install
 ```
 
@@ -74,7 +74,7 @@ The workflow signs in to the Marketplace with [Trusted Publishing](https://code.
 | --- | --- |
 | Policy name | Any name, such as `Release workflow` |
 | Repository owner | `yhay81` |
-| Repository | `bilingual-markdown-preview` |
+| Repository | `markdown-translation-preview` |
 | Workflow | `release.yml` |
 | Environment | Leave it empty |
 

@@ -160,7 +160,7 @@ OpenAI 互換の API を持つサーバーなら使えます。`bilingualMarkdow
 
 ## 開発に参加する
 
-不具合の報告やプルリクエストは [GitHub](https://github.com/yhay81/bilingual-markdown-preview/issues) で受け付けています。ビルドとテストの方法は [CONTRIBUTING.md](CONTRIBUTING.md)（英語）にあります。
+不具合の報告やプルリクエストは [GitHub](https://github.com/yhay81/markdown-translation-preview/issues) で受け付けています。ビルドとテストの方法は [CONTRIBUTING.md](CONTRIBUTING.md)（英語）にあります。
 
 ## ライセンス
 
