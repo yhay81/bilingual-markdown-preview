@@ -363,7 +363,7 @@ class Commands {
   }
 
   async clearApiKey(): Promise<void> {
-    const stored = KEY_PROVIDER_IDS.filter((provider) => this.keys.has(provider));
+    const stored = KEY_PROVIDER_IDS.filter((provider) => this.keys.hasStored(provider));
     if (stored.length === 0) {
       void vscode.window.showInformationMessage(vscode.l10n.t("No API keys are stored."));
       return;
@@ -391,7 +391,7 @@ class Commands {
     await setProvider(provider);
     // An OpenAI-compatible server on this machine or a company gateway may need no key here.
     const ownEndpoint = provider === "openai" && readConfig().openaiBaseUrl !== "";
-    if (isKeyProviderId(provider) && !this.keys.has(provider) && !ownEndpoint) await this.setApiKey(provider);
+    if (isKeyProviderId(provider) && !this.keys.get(provider) && !ownEndpoint) await this.setApiKey(provider);
   }
 
   /** Asks for the endpoint of the Azure resource and stores it in the user's settings. */
@@ -428,14 +428,16 @@ class Commands {
         id,
         label: providerLabel(id),
         description: modelLabelOf({ ...config, provider: id }),
-        detail:
-          id === "vscode"
-            ? vscode.l10n.t("No API key needed: uses GitHub Copilot or another model in VS Code")
-            : this.keys.has(id)
-              ? vscode.l10n.t("API key stored")
-              : vscode.l10n.t("No API key yet"),
+        detail: this.keyDescription(id),
       }));
     return (await vscode.window.showQuickPick(items, { placeHolder }))?.id;
+  }
+
+  private keyDescription(id: ProviderId): string {
+    if (id === "vscode") return vscode.l10n.t("No API key needed: uses GitHub Copilot or another model in VS Code");
+    if (this.keys.hasStored(id)) return vscode.l10n.t("API key stored");
+    if (id === "plamo" && this.keys.get(id)) return "PLAMO_API_KEY";
+    return vscode.l10n.t("No API key yet");
   }
 
   private pickKeyProvider(placeHolder: string, current: KeyProviderId, candidates: readonly KeyProviderId[] = KEY_PROVIDER_IDS) {

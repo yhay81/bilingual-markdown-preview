@@ -1,6 +1,6 @@
 {
   "displayName": "Markdown Translation Preview",
-  "description": "Markdown-Vorschau mit KI-Übersetzung nebeneinander, in jede Sprache. Nutze GitHub Copilot in VS Code, ein lokales Modell oder deinen eigenen Schlüssel für Anthropic, OpenAI, OpenRouter, Vercel AI Gateway, Gemini, DeepSeek, Mistral, xAI, Azure, Amazon Bedrock oder Vertex AI.",
+  "description": "Markdown-Vorschau mit KI-Übersetzung nebeneinander, in jede Sprache. Nutze GitHub Copilot in VS Code, ein lokales Modell oder deinen eigenen Schlüssel für Anthropic, OpenAI, OpenRouter, Vercel AI Gateway, Gemini, DeepSeek, PLaMo, Mistral, xAI, Azure, Amazon Bedrock oder Vertex AI.",
   "category": "Markdown Translation",
   "command.openPreview": "Übersetzungsvorschau öffnen",
   "command.openPreviewToSide": "Übersetzungsvorschau an der Seite öffnen",
@@ -20,6 +20,7 @@
   "config.provider.vercel": "Vercel AI Gateway: Modelle vieler Anbieter mit einem Schlüssel",
   "config.provider.gemini": "Google Gemini (Google AI Studio)",
   "config.provider.deepseek": "DeepSeek",
+  "config.provider.plamo": "PLaMo (Preferred Networks)",
   "config.provider.mistral": "Mistral AI",
   "config.provider.xai": "xAI (Grok)",
   "config.provider.azure": "Microsoft Azure: ein in Azure AI Foundry oder Azure OpenAI bereitgestelltes Modell",
@@ -34,6 +35,7 @@
   "config.vercel.model": "Vercel-AI-Gateway-Modell-ID als `provider/model`, z. B. `google/gemini-3.8-flash` oder `anthropic/claude-haiku-5.5`. **Markdown Translation: Modell auswählen** listet alle auf.",
   "config.gemini.model": "Gemini-Modell-ID, z. B. `gemini-3.8-flash` oder `gemini-3.5-flash-lite`. **Markdown Translation: Modell auswählen** listet die Modelle auf, die dein Schlüssel nutzen kann.",
   "config.deepseek.model": "DeepSeek-Modell-ID, z. B. `deepseek-flash` oder `deepseek-v4-pro`.",
+  "config.plamo.model": "PLaMo-Modell-ID, z. B. `plamo-3.1-prime`.",
   "config.mistral.model": "Mistral-Modell-ID, z. B. `mistral-small-2603` oder `mistral-medium-3-5`.",
   "config.xai.model": "xAI-Modell-ID, z. B. `grok-4.3` oder `grok-4.7`.",
   "config.azure.endpoint": "Endpunkt deiner Azure-Ressource, z. B. `https://my-resource.services.ai.azure.com`, oder nur der Ressourcenname. Wird auf der Seite **Schlüssel und Endpunkt** der Ressource angezeigt. Nur die Benutzereinstellungen können dies festlegen, damit ein Arbeitsbereich deinen Schlüssel nicht umleiten kann.",

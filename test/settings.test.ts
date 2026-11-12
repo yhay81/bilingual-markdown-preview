@@ -57,6 +57,7 @@ describe("sanitizeConfig", () => {
       openrouter: "google/gemini-3.8-flash",
       gemini: "gemini-3.8-flash",
       deepseek: "deepseek-flash",
+      plamo: "plamo-3.1-prime",
       mistral: "mistral-small-2603",
       xai: "grok-4.3",
       vscode: "",

@@ -1,6 +1,6 @@
 {
   "displayName": "Markdown Translation Preview",
-  "description": "Markdown と LLM による訳文を並べてプレビューします。翻訳先はどの言語でも選べます。VS Code の GitHub Copilot、ローカルモデル、または Anthropic・OpenAI・OpenRouter・Vercel AI Gateway・Gemini・DeepSeek・Mistral・xAI・Azure・Amazon Bedrock・Vertex AI の自分の API キーを使えます。",
+  "description": "Markdown と LLM による訳文を並べてプレビューします。翻訳先はどの言語でも選べます。VS Code の GitHub Copilot、ローカルモデル、または Anthropic・OpenAI・OpenRouter・Vercel AI Gateway・Gemini・DeepSeek・PLaMo・Mistral・xAI・Azure・Amazon Bedrock・Vertex AI の自分の API キーを使えます。",
   "category": "Markdown Translation",
   "command.openPreview": "翻訳プレビューを開く",
   "command.openPreviewToSide": "翻訳プレビューを横に開く",
@@ -20,6 +20,7 @@
   "config.provider.vercel": "Vercel AI Gateway（1 つのキーで多数のプロバイダーのモデルを使えます）",
   "config.provider.gemini": "Google Gemini（Google AI Studio）",
   "config.provider.deepseek": "DeepSeek",
+  "config.provider.plamo": "PLaMo（Preferred Networks）",
   "config.provider.mistral": "Mistral AI",
   "config.provider.xai": "xAI（Grok）",
   "config.provider.azure": "Microsoft Azure（Azure AI Foundry や Azure OpenAI にデプロイしたモデル）",
@@ -34,6 +35,7 @@
   "config.vercel.model": "Vercel AI Gateway のモデル ID。`provider/model` の形で書きます（例: `google/gemini-3.8-flash`、`anthropic/claude-haiku-5.5`）。**Markdown Translation: モデルを選ぶ** ですべて一覧できます。",
   "config.gemini.model": "Gemini のモデル ID（例: `gemini-3.8-flash`、`gemini-3.5-flash-lite`）。キーで使えるモデルは **Markdown Translation: モデルを選ぶ** で一覧できます。",
   "config.deepseek.model": "DeepSeek のモデル ID（例: `deepseek-flash`、`deepseek-v4-pro`）。",
+  "config.plamo.model": "PLaMo のモデル ID（例: `plamo-3.1-prime`）。",
   "config.mistral.model": "Mistral のモデル ID（例: `mistral-small-2603`、`mistral-medium-3-5`）。",
   "config.xai.model": "xAI のモデル ID（例: `grok-4.3`、`grok-4.7`）。",
   "config.azure.endpoint": "Azure リソースのエンドポイント（例: `https://my-resource.services.ai.azure.com`）。リソース名だけでも構いません。リソースの **キーとエンドポイント** ページに表示されています。ユーザー設定でしか設定できないため、ワークスペースからキーの送信先を変えられることはありません。",

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.0
+
+- Choose **PLaMo** in **Markdown Translation: Switch Translation Provider** to translate with PLaMo 3.1 Prime. Enter your key once in VS Code or start VS Code with `PLAMO_API_KEY` set.
+- **Markdown Translation: Choose Model** lists the PLaMo chat models available to your key.
+
 ## 0.2.0
 
 - Settings, commands and the command category are named after the extension: `markdownTranslation.*` and **Markdown Translation: …**, no longer `bilingualMarkdown.*` and **Bilingual Markdown: …**. Your settings, stored API keys and view mode are moved to the new names when the extension starts. Keybindings to the old command IDs need updating.

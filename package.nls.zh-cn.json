@@ -1,6 +1,6 @@
 {
   "displayName": "Markdown Translation Preview",
-  "description": "将 Markdown 与 LLM 译文并排预览，可译为任意语言。可使用 VS Code 中的 GitHub Copilot、本地模型，或你自己的 Anthropic、OpenAI、OpenRouter、Vercel AI Gateway、Gemini、DeepSeek、Mistral、xAI、Azure、Amazon Bedrock 或 Vertex AI API 密钥。",
+  "description": "将 Markdown 与 LLM 译文并排预览，可译为任意语言。可使用 VS Code 中的 GitHub Copilot、本地模型，或你自己的 Anthropic、OpenAI、OpenRouter、Vercel AI Gateway、Gemini、DeepSeek、PLaMo、Mistral、xAI、Azure、Amazon Bedrock 或 Vertex AI API 密钥。",
   "category": "Markdown Translation",
   "command.openPreview": "打开翻译预览",
   "command.openPreviewToSide": "在侧边打开翻译预览",
@@ -20,6 +20,7 @@
   "config.provider.vercel": "Vercel AI Gateway：一个密钥即可使用众多提供方的模型",
   "config.provider.gemini": "Google Gemini（Google AI Studio）",
   "config.provider.deepseek": "DeepSeek",
+  "config.provider.plamo": "PLaMo（Preferred Networks）",
   "config.provider.mistral": "Mistral AI",
   "config.provider.xai": "xAI（Grok）",
   "config.provider.azure": "Microsoft Azure：部署在 Azure AI Foundry 或 Azure OpenAI 中的模型",
@@ -34,6 +35,7 @@
   "config.vercel.model": "Vercel AI Gateway 模型 ID，格式为 `provider/model`，例如 `google/gemini-3.8-flash` 或 `anthropic/claude-haiku-5.5`。**Markdown Translation: 选择模型** 会列出全部模型。",
   "config.gemini.model": "Gemini 模型 ID，例如 `gemini-3.8-flash` 或 `gemini-3.5-flash-lite`。**Markdown Translation: 选择模型** 会列出你的密钥可用的模型。",
   "config.deepseek.model": "DeepSeek 模型 ID，例如 `deepseek-flash` 或 `deepseek-v4-pro`。",
+  "config.plamo.model": "PLaMo 模型 ID，例如 `plamo-3.1-prime`。",
   "config.mistral.model": "Mistral 模型 ID，例如 `mistral-small-2603` 或 `mistral-medium-3-5`。",
   "config.xai.model": "xAI 模型 ID，例如 `grok-4.3` 或 `grok-4.7`。",
   "config.azure.endpoint": "Azure 资源的终结点，例如 `https://my-resource.services.ai.azure.com`，也可以只填资源名称。可在资源的 **密钥和终结点** 页面找到。只能在用户设置中设置，因此工作区无法改变密钥的发送目标。",

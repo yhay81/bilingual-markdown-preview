@@ -1,6 +1,6 @@
 {
   "displayName": "Markdown Translation Preview",
-  "description": "Previsualiza Markdown junto a su traducción con un LLM, a cualquier idioma. Usa GitHub Copilot en VS Code, un modelo local o tu propia clave de Anthropic, OpenAI, OpenRouter, Vercel AI Gateway, Gemini, DeepSeek, Mistral, xAI, Azure, Amazon Bedrock o Vertex AI.",
+  "description": "Previsualiza Markdown junto a su traducción con un LLM, a cualquier idioma. Usa GitHub Copilot en VS Code, un modelo local o tu propia clave de Anthropic, OpenAI, OpenRouter, Vercel AI Gateway, Gemini, DeepSeek, PLaMo, Mistral, xAI, Azure, Amazon Bedrock o Vertex AI.",
   "category": "Markdown Translation",
   "command.openPreview": "Abrir vista previa de traducción",
   "command.openPreviewToSide": "Abrir vista previa de traducción en el lateral",
@@ -20,6 +20,7 @@
   "config.provider.vercel": "Vercel AI Gateway: modelos de muchos proveedores con una sola clave",
   "config.provider.gemini": "Google Gemini (Google AI Studio)",
   "config.provider.deepseek": "DeepSeek",
+  "config.provider.plamo": "PLaMo (Preferred Networks)",
   "config.provider.mistral": "Mistral AI",
   "config.provider.xai": "xAI (Grok)",
   "config.provider.azure": "Microsoft Azure: un modelo implementado en Azure AI Foundry o Azure OpenAI",
@@ -34,6 +35,7 @@
   "config.vercel.model": "ID de modelo de Vercel AI Gateway, con el formato `provider/model`, p. ej. `google/gemini-3.8-flash` o `anthropic/claude-haiku-5.5`. **Markdown Translation: Elegir modelo** los muestra todos.",
   "config.gemini.model": "ID de modelo de Gemini, p. ej. `gemini-3.8-flash` o `gemini-3.5-flash-lite`. **Markdown Translation: Elegir modelo** muestra los modelos que puede usar tu clave.",
   "config.deepseek.model": "ID de modelo de DeepSeek, p. ej. `deepseek-flash` o `deepseek-v4-pro`.",
+  "config.plamo.model": "ID de modelo de PLaMo, p. ej. `plamo-3.1-prime`.",
   "config.mistral.model": "ID de modelo de Mistral, p. ej. `mistral-small-2603` o `mistral-medium-3-5`.",
   "config.xai.model": "ID de modelo de xAI, p. ej. `grok-4.3` o `grok-4.7`.",
   "config.azure.endpoint": "Punto de conexión de tu recurso de Azure, p. ej. `https://my-resource.services.ai.azure.com`, o solo el nombre del recurso. Aparece en la página **Claves y punto de conexión** del recurso. Solo la configuración de usuario puede establecerlo, de modo que un área de trabajo no pueda redirigir tu clave.",

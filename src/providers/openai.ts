@@ -69,7 +69,7 @@ export class OpenAIProvider implements TranslationProvider {
           { role: "system", content: request.system },
           { role: "user", content: request.user },
         ],
-        [this.maxTokensParam]: request.maxOutputTokens,
+        [this.maxTokensParam]: Math.min(request.maxOutputTokens, COMPATIBLE_SERVICES[this.id].maxOutputTokens ?? Infinity),
         ...(this.askForUsage ? { stream_options: { include_usage: true } } : {}),
         ...reasoning,
       },
@@ -120,6 +120,8 @@ export async function listCompatibleModels(provider: CompatibleProviderId, apiKe
       // Gemini lists its models as `models/<id>`.
       const id = model.id.replace(/^models\//, "");
       if (NOT_CHAT_RE.test(id)) continue;
+      // PLaMo Deep Research runs background jobs through the Responses API.
+      if (provider === "plamo" && id.endsWith("-deep-research")) continue;
       // Vercel AI Gateway gives each model a type, and offers batch-priced copies.
       const type = (model as { type?: unknown }).type;
       if ((typeof type === "string" && type !== "language") || id.endsWith("-batch")) continue;

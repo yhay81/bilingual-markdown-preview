@@ -1,6 +1,6 @@
 {
   "displayName": "Markdown Translation Preview",
-  "description": "Affichez un aperçu de votre Markdown avec sa traduction par un LLM en regard, dans la langue de votre choix. Utilisez GitHub Copilot dans VS Code, un modèle local ou votre propre clé Anthropic, OpenAI, OpenRouter, Vercel AI Gateway, Gemini, DeepSeek, Mistral, xAI, Azure, Amazon Bedrock ou Vertex AI.",
+  "description": "Affichez un aperçu de votre Markdown avec sa traduction par un LLM en regard, dans la langue de votre choix. Utilisez GitHub Copilot dans VS Code, un modèle local ou votre propre clé Anthropic, OpenAI, OpenRouter, Vercel AI Gateway, Gemini, DeepSeek, PLaMo, Mistral, xAI, Azure, Amazon Bedrock ou Vertex AI.",
   "category": "Markdown Translation",
   "command.openPreview": "Ouvrir l’aperçu de la traduction",
   "command.openPreviewToSide": "Ouvrir l’aperçu de la traduction sur le côté",
@@ -20,6 +20,7 @@
   "config.provider.vercel": "Vercel AI Gateway : les modèles de nombreux fournisseurs avec une seule clé",
   "config.provider.gemini": "Google Gemini (Google AI Studio)",
   "config.provider.deepseek": "DeepSeek",
+  "config.provider.plamo": "PLaMo (Preferred Networks)",
   "config.provider.mistral": "Mistral AI",
   "config.provider.xai": "xAI (Grok)",
   "config.provider.azure": "Microsoft Azure : un modèle déployé dans Azure AI Foundry ou Azure OpenAI",
@@ -34,6 +35,7 @@
   "config.vercel.model": "ID de modèle Vercel AI Gateway, sous la forme `provider/model`, par ex. `google/gemini-3.8-flash` ou `anthropic/claude-haiku-5.5`. **Markdown Translation: Choisir le modèle** les liste tous.",
   "config.gemini.model": "ID de modèle Gemini, par ex. `gemini-3.8-flash` ou `gemini-3.5-flash-lite`. **Markdown Translation: Choisir le modèle** liste les modèles que votre clé peut utiliser.",
   "config.deepseek.model": "ID de modèle DeepSeek, par ex. `deepseek-flash` ou `deepseek-v4-pro`.",
+  "config.plamo.model": "ID de modèle PLaMo, par exemple `plamo-3.1-prime`.",
   "config.mistral.model": "ID de modèle Mistral, par ex. `mistral-small-2603` ou `mistral-medium-3-5`.",
   "config.xai.model": "ID de modèle xAI, par ex. `grok-4.3` ou `grok-4.7`.",
   "config.azure.endpoint": "Point de terminaison de votre ressource Azure, par ex. `https://my-resource.services.ai.azure.com`, ou simplement le nom de la ressource. Affiché sur la page **Clés et point de terminaison** de la ressource. Seuls les paramètres utilisateur peuvent le définir, afin qu’un espace de travail ne puisse pas rediriger votre clé.",

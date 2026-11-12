@@ -2,7 +2,7 @@
   "name": "markdown-translation-preview",
   "displayName": "%displayName%",
   "description": "%description%",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "publisher": "yhay81",
   "license": "MIT",
@@ -46,6 +46,7 @@
     "openrouter",
     "gemini",
     "deepseek",
+    "plamo",
     "mistral",
     "grok",
     "copilot",
@@ -187,6 +188,7 @@
             "vercel",
             "gemini",
             "deepseek",
+            "plamo",
             "mistral",
             "xai",
             "azure",
@@ -201,6 +203,7 @@
             "%config.provider.vercel%",
             "%config.provider.gemini%",
             "%config.provider.deepseek%",
+            "%config.provider.plamo%",
             "%config.provider.mistral%",
             "%config.provider.xai%",
             "%config.provider.azure%",
@@ -268,61 +271,68 @@
           "scope": "machine",
           "order": 8
         },
+        "markdownTranslation.plamo.model": {
+          "type": "string",
+          "default": "plamo-3.1-prime",
+          "markdownDescription": "%config.plamo.model%",
+          "scope": "machine",
+          "order": 9
+        },
         "markdownTranslation.mistral.model": {
           "type": "string",
           "default": "mistral-small-2603",
           "markdownDescription": "%config.mistral.model%",
           "scope": "machine",
-          "order": 9
+          "order": 10
         },
         "markdownTranslation.xai.model": {
           "type": "string",
           "default": "grok-4.3",
           "markdownDescription": "%config.xai.model%",
           "scope": "machine",
-          "order": 10
+          "order": 11
         },
         "markdownTranslation.azure.endpoint": {
           "type": "string",
           "default": "",
           "markdownDescription": "%config.azure.endpoint%",
           "scope": "machine",
-          "order": 11
+          "order": 12
         },
         "markdownTranslation.azure.model": {
           "type": "string",
           "default": "gpt-6-luna",
           "markdownDescription": "%config.azure.model%",
           "scope": "machine",
-          "order": 12
+          "order": 13
         },
         "markdownTranslation.bedrock.region": {
           "type": "string",
           "default": "us-east-1",
           "markdownDescription": "%config.bedrock.region%",
           "scope": "machine",
-          "order": 13
+          "order": 14
         },
         "markdownTranslation.bedrock.model": {
           "type": "string",
           "default": "global.anthropic.claude-haiku-5-5",
           "markdownDescription": "%config.bedrock.model%",
           "scope": "machine",
-          "order": 14
+          "order": 15
         },
         "markdownTranslation.vertex.model": {
           "type": "string",
           "default": "gemini-3.8-flash",
           "markdownDescription": "%config.vertex.model%",
           "scope": "machine",
-          "order": 15
+          "order": 16
         },
         "markdownTranslation.vscode.model": {
           "type": "string",
           "default": "",
           "markdownDescription": "%config.vscode.model%",
           "scope": "machine",
-          "order": 16
+          "order": 17
         },
         "markdownTranslation.reasoningEffort": {
           "type": "string",
@@ -343,14 +353,14 @@
           "default": "none",
           "markdownDescription": "%config.reasoningEffort%",
           "scope": "machine",
-          "order": 17
+          "order": 18
         },
         "markdownTranslation.styleInstructions": {
           "type": "string",
           "default": "",
           "editPresentation": "multilineText",
           "markdownDescription": "%config.styleInstructions%",
-          "order": 18
+          "order": 19
         },
         "markdownTranslation.glossary": {
           "type": "object",
@@ -359,13 +369,13 @@
             "type": "string"
           },
           "markdownDescription": "%config.glossary%",
-          "order": 19
+          "order": 20
         },
         "markdownTranslation.translateCodeComments": {
           "type": "boolean",
           "default": false,
           "markdownDescription": "%config.translateCodeComments%",
-          "order": 20
+          "order": 21
         },
         "markdownTranslation.maxConcurrentRequests": {
           "type": "integer",
@@ -374,7 +384,7 @@
           "maximum": 8,
           "markdownDescription": "%config.maxConcurrentRequests%",
           "scope": "machine",
-          "order": 21
+          "order": 22
         },
         "markdownTranslation.batchCharacterLimit": {
           "type": "integer",
@@ -383,7 +393,7 @@
           "maximum": 20000,
           "markdownDescription": "%config.batchCharacterLimit%",
           "scope": "machine",
-          "order": 22
+          "order": 23
         },
         "markdownTranslation.tokenLimit": {
           "type": "integer",
@@ -391,13 +401,13 @@
           "minimum": 0,
           "markdownDescription": "%config.tokenLimit%",
           "scope": "machine",
-          "order": 23
+          "order": 24
         },
         "markdownTranslation.syncScroll": {
           "type": "boolean",
           "default": true,
           "markdownDescription": "%config.syncScroll%",
-          "order": 24
+          "order": 25
         }
       }
     }

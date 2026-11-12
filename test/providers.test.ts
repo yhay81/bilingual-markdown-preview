@@ -46,6 +46,9 @@ describe("reasoning parameters", () => {
     expect(reasoningAttempts("gemini", "medium")).toEqual([{ reasoning_effort: "medium" }, {}]);
     expect(reasoningAttempts("deepseek", "none")).toEqual([{ thinking: { type: "disabled" } }, {}]);
     expect(reasoningAttempts("deepseek", "low")).toEqual([{ reasoning_effort: "low" }, {}]);
+    expect(reasoningAttempts("plamo", "none")).toEqual([{ reasoning_effort: "none" }, {}]);
+    expect(reasoningAttempts("plamo", "low")).toEqual([{ reasoning_effort: "medium" }, {}]);
+    expect(reasoningAttempts("plamo", "high")).toEqual([{ reasoning_effort: "medium" }, {}]);
     expect(reasoningAttempts("mistral", "none")).toEqual([{ reasoning_effort: "none" }, { reasoning_effort: "low" }, {}]);
     expect(reasoningAttempts("xai", "none")).toEqual([{ reasoning_effort: "low" }, {}]);
     expect(reasoningAttempts("vercel", "low")).toEqual([{ reasoning: { effort: "low" } }, {}]);
@@ -472,6 +475,7 @@ describe("OpenAI-compatible services", () => {
       ["openrouter", "https://openrouter.ai/api/v1/chat/completions"],
       ["gemini", "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"],
       ["deepseek", "https://api.deepseek.com/chat/completions"],
+      ["plamo", "https://api.platform.preferredai.jp/v1/chat/completions"],
       ["mistral", "https://api.mistral.ai/v1/chat/completions"],
       ["xai", "https://api.x.ai/v1/chat/completions"],
     ];
@@ -498,6 +502,21 @@ describe("OpenAI-compatible services", () => {
     await new OpenAIProvider(OPENAI_TEST_KEY, "mistral-small-2603", "none", undefined, "mistral").translate(translateRequest());
     expect(captured[0]!.body).not.toHaveProperty("stream_options");
     expect(captured[0]!.body).toMatchObject({ reasoning_effort: "none" });
+  });
+
+  it("caps large PLaMo batches and reads translation text and token usage from separate events", async () => {
+    const captured = stubFetch(() => sse([
+      { data: chunk({ reasoning_content: "reasoning" }) },
+      { data: chunk({ content: "訳文" }, "stop") },
+      { data: { choices: [], usage: { prompt_tokens: 40, completion_tokens: 10 } } },
+      { data: "[DONE]" },
+    ]));
+    const provider = createProvider({ provider: "plamo", model: "plamo-3.1-prime", baseUrl: "", reasoningEffort: "high" }, "plamo-test-key");
+    const request = translateRequest();
+    request.maxOutputTokens = 32_000;
+    await expect(provider.translate(request)).resolves.toEqual({ stopReason: "end", usage: { inputTokens: 40, outputTokens: 10 } });
+    expect(request.deltas).toEqual(["訳文"]);
+    expect(captured[0]!.body).toMatchObject({ model: "plamo-3.1-prime", max_tokens: 20_480, reasoning_effort: "medium", stream_options: { include_usage: true } });
   });
 
   it("step down to reasoning parameters the model accepts, and remember them", async () => {
@@ -548,6 +567,14 @@ describe("listModels", () => {
     stubFetch(() => list([{ id: "google/gemini-3.8-flash", name: "Google: Gemini 3.8 Flash", object: "model" }]));
     const models = await listModels({ provider: "openrouter", model: "", baseUrl: "", reasoningEffort: "none" }, OPENAI_TEST_KEY);
     expect(models).toEqual([{ id: "google/gemini-3.8-flash", name: "Google: Gemini 3.8 Flash" }]);
+  });
+
+  it("lists PLaMo chat models and omits its Responses-only Deep Research model", async () => {
+    const captured = stubFetch(() => list([{ id: "plamo-3.1-prime" }, { id: "plamo-3.1-prime-deep-research" }]));
+    const models = await listModels({ provider: "plamo", model: "", baseUrl: "https://elsewhere.example.com/v1", reasoningEffort: "none" }, "plamo-test-key");
+    expect(models).toEqual([{ id: "plamo-3.1-prime" }]);
+    expect(captured[0]!.url).toBe("https://api.platform.preferredai.jp/v1/models");
+    expect(captured[0]!.headers.get("authorization")).toBe("Bearer plamo-test-key");
   });
 
   it("lists Claude models", async () => {

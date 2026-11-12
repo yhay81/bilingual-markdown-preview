@@ -1,6 +1,6 @@
 {
   "displayName": "Markdown Translation Preview",
-  "description": "Предварительный просмотр Markdown рядом с переводом, сделанным LLM, на любой язык. Используйте GitHub Copilot в VS Code, локальную модель или собственный ключ Anthropic, OpenAI, OpenRouter, Vercel AI Gateway, Gemini, DeepSeek, Mistral, xAI, Azure, Amazon Bedrock или Vertex AI.",
+  "description": "Предварительный просмотр Markdown рядом с переводом, сделанным LLM, на любой язык. Используйте GitHub Copilot в VS Code, локальную модель или собственный ключ Anthropic, OpenAI, OpenRouter, Vercel AI Gateway, Gemini, DeepSeek, PLaMo, Mistral, xAI, Azure, Amazon Bedrock или Vertex AI.",
   "category": "Markdown Translation",
   "command.openPreview": "Открыть предварительный просмотр перевода",
   "command.openPreviewToSide": "Открыть предварительный просмотр перевода сбоку",
@@ -20,6 +20,7 @@
   "config.provider.vercel": "Vercel AI Gateway: модели многих поставщиков с одним ключом",
   "config.provider.gemini": "Google Gemini (Google AI Studio)",
   "config.provider.deepseek": "DeepSeek",
+  "config.provider.plamo": "PLaMo (Preferred Networks)",
   "config.provider.mistral": "Mistral AI",
   "config.provider.xai": "xAI (Grok)",
   "config.provider.azure": "Microsoft Azure: модель, развернутая в Azure AI Foundry или Azure OpenAI",
@@ -34,6 +35,7 @@
   "config.vercel.model": "Идентификатор модели Vercel AI Gateway в формате `provider/model`, например `google/gemini-3.8-flash` или `anthropic/claude-haiku-5.5`. Команда **Markdown Translation: Выбрать модель** показывает все модели.",
   "config.gemini.model": "Идентификатор модели Gemini, например `gemini-3.8-flash` или `gemini-3.5-flash-lite`. Команда **Markdown Translation: Выбрать модель** показывает модели, доступные для вашего ключа.",
   "config.deepseek.model": "Идентификатор модели DeepSeek, например `deepseek-flash` или `deepseek-v4-pro`.",
+  "config.plamo.model": "Идентификатор модели PLaMo, например `plamo-3.1-prime`.",
   "config.mistral.model": "Идентификатор модели Mistral, например `mistral-small-2603` или `mistral-medium-3-5`.",
   "config.xai.model": "Идентификатор модели xAI, например `grok-4.3` или `grok-4.7`.",
   "config.azure.endpoint": "Конечная точка вашего ресурса Azure, например `https://my-resource.services.ai.azure.com`, или просто имя ресурса. Указана на странице ресурса **Ключи и конечная точка**. Задать параметр можно только в пользовательских параметрах, чтобы рабочая область не могла перенаправить ваш ключ.",

@@ -22,6 +22,7 @@ export const PROVIDERS: Readonly<Record<ProviderId, ProviderInfo>> = {
   vercel: { label: "Vercel AI Gateway", defaultModel: "google/gemini-3.8-flash" },
   gemini: { label: "Google Gemini", defaultModel: "gemini-3.8-flash", keyPlaceholder: "AIza..." },
   deepseek: { label: "DeepSeek", defaultModel: "deepseek-flash", keyPlaceholder: "sk-..." },
+  plamo: { label: "PLaMo", defaultModel: "plamo-3.1-prime" },
   mistral: { label: "Mistral AI", defaultModel: "mistral-small-2603" },
   xai: { label: "xAI", defaultModel: "grok-4.3", keyPlaceholder: "xai-..." },
   // Azure names a deployment after its model unless told otherwise.
@@ -42,6 +43,8 @@ export interface CompatibleService {
   baseUrl: string;
   /** OpenAI's reasoning models reject `max_tokens`; the other services all accept it. */
   maxTokensParam: "max_completion_tokens" | "max_tokens";
+  /** A service-wide limit on generated tokens, when requests over that limit are rejected. */
+  maxOutputTokens?: number;
   /** Whether to ask for token usage in the stream, an option that not every server accepts. */
   askForUsage: boolean;
   /** Whether models may reason even at `none`, so the output budget needs headroom. */
@@ -97,6 +100,15 @@ export const COMPATIBLE_SERVICES: Readonly<Record<CompatibleProviderId, Compatib
     askForUsage: true,
     reasonsAtNone: false,
     reasoning: (effort) => (effort === "none" ? [{ thinking: { type: "disabled" } }] : [effortParam(effort)]),
+  },
+  plamo: {
+    baseUrl: "https://api.platform.preferredai.jp/v1",
+    maxTokensParam: "max_tokens",
+    maxOutputTokens: 20_480,
+    askForUsage: true,
+    reasonsAtNone: false,
+    // PLaMo offers one level of reasoning when enabled.
+    reasoning: (effort) => [effortParam(effort === "none" ? "none" : "medium")],
   },
   mistral: {
     baseUrl: "https://api.mistral.ai/v1",

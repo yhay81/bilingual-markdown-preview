@@ -77,8 +77,7 @@ export function createProvider(settings: ProviderSettings, apiKey: string): Tran
 }
 
 /**
- * The key to use: "" for VS Code, which needs none, and undefined when no key is stored.
- * Without a stored key, only an OpenAI-compatible server on this machine can be used.
+ * Resolves the configured key, with a placeholder for a local server and "" for VS Code.
  */
 export function apiKeyFor(settings: ProviderSettings, getKey: (provider: KeyProviderId) => string | undefined): string | undefined {
   if (settings.provider === "vscode") return "";

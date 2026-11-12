@@ -2,7 +2,7 @@
 
 [日本語](README.ja.md)
 
-Preview Markdown with an LLM translation beside it, block by block, into any language. Translate with **GitHub Copilot** or another language model in VS Code; with your own API key (BYOK) for **Anthropic**, **OpenAI**, **OpenRouter**, **Vercel AI Gateway**, **Google Gemini**, **DeepSeek**, **Mistral AI** or **xAI**; with a model in **Microsoft Azure**, **Amazon Bedrock** or **Google Cloud Vertex AI**; or with a model running on your computer.
+Preview Markdown with an LLM translation beside it, block by block, into any language. Translate with **GitHub Copilot** or another language model in VS Code; with your own API key (BYOK) for **Anthropic**, **OpenAI**, **OpenRouter**, **Vercel AI Gateway**, **Google Gemini**, **DeepSeek**, **PLaMo**, **Mistral AI** or **xAI**; with a model in **Microsoft Azure**, **Amazon Bedrock** or **Google Cloud Vertex AI**; or with a model running on your computer.
 
 ![An English document on the left and its Japanese translation on the right, lined up block by block](images/screenshot.png)
 
@@ -27,7 +27,7 @@ Preview Markdown with an LLM translation beside it, block by block, into any lan
 
 ## Getting started
 
-You need VS Code 1.101 or later, and one of these: GitHub Copilot; an API key from Anthropic, OpenAI, OpenRouter, Vercel AI Gateway, Google Gemini, DeepSeek, Mistral AI or xAI; an API key for Microsoft Azure, Amazon Bedrock or Google Cloud Vertex AI; or a local server such as Ollama or LM Studio.
+You need VS Code 1.101 or later, and one of these: GitHub Copilot; an API key from Anthropic, OpenAI, OpenRouter, Vercel AI Gateway, Google Gemini, DeepSeek, PLaMo, Mistral AI or xAI; an API key for Microsoft Azure, Amazon Bedrock or Google Cloud Vertex AI; or a local server such as Ollama or LM Studio.
 
 1. Install **Markdown Translation Preview** from the Visual Studio Marketplace.
 2. Open a Markdown file and click the globe icon (**Open Translation Preview to the Side**) at the top right of the editor. You can also right-click the file in the Explorer, or run **Markdown Translation: Open Translation Preview** from the Command Palette.
@@ -77,6 +77,7 @@ Set `markdownTranslation.provider` to `vscode`, or run **Markdown Translation: S
 | [Vercel AI Gateway](https://vercel.com/ai-gateway) | `vercel` | `google/gemini-3.8-flash` |
 | [Google Gemini](https://aistudio.google.com) | `gemini` | `gemini-3.8-flash` |
 | [DeepSeek](https://www.deepseek.com) | `deepseek` | `deepseek-flash` |
+| [PLaMo](https://docs.plamo.preferredai.jp/en/getting-started) | `plamo` | `plamo-3.1-prime` |
 | [Mistral AI](https://mistral.ai) | `mistral` | `mistral-small-2603` |
 | [xAI](https://x.ai) | `xai` | `grok-4.3` |
 
@@ -84,6 +85,7 @@ Run **Markdown Translation: Switch Translation Provider**, choose a provider and
 
 - To use another model, run **Markdown Translation: Choose Model**, or click the model name in the preview's toolbar. It lists the models your key can use; you can also type a model ID. The model is stored in `markdownTranslation.<provider>.model`.
 - OpenRouter and Vercel AI Gateway reach many providers' models with one key and one bill. Their model IDs name the provider, as in `anthropic/claude-haiku-5.5` or `openai/gpt-6-luna`.
+- PLaMo uses its saved key first. It can also use the `PLAMO_API_KEY` environment variable set when starting VS Code. When reasoning is enabled, PLaMo uses its standard `medium` level.
 - Translation is billed to the account that issued the key.
 - You enter the key in a password box. It is kept in VS Code Secret Storage (your OS keychain), never in `settings.json`.
 - If the provider rejects the key (an authentication or permission error), translation stops, and the preview offers to set the key again or to switch providers.
@@ -121,7 +123,7 @@ Small models translate less accurately and more often drop the placeholders that
 
 | Setting | Default | Description |
 | --- | --- | --- |
-| `markdownTranslation.provider` | `anthropic` | Translation provider: `anthropic`, `openai`, `openrouter`, `vercel`, `gemini`, `deepseek`, `mistral`, `xai`, `azure`, `bedrock`, `vertex`, or `vscode` for a language model in VS Code. |
+| `markdownTranslation.provider` | `anthropic` | Translation provider: `anthropic`, `openai`, `openrouter`, `vercel`, `gemini`, `deepseek`, `plamo`, `mistral`, `xai`, `azure`, `bedrock`, `vertex`, or `vscode` for a language model in VS Code. |
 | `markdownTranslation.targetLanguage` | `Japanese` | Language to translate into: any language, written as you would tell a translator, such as `English`, `Simplified Chinese` or `Swahili`. `translate-to` in a document's front matter overrides it. |
 | `markdownTranslation.anthropic.model` | `claude-haiku-5-5` | Anthropic model ID. |
 | `markdownTranslation.openai.model` | `gpt-6-luna` | OpenAI model ID. |
@@ -130,6 +132,7 @@ Small models translate less accurately and more often drop the placeholders that
 | `markdownTranslation.vercel.model` | `google/gemini-3.8-flash` | Vercel AI Gateway model ID, as `provider/model`. |
 | `markdownTranslation.gemini.model` | `gemini-3.8-flash` | Gemini model ID. |
 | `markdownTranslation.deepseek.model` | `deepseek-flash` | DeepSeek model ID. |
+| `markdownTranslation.plamo.model` | `plamo-3.1-prime` | PLaMo model ID. |
 | `markdownTranslation.mistral.model` | `mistral-small-2603` | Mistral model ID. |
 | `markdownTranslation.xai.model` | `grok-4.3` | xAI model ID. |
 | `markdownTranslation.azure.endpoint` | (empty) | Endpoint of your Azure resource, such as `https://my-resource.services.ai.azure.com`, or the resource name alone. |
@@ -189,7 +192,7 @@ Turn on `markdownTranslation.translateCodeComments` to translate the comments in
 
 ## Security and privacy
 
-- The text to translate is sent only to the provider you choose: `https://api.anthropic.com`, `https://api.openai.com/v1`, `https://openrouter.ai/api/v1`, `https://ai-gateway.vercel.sh/v1`, `https://generativelanguage.googleapis.com`, `https://api.deepseek.com`, `https://api.mistral.ai/v1`, `https://api.x.ai/v1`, `https://bedrock-runtime.<region>.amazonaws.com`, `https://aiplatform.googleapis.com`, the `markdownTranslation.openai.baseUrl` or `markdownTranslation.azure.endpoint` in your user settings, or the language model in VS Code that you allowed. Each key is sent only to its own provider. Environment variables such as `ANTHROPIC_BASE_URL`, `OPENAI_BASE_URL`, `OPENAI_ORG_ID` and `OPENAI_PROJECT_ID` are not used.
+- The text to translate is sent only to the provider you choose: `https://api.anthropic.com`, `https://api.openai.com/v1`, `https://openrouter.ai/api/v1`, `https://ai-gateway.vercel.sh/v1`, `https://generativelanguage.googleapis.com`, `https://api.deepseek.com`, `https://api.platform.preferredai.jp/v1`, `https://api.mistral.ai/v1`, `https://api.x.ai/v1`, `https://bedrock-runtime.<region>.amazonaws.com`, `https://aiplatform.googleapis.com`, the `markdownTranslation.openai.baseUrl` or `markdownTranslation.azure.endpoint` in your user settings, or the language model in VS Code that you allowed. Each key is sent only to its own provider. Environment variables such as `ANTHROPIC_BASE_URL`, `OPENAI_BASE_URL`, `OPENAI_ORG_ID` and `OPENAI_PROJECT_ID` are not used.
 - Code blocks, front matter, inline code, math, URLs, link targets and HTML are not sent. With `markdownTranslation.translateCodeComments` on, the text of the comments in code blocks is sent.
 - In Restricted Mode (an untrusted workspace), the target language, style instructions, glossary and code comment translation also come only from your user settings. The glossary file and `translate-to` in front matter are not used.
 - The extension collects no telemetry.

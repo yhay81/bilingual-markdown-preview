@@ -27,10 +27,12 @@ export class ApiKeyStore implements vscode.Disposable {
   }
 
   get(provider: KeyProviderId): string | undefined {
-    return this.keys.get(provider);
+    const stored = this.keys.get(provider);
+    if (stored || provider !== "plamo") return stored;
+    return process.env.PLAMO_API_KEY?.trim() || undefined;
   }
 
-  has(provider: KeyProviderId): boolean {
+  hasStored(provider: KeyProviderId): boolean {
     return this.keys.has(provider);
   }
 

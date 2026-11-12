@@ -1,6 +1,6 @@
 {
   "displayName": "Markdown Translation Preview",
-  "description": "Preview Markdown with an LLM translation side by side, into any language. Use GitHub Copilot in VS Code, a local model, or your own key for Anthropic, OpenAI, OpenRouter, Vercel AI Gateway, Gemini, DeepSeek, Mistral, xAI, Azure, Amazon Bedrock or Vertex AI.",
+  "description": "Preview Markdown with an LLM translation side by side, into any language. Use GitHub Copilot in VS Code, a local model, or your own key for Anthropic, OpenAI, OpenRouter, Vercel AI Gateway, Gemini, DeepSeek, PLaMo, Mistral, xAI, Azure, Amazon Bedrock or Vertex AI.",
   "category": "Markdown Translation",
   "command.openPreview": "Open Translation Preview",
   "command.openPreviewToSide": "Open Translation Preview to the Side",
@@ -20,6 +20,7 @@
   "config.provider.vercel": "Vercel AI Gateway: many providers' models with one key",
   "config.provider.gemini": "Google Gemini (Google AI Studio)",
   "config.provider.deepseek": "DeepSeek",
+  "config.provider.plamo": "PLaMo (Preferred Networks)",
   "config.provider.mistral": "Mistral AI",
   "config.provider.xai": "xAI (Grok)",
   "config.provider.azure": "Microsoft Azure: a model deployed in Azure AI Foundry or Azure OpenAI",
@@ -34,6 +35,7 @@
   "config.vercel.model": "Vercel AI Gateway model ID, as `provider/model`, e.g. `google/gemini-3.8-flash` or `anthropic/claude-haiku-5.5`. **Markdown Translation: Choose Model** lists them all.",
   "config.gemini.model": "Gemini model ID, e.g. `gemini-3.8-flash` or `gemini-3.5-flash-lite`. **Markdown Translation: Choose Model** lists the models your key can use.",
   "config.deepseek.model": "DeepSeek model ID, e.g. `deepseek-flash` or `deepseek-v4-pro`.",
+  "config.plamo.model": "PLaMo model ID, such as `plamo-3.1-prime`.",
   "config.mistral.model": "Mistral model ID, e.g. `mistral-small-2603` or `mistral-medium-3-5`.",
   "config.xai.model": "xAI model ID, e.g. `grok-4.3` or `grok-4.7`.",
   "config.azure.endpoint": "Endpoint of your Azure resource, e.g. `https://my-resource.services.ai.azure.com`, or just the resource name. Shown on the resource's **Keys and Endpoint** page. Only user settings can set this, so a workspace cannot redirect your key.",

@@ -2,7 +2,7 @@
  * Providers reached through an OpenAI-compatible Chat Completions API with the user's own key.
  * Azure and Amazon Bedrock serve Claude through an Anthropic-compatible API instead.
  */
-export const COMPATIBLE_PROVIDER_IDS = ["openai", "openrouter", "vercel", "gemini", "deepseek", "mistral", "xai", "azure", "bedrock"] as const;
+export const COMPATIBLE_PROVIDER_IDS = ["openai", "openrouter", "vercel", "gemini", "deepseek", "plamo", "mistral", "xai", "azure", "bedrock"] as const;
 
 export type CompatibleProviderId = (typeof COMPATIBLE_PROVIDER_IDS)[number];
 
